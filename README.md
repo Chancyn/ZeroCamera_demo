@@ -1,2 +1,2 @@
 # ZeroCamera_demo
-ZeroCamera demo for study
+ZeroCamera for study
