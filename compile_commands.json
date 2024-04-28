@@ -1,0 +1,310 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-Wall",
+      "-std=gnu11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/bsw_basic.dir/zc_bsw_add.c.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/basic/zc_bsw_add.c"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/basic",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/basic/zc_bsw_add.c",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/basic/CMakeFiles/bsw_basic.dir/zc_bsw_add.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-DZC_DEBUG",
+      "-Dplat_basic_EXPORTS",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-Wall",
+      "-std=gnu11",
+      "-g",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/plat_basic.dir/zc_plat_add.c.o",
+      "/home/zhoucc/work/study/cmake/test/src/plat/basic/zc_plat_add.c"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/plat/basic",
+    "file": "/home/zhoucc/work/study/cmake/test/src/plat/basic/zc_plat_add.c",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/plat/basic/CMakeFiles/plat_basic.dir/zc_plat_add.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-Dzc_nng_EXPORTS",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-I/home/zhoucc/work/study/cmake/test/thirdparty/install/x64/nng/include",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_nng.dir/ZCNngReqClient.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/zc_nng/ZCNngReqClient.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/zc_nng",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/zc_nng/ZCNngReqClient.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/zc_nng/CMakeFiles/zc_nng.dir/ZCNngReqClient.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-Dzc_log_EXPORTS",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/thirdparty/install/x64/spdlog/include",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_log.dir/ZCLog.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/log/ZCLog.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/log",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/log/ZCLog.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/log/CMakeFiles/zc_log.dir/ZCLog.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-Dzc_log_EXPORTS",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/thirdparty/install/x64/spdlog/include",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_log.dir/zc_log.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/log/zc_log.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/log",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/log/zc_log.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/log/CMakeFiles/zc_log.dir/zc_log.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-Dzc_nng_EXPORTS",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-I/home/zhoucc/work/study/cmake/test/thirdparty/install/x64/nng/include",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-fPIC",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_nng.dir/ZCNngRepServer.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/zc_nng/ZCNngRepServer.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/zc_nng",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/zc_nng/ZCNngRepServer.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/zc_nng/CMakeFiles/zc_nng.dir/ZCNngRepServer.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-Wall",
+      "-std=gnu11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/utils.dir/timer_wheel.c.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/utils/timer_wheel.c"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/utils",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/utils/timer_wheel.c",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/utils/CMakeFiles/utils.dir/timer_wheel.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/threadxx.dir/Thread.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/threadxx/Thread.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/threadxx",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/threadxx/Thread.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/threadxx/CMakeFiles/threadxx.dir/Thread.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/threadxx.dir/zc_test_thread.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/threadxx/zc_test_thread.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/threadxx",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/threadxx/zc_test_thread.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/threadxx/CMakeFiles/threadxx.dir/zc_test_thread.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/threadxx.dir/Subject.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/bsw/threadxx/Subject.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/threadxx",
+    "file": "/home/zhoucc/work/study/cmake/test/src/bsw/threadxx/Subject.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/bsw/threadxx/CMakeFiles/threadxx.dir/Subject.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/thirdparty/install/x64/nng/include",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/plat/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/zc_nng",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_man.dir/zc_man_main.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/app/zc_man/zc_man_main.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_man",
+    "file": "/home/zhoucc/work/study/cmake/test/src/app/zc_man/zc_man_main.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_man/CMakeFiles/zc_man.dir/zc_man_main.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/plat/basic",
+      "-Wall",
+      "-std=gnu11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_test.dir/zc_test_add.c.o",
+      "/home/zhoucc/work/study/cmake/test/src/app/zc_test/zc_test_add.c"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_test",
+    "file": "/home/zhoucc/work/study/cmake/test/src/app/zc_test/zc_test_add.c",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_test/CMakeFiles/zc_test.dir/zc_test_add.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/plat/basic",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_test.dir/zc_test_main.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/app/zc_test/zc_test_main.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_test",
+    "file": "/home/zhoucc/work/study/cmake/test/src/app/zc_test/zc_test_main.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_test/CMakeFiles/zc_test.dir/zc_test_main.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/plat/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/threadxx",
+      "-Wall",
+      "-std=gnu++11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_app.dir/zc_app_main.cpp.o",
+      "/home/zhoucc/work/study/cmake/test/src/app/zc_app/zc_app_main.cpp"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_app",
+    "file": "/home/zhoucc/work/study/cmake/test/src/app/zc_app/zc_app_main.cpp",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_app/CMakeFiles/zc_app.dir/zc_app_main.cpp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-DZC_DEBUG",
+      "-I/home/zhoucc/work/study/cmake/test/include",
+      "-I/home/zhoucc/work/study/cmake/test/include/utilsxx",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/log",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/plat/basic",
+      "-I/home/zhoucc/work/study/cmake/test/src/bsw/threadxx",
+      "-Wall",
+      "-std=gnu11",
+      "-g",
+      "-c",
+      "-o",
+      "CMakeFiles/zc_app.dir/zc_app_add.c.o",
+      "/home/zhoucc/work/study/cmake/test/src/app/zc_app/zc_app_add.c"
+    ],
+    "directory": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_app",
+    "file": "/home/zhoucc/work/study/cmake/test/src/app/zc_app/zc_app_add.c",
+    "output": "/home/zhoucc/work/study/cmake/test/build/x64/src/app/zc_app/CMakeFiles/zc_app.dir/zc_app_add.c.o"
+  }
+]

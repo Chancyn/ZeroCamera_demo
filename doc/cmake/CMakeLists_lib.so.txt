@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.22)
+aux_source_directory(./ DIR_SOURCE_SRCS)
+
+set(PLAT_BASIC platbasic)
+#生成动态库
+add_library(plat_basic SHARED ${DIR_SOURCE_SRCS})
+
+#头文件包含
+#target_include_directories(plat_basic ./)
+
+#连接库
+#target_link_libraries(plat_basic PUBLIC ${Mqtt_lib})
+
+#文件的安装位置
+#install(TARGETS plat_basic RUNTIME DESTINATION ${ZC_BIN_INSTALL})
+install(TARGETS plat_basic DESTINATION ${ZC_BIN_INSTALL})

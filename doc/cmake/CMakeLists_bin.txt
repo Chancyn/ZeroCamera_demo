@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.22)
+aux_source_directory(./ DIR_SOURCE_SRCS)
+set(ZC_APP "zc_app")
+
+# 指定生成目标
+add_executable(${ZC_APP} ${DIR_SOURCE_SRCS})
+
+#头文件包含
+#target_include_directories(${ZC_APP} ./)
+
+#连接库
+#target_link_libraries(${ZC_APP} PUBLIC ${Mqtt_lib})
+
+#执行文件的安装位置
+install(TARGETS ${ZC_APP} RUNTIME DESTINATION ${ZC_BIN_INSTALL})
