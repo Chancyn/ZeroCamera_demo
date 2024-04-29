@@ -21,3 +21,4 @@ debug/
 output/
 .vscode/
 .cache/
+compile_commands.json
