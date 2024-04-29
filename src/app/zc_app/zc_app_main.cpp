@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     b = zc_plat_dec(a, 1);
     LOG_WARN("app plat dec a=%d", b);
 
-    test_threadxx();
+    test_utilsxx();
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep exit");

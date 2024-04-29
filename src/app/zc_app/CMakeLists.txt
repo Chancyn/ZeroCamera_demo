@@ -9,7 +9,8 @@ target_include_directories(zc_app PRIVATE
 ${ZC_LOG_INC}
 ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
-${THREADXX_INC}
+${UTILSXX_INC}
+${UTILS_INC}
 )
 
 # target_link_directories(zc_app PRIVATE
@@ -21,7 +22,8 @@ target_link_libraries(zc_app PRIVATE
 plat_basic
 bsw_basic
 zc_log
-threadxx
+utilsxx
+utils
 pthread
 )
 

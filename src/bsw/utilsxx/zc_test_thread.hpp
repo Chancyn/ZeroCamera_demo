@@ -3,4 +3,4 @@
 
 #pragma once
 
-int test_threadxx();
+int test_utilsxx();

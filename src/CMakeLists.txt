@@ -11,7 +11,7 @@ set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(ZC_NNG_INC ${CMAKE_SOURCE_DIR}/src/bsw/zc_nng)
 
-set(THREADXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/threadxx)
+set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 
 message("build with src")
 

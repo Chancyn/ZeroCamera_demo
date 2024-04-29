@@ -60,6 +60,7 @@ endif()
 
 include_directories(include
 include/utilsxx
+include/utils
 )
 
 add_subdirectory(src)
