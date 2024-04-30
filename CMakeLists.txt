@@ -30,12 +30,12 @@ set (CMAKE_C_COMPILER ${COMPILER_PREFIX}gcc)
 set (CMAKE_CXX_COMPILER ${COMPILER_PREFIX}g++)
 
 set(CMAKE_C_FLAGS
-    "${CFLAGS_SOC} -Wall -std=gnu11"
+    "${CFLAGS_SOC} -Wall -std=gnu11 -fPIC"
 )
 
 #"${CXXFLAGS_SOC} -Wall -std=c++11 -Werror" -std=c++11
 set(CMAKE_CXX_FLAGS
-    "${CXXFLAGS_SOC} -Wall -std=gnu++11"
+    "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC"
 )
 
 #build cmd debug/release
@@ -58,12 +58,25 @@ else()
        message("build with Release")
 endif()
 
+
+set(SPDLOG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/include)
+set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib)
+set(NNG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/include)
+set(NNG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/lib)
+
+set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
+set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
+set(ZC_NNG_INC ${CMAKE_SOURCE_DIR}/src/bsw/zc_nng)
+set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
+
 include_directories(include
+include/zc_log
 include/utilsxx
 include/utils
 )
 
 add_subdirectory(src)
+add_subdirectory(tests)
 
 #add_subdirectory(tests)
 #option build if or not

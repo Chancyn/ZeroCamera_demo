@@ -9,9 +9,6 @@ add_library(zc_nng SHARED ${DIR_SOURCE_SRCS})
 #add_library(zc_nng SHARED ${DIR_SOURCE_SRCS})
 
 #message("build log zc_nng inc:${NNG_INC}")
-target_include_directories(zc_nng PRIVATE
-${ZC_LOG_INC}
-)
 
 target_include_directories(zc_nng PUBLIC
 ${NNG_INC}

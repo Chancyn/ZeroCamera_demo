@@ -6,7 +6,6 @@ add_executable(zc_app ${DIR_SOURCE_SRCS})
 
 #头文件包含
 target_include_directories(zc_app PRIVATE
-${ZC_LOG_INC}
 ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
