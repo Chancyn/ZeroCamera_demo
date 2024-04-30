@@ -5,7 +5,6 @@ add_executable(zc_man ${DIR_SOURCE_SRCS})
 
 target_include_directories(zc_man PRIVATE
 ${NNG_INC}
-${ZC_LOG_INC}
 ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${ZC_NNG_INC}
