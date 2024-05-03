@@ -38,5 +38,5 @@ class CTimerManager : public Singleton<CTimerManager> {
     std::mutex m_mutex;
 };
 
-#define g_ZCTimerManagerInstance (zc::CTimerManager::GetInstance())
+#define g_TimerManagerInstance (zc::CTimerManager::GetInstance())
 };  // namespace zc

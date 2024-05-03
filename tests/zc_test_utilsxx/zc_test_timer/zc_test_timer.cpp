@@ -1,10 +1,10 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
-#include <cstddef>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stddef.h>
 
 #include <memory>
 #include <string>
@@ -12,7 +12,7 @@
 #include "zc_list.h"
 #include "zc_log.h"
 
-#include "ZCTimer.hpp"
+#include "Timer.hpp"
 #include "zc_test_timer.hpp"
 
 void test_timer_cb_once(void *pdata, size_t len, void *pcontext) {
@@ -139,7 +139,7 @@ static int test_timer_forever() {
         infoA.pcontext = (void *)test_timer_cb_forever;
         timerA.Start(&infoA);
 
-        while (waitcnt++ < 20) {
+        while (waitcnt++ < 10) {
             sleep(1);
         }
     }
@@ -150,12 +150,12 @@ static int test_timer_forever() {
 }
 
 static int test_timer() {
-    g_ZCTimerManagerInstance.Init();
+    g_TimerManagerInstance.Init();
     test_timer_once();
     test_timer_timecnt();
     test_timer_timecnt_stop();
-    // test_timer_forever();
-    g_ZCTimerManagerInstance.UnInit();
+    test_timer_forever();
+    g_TimerManagerInstance.UnInit();
 
     return 0;
 }

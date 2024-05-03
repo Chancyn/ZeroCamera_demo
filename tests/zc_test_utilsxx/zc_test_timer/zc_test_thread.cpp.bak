@@ -19,7 +19,7 @@
 #include "zc_list.h"
 #include "zc_log.h"
 
-#include "ZCTimer.hpp"
+#include "Timer.hpp"
 
 #include "zc_test_thread.hpp"
 
@@ -354,12 +354,12 @@ int test_timer_forever() {
     return 0;
 }
 int test_timer() {
-    g_ZCTimerManagerInstance.Init();
+    g_TimerManagerInstance.Init();
     // test_timer_once();
     test_timer_timecnt();
     test_timer_timecnt_stop();
     // test_timer_forever();
-    g_ZCTimerManagerInstance.UnInit();
+    g_TimerManagerInstance.UnInit();
 
     return 0;
 }

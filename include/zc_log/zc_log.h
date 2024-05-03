@@ -19,16 +19,16 @@ enum LogLevel {
     LEVEL_BUTT = 6,
 };
 
-#define LOG_TRACE(fmt, ...) hl_log_levelout(LEVEL_TRACE, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt, ...) hl_log_levelout(LEVEL_DEBUG, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-// #define LOG_TRACE(fmt, ...) hl_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-// #define LOG_DEBUG(fmt, ...) hl_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_INFO(fmt, ...) hl_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_WARN(fmt, ...) hl_log_levelout(LEVEL_WARN, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) hl_log_levelout(LEVEL_ERROR, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_CRITI(fmt, ...) hl_log_levelout(LEVEL_CRITI, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_TRACE(fmt, ...) zc_log_levelout(LEVEL_TRACE, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...) zc_log_levelout(LEVEL_DEBUG, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+// #define LOG_TRACE(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+// #define LOG_DEBUG(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_WARN(fmt, ...) zc_log_levelout(LEVEL_WARN, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) zc_log_levelout(LEVEL_ERROR, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_CRITI(fmt, ...) zc_log_levelout(LEVEL_CRITI, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
-void hl_log_levelout(int level, const char *fmt, ...);
+void zc_log_levelout(int level, const char *fmt, ...);
 int zc_log_init(const char *szName);
 int zc_log_uninit();
 

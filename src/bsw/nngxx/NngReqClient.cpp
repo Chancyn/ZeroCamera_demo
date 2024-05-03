@@ -8,7 +8,7 @@
 #include <nng/protocol/reqrep0/req.h>
 
 #include "zc_log.h"
-#include "ZCNngReqClient.hpp"
+#include "NngReqClient.hpp"
 
 namespace zc {
 

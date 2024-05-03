@@ -66,13 +66,14 @@ set(NNG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/lib)
 
 set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
-set(ZC_NNG_INC ${CMAKE_SOURCE_DIR}/src/bsw/zc_nng)
+set(NNGXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/nngxx)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 
 include_directories(include
 include/zc_log
 include/utilsxx
 include/utils
+include/mod
 )
 
 add_subdirectory(src)

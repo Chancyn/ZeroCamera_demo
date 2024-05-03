@@ -2,7 +2,7 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#inlcude "zc_type.h"
+#include "zc_type.h"
 
 #define ZC_SAFE_DELETE(x) \
     do { \

@@ -60,9 +60,9 @@ typedef int BOOL;
 #endif
 
 #if defined(__GNUC__)
-#define hl_unused __attribute__((unused))
+#define zc_unused __attribute__((unused))
 #else
-#define hl_unused
+#define zc_unused
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ >= 4)
@@ -74,9 +74,9 @@ typedef int BOOL;
 #endif
 
 #if defined(__GNUC__)
-#define hl_packed __attribute__((packed))
+#define zc_packed __attribute__((packed))
 #else
-#define hl_packed
+#define zc_packed
 #endif
 
 #if defined(__GNUC__)

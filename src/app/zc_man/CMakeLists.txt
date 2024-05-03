@@ -7,7 +7,7 @@ target_include_directories(zc_man PRIVATE
 ${NNG_INC}
 ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
-${ZC_NNG_INC}
+${NNGXX_INC}
 )
 
 target_link_directories(zc_man PRIVATE
@@ -18,7 +18,7 @@ target_link_libraries(zc_man PRIVATE
 plat_basic
 bsw_basic
 zc_log
-zc_nng
+nngxx
 nng
 pthread
 )

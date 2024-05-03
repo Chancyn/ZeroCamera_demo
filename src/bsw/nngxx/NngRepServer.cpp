@@ -9,7 +9,7 @@
 #include <nng/protocol/reqrep0/rep.h>
 #include <nng/protocol/reqrep0/req.h>
 
-#include "ZCNngRepServer.hpp"
+#include "NngRepServer.hpp"
 #include "zc_log.h"
 
 namespace zc {

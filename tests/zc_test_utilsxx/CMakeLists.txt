@@ -33,4 +33,4 @@ add_subdirectory(zc_test_thread)
 add_subdirectory(zc_test_timer)
 #add_subdirectory(zc_test_utilsxx_main)
 
-#install(TARGETS zc_test_utilsxx DESTINATION ${ZC_LIB_INSTALL})
+install(TARGETS zc_test_utilsxx DESTINATION ${ZC_LIB_INSTALL})

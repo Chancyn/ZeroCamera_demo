@@ -29,7 +29,7 @@
 #define MSG_BUF_LEN 1024
 static bool g_binit = false;
 
-void hl_log_levelout(int level, const char *fmt, ...) {
+void zc_log_levelout(int level, const char *fmt, ...) {
     char buf[MSG_BUF_LEN] = {0};
     va_list args;
     va_start(args, fmt);

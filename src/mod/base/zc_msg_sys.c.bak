@@ -1,0 +1,88 @@
+// Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
+// Distributed under the MIT License (http://opensource.org/licenses/MIT)
+
+#include <string.h>
+#include <time.h>
+
+#include "zc_msg_sys.h"
+
+int pub_mod_reg(zc_mod_reg_t *reg) {
+    char buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)];
+    zc_msg_t *msg = (zc_msg_t *)buf;
+
+    memset(msg, 0, sizeof(*msg));
+    msg->id = ZC_PUB_SYS_REG;
+    msg->ts = time(NULL) * 1000;
+    msg->sid = 0;
+    msg->err = 0;
+    msg->size = sizeof(zc_mod_reg_t);
+    memcpy(msg->data, reg, msg->size);
+    nng_pub_send(ZC_SYS_URL_PUB, (char *)msg, sizeof(*msg) + msg->size);
+
+    return 0;
+}
+
+static void msg_func_man(zc_msg_t *req, int iqsize, zc_msg_t *rsp, int *opsize) {
+    int ret = 0;
+    switch (req->sid) {
+    case ZC_MSID_SYS_MAN_REGISTER_E: {
+        // register mod url to gmods;
+        gsf_mod_reg_t *reg = (gsf_mod_reg_t *)req->data;
+        LOG_INFO("REGISTER [mid:%d, pid:%d, uri:%s]\n", reg->mid, reg->pid, reg->uri);
+
+        gmods[reg->mid] = *reg;
+        pub_mod_reg(reg);
+
+        rsp->size = sizeof(gmods);
+        memcpy(rsp->data, gmods, sizeof(gmods));
+    } break;
+    case ZC_MSID_SYS_MAN_VERSION_E: {
+        // get version-string;
+        FILE *fp;
+        char buf[256] = {0};
+        sprintf(buf, "cat %s/version", home_path);
+        if ((fp = popen(buf, "r")) != NULL) {
+            buf[0] = '\0';
+            while (fgets(buf, 256, fp) != NULL) {
+                sprintf(rsp->data, "%s", buf);
+                break;
+            }
+            pclose(fp);
+        }
+        rsp->size = strlen(rsp->data) + 1;
+        rsp->err = 0;
+    } break;
+    case ZC_MSID_SYS_MAN_RESTART_E: {
+        // TODO(zhoucc) sendto all mod, reboot;
+        // reboot system;
+    } break;
+    case ZC_MSID_SYS_MAN_SHUTDOWN_E: {
+        // TODO(zhoucc) sendto all mod, poweroff;
+        // halt system;
+    } break;
+    default:
+        break;
+    }
+}
+
+static zc_msg_func_t *g_msg_func[ZC_MID_SYS_BUTT] = {
+    [ZC_MID_SYS_MAN_E] = msg_func_man,    // manager other module
+    [ZC_MID_SYS_TIME_E] = msg_func_time,  // time
+    [ZC_MID_SYS_BASE_E] = msg_func_base,  // base
+    [ZC_MID_SYS_USER_E] = msg_func_user,  // user
+    [ZC_MID_SYS_UPG_E] = msg_func_upg,    // upg
+};
+
+int zc_msg_func_proc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    if (req->id < 0 || req->id >= ZC_MID_SYS_BUTT) {
+        return FALSE;
+    }
+
+    if (g_msg_func[req->id] == NULL) {
+        return FALSE;
+    }
+
+    g_msg_func[req->id](req, iqsize, rep, opsize);
+
+    return TRUE;
+}

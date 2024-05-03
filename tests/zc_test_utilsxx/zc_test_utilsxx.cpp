@@ -10,7 +10,7 @@
 #include <string>
 
 #include "zc_log.h"
-#include "ZCTimer.hpp"
+#include "Timer.hpp"
 
 #include "zc_test_thread/zc_test_thread.hpp"
 #include "zc_test_observer/zc_test_observer.hpp"

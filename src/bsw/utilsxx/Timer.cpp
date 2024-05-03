@@ -7,7 +7,7 @@
 #include "zc_log.h"
 #include "zc_timerwheel.h"
 
-#include "ZCTimer.hpp"
+#include "Timer.hpp"
 
 namespace zc {
 

@@ -25,23 +25,6 @@
 #define FALSE 0
 #endif
 
-// using namespace zc;
-
-static BOOL bExitFlag = FALSE;
-
-static void SigProc(int dummy) {
-    LOG_CRITI("\nReceived Signal %d\n", dummy);
-    bExitFlag = TRUE;
-}
-
-static void InitSignals() {
-    signal(SIGINT, SigProc);
-    signal(SIGQUIT, SigProc);
-    signal(SIGKILL, SigProc);
-    signal(SIGTERM, SigProc);
-    signal(SIGPIPE, SIG_IGN);
-}
-
 char *date(void) {
     static char buffer[128];
     time_t now = time(&now);
@@ -61,43 +44,36 @@ static int nngxx_msg_cbfun(char *in, size_t iqsize, char *out, size_t *opsize) {
     return 0;
 }
 
-int main(int argc, char **argv) {
-    printf("main into\n");
-    InitSignals();
-    zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-    LOG_DEBUG("app into");
+static zc::NngRepServer g_ser;
+static zc::NngReqClient g_cli;
 
-    int nodetype = 0;
-    if (argc > 1) {
-        nodetype = atoi(argv[1]);
-    }
+// 0 server;1 client
+int zc_test_nngxx_start(int nodetype) {
+    LOG_DEBUG("zc_test_nngxx_start into");
 
     LOG_DEBUG("NODE type [%d]", nodetype);
-    zc::NngRepServer ser;
-    zc::NngReqClient cli;
-
     if (nodetype) {
         char msg[256] = DATE;
         LOG_DEBUG("NODE1 sendto NODE0");
-        cli.Open(NODE0_URL);
-        cli.Send(msg, strlen(msg) + 1, 0);
+        g_cli.Open(NODE0_URL);
+        g_cli.Send(msg, strlen(msg) + 1, 0);
     } else {
         LOG_DEBUG("NODE0 start NODE1");
-        ser.Open(NODE0_URL, nngxx_msg_cbfun);
-        ser.Start();
+        g_ser.Open(NODE0_URL, nngxx_msg_cbfun);
+        g_ser.Start();
     }
 
     LOG_DEBUG("NODE0 sendto end");
-    while (!bExitFlag) {
-        sleep(1);
-        LOG_DEBUG("sleep ");
-    }
 
-    ser.Stop();
-    ser.Close();
-    cli.Close();
-    LOG_ERROR("app loop exit");
-    zc_log_uninit();
-    printf("main exit\n");
+    return 0;
+}
+
+int zc_test_nngxx_stop() {
+    LOG_TRACE("zc_test_nngxx_start exit");
+
+    g_ser.Stop();
+    g_ser.Close();
+    g_cli.Close();
+    LOG_TRACE("zc_test_nngxx_stop exit");
     return 0;
 }

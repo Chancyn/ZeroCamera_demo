@@ -9,7 +9,7 @@
 
 namespace zc {
 
-typedef int (*NngReqSerHandleCb)(char *in, size_t isize, char *out, size_t *osize);
+typedef int (*NngReqSerHandleCb)(char *in, size_t iqsize, char *out, size_t *opsize);
 class NngRepServer {
  public:
     NngRepServer();

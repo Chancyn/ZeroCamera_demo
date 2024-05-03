@@ -7,6 +7,7 @@ cd $basepath
 #CMake编译工作目录生成文件的地方
 builddir=$basepath/build/${soc}
 outputdir=$basepath/output/${soc}
+thirdinstalldir=$basepath/thirdparty/install/${soc}
 echo "builddir=${builddir}"
 echo "outputdir=${outputdir}"
 
@@ -51,6 +52,11 @@ function build_make_append(){
     popd
 }
 
+function build_copy_thirdparty(){
+    # copy nng
+    cp ${thirdinstalldir}/nng/lib/lib*.so* ${outputdir}/lib
+}
+
 echo "----------------------------------"
 #enable_debug
 export WITH_DEBUG=y
@@ -62,4 +68,5 @@ build_cmake
 #build_make
 build_make_debug
 #build_make_append
+build_copy_thirdparty
 echo "mk soc=${soc} end"
