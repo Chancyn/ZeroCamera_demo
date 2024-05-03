@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.22)
 
 # set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 # set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
-# set(NNGXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/nngxx)
+# set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 # set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 
 message("build with src")

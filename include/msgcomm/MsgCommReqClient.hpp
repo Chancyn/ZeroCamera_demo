@@ -2,14 +2,13 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-
-#include <nng/nng.h>
+#include <cstddef>
 
 namespace zc {
-class NngReqClient {
+class CMsgCommReqClient {
  public:
-    NngReqClient();
-    ~NngReqClient();
+    CMsgCommReqClient();
+    ~CMsgCommReqClient();
 
  public:
     bool Open(const char *url);
@@ -18,7 +17,6 @@ class NngReqClient {
     bool Recv(void *buf, size_t *len, int flags);
 
  private:
- private:
-    nng_socket m_sock;
+    void *m_psock;  // nng_socket m_sock;
 };
 }  // namespace zc

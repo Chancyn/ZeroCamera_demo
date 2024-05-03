@@ -4,15 +4,16 @@
 #include <stdio.h>
 
 #include "zc_mod_base.h"
+#include "ModBase.hpp"
 #include "zc_log.h"
+namespace zc {
+CModBase::CModBase(ZC_U8 modid)
+{
 
-int zc_mod_base_init() {
-    LOG_TRACE("init ok");
-    return 0;
 }
 
-int zc_mod_base_uninit() {
-    LOG_TRACE("uninit ok");
+CModBase::~CModBase()
+{
 
-    return 0;
+}
 }

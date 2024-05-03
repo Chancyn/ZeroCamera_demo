@@ -2,6 +2,6 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-//0 server;1 client
-int zc_test_nngxx_start(int nodetype);
-int zc_test_nngxx_stop();
+// 0 server;1 client
+int zc_test_msgcomm_start(int nodetype);
+int zc_test_msgcomm_stop();

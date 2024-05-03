@@ -8,8 +8,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "NngRepServer.hpp"
-#include "NngReqClient.hpp"
+#include "MsgCommRepServer.hpp"
+#include "MsgCommReqClient.hpp"
 #include "zc_log.h"
 
 #define ZC_LOG_PATH "./log"
@@ -51,7 +51,7 @@ char *date(void) {
     return (buffer);
 }
 
-static int nngxx_msg_cbfun(char *in, size_t iqsize, char *out, size_t *opsize) {
+static int msgcomm_msg_cbfun(char *in, size_t iqsize, char *out, size_t *opsize) {
     LOG_DEBUG("msg_cbfun into");
     char *tmp = date();
     size_t len = strlen(tmp);
@@ -73,8 +73,8 @@ int main(int argc, char **argv) {
     }
 
     LOG_DEBUG("NODE type [%d]", nodetype);
-    zc::NngRepServer ser;
-    zc::NngReqClient cli;
+    zc::CMsgCommRepServer ser;
+    zc::CMsgCommReqClient cli;
 
     if (nodetype) {
         char msg[256] = DATE;
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
         cli.Send(msg, strlen(msg) + 1, 0);
     } else {
         LOG_DEBUG("NODE0 start NODE1");
-        ser.Open(NODE0_URL, nngxx_msg_cbfun);
+        ser.Open(NODE0_URL, msgcomm_msg_cbfun);
         ser.Start();
     }
 

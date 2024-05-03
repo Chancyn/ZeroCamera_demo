@@ -8,8 +8,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "NngRepServer.hpp"
-#include "NngReqClient.hpp"
+#include "MsgCommRepServer.hpp"
+#include "MsgCommReqClient.hpp"
+#include "zc_test_msgcomm.hpp"
 #include "zc_log.h"
 
 #define ZC_LOG_PATH "./log"
@@ -34,7 +35,7 @@ char *date(void) {
     return (buffer);
 }
 
-static int nngxx_msg_cbfun(char *in, size_t iqsize, char *out, size_t *opsize) {
+static int msgcomm_msg_cbfun(char *in, size_t iqsize, char *out, size_t *opsize) {
     LOG_DEBUG("msg_cbfun into");
     char *tmp = date();
     size_t len = strlen(tmp);
@@ -44,12 +45,12 @@ static int nngxx_msg_cbfun(char *in, size_t iqsize, char *out, size_t *opsize) {
     return 0;
 }
 
-static zc::NngRepServer g_ser;
-static zc::NngReqClient g_cli;
+static zc::CMsgCommRepServer g_ser;
+static zc::CMsgCommReqClient g_cli;
 
 // 0 server;1 client
-int zc_test_nngxx_start(int nodetype) {
-    LOG_DEBUG("zc_test_nngxx_start into");
+int zc_test_msgcomm_start(int nodetype) {
+    LOG_DEBUG("zc_test_msgcomm_start into");
 
     LOG_DEBUG("NODE type [%d]", nodetype);
     if (nodetype) {
@@ -59,7 +60,7 @@ int zc_test_nngxx_start(int nodetype) {
         g_cli.Send(msg, strlen(msg) + 1, 0);
     } else {
         LOG_DEBUG("NODE0 start NODE1");
-        g_ser.Open(NODE0_URL, nngxx_msg_cbfun);
+        g_ser.Open(NODE0_URL, msgcomm_msg_cbfun);
         g_ser.Start();
     }
 
@@ -68,12 +69,12 @@ int zc_test_nngxx_start(int nodetype) {
     return 0;
 }
 
-int zc_test_nngxx_stop() {
-    LOG_TRACE("zc_test_nngxx_start exit");
+int zc_test_msgcomm_stop() {
+    LOG_TRACE("zc_test_msgcomm_start exit");
 
     g_ser.Stop();
     g_ser.Close();
     g_cli.Close();
-    LOG_TRACE("zc_test_nngxx_stop exit");
+    LOG_TRACE("zc_test_msgcomm_stop exit");
     return 0;
 }

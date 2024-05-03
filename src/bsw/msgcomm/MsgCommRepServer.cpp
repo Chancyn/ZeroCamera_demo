@@ -6,102 +6,110 @@
 #include <pthread.h>
 #include <string.h>
 
+#include "zc_log.h"
+#include "zc_macros.h"
+
 #include <nng/protocol/reqrep0/rep.h>
 #include <nng/protocol/reqrep0/req.h>
 
-#include "NngRepServer.hpp"
-#include "zc_log.h"
+#include "ZcType.hpp"
+#include "MsgCommRepServer.hpp"
 
 namespace zc {
 #define ZC_NNGREPMSG_SIZE (4096)
 #define ZC_NNGREPMSG_RECVFLAG (0)  // NNG_FLAG_ALLOC|NNG_FLAG_NONBLOCK
 #define ZC_NNGREPMSG_SENDFLAG (0)
 
-NngRepServer::NngRepServer() : m_handle(nullptr), m_running(0), m_tid(0) {
-    memset(&m_sock, 0, sizeof(m_sock));
-}
+CMsgCommRepServer::CMsgCommRepServer() : m_psock(new nng_socket()), m_handle(nullptr), m_running(0), m_tid(0) {}
 
-NngRepServer::~NngRepServer() {
+CMsgCommRepServer::~CMsgCommRepServer() {
     Stop();
     Close();
+    ZC_SAFE_DELETE(m_psock);
 }
 
-bool NngRepServer::Open(const char *url, NngReqSerHandleCb handle) {
-    if (m_sock.id != 0) {
-        LOG_WARN("already m_sock[%d] open", m_sock.id);
+bool CMsgCommRepServer::Open(const char *url, NngReqSerHandleCb handle) {
+    ZC_ASSERT(m_psock != nullptr);
+    nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+    if (psock->id) {
+        LOG_WARN("already sock open");
         return false;
     }
-
+    nng_socket nngsock = {};
     int rv = 0;
-    if ((rv = nng_rep0_open(&m_sock)) != 0) {
+    if ((rv = nng_rep0_open(&nngsock)) != 0) {
         LOG_WARN("nng_rep0_open %d %s", rv, nng_strerror(rv));
-        memset(&m_sock, 0, sizeof(m_sock));
         return false;
     }
 
-    if ((rv = nng_listen(m_sock, url, NULL, 0)) != 0) {
+    if ((rv = nng_listen(nngsock, url, NULL, 0)) != 0) {
         LOG_WARN("nng_listen %d %s", rv, nng_strerror(rv));
         goto _err_close;
     }
 
     m_handle = handle;
-    LOG_TRACE("open m_sock[%d] ok", m_sock.id);
+    memcpy(m_psock, &nngsock, sizeof(nng_socket));
+    LOG_TRACE("open sock[%d] ok", nngsock.id);
     return true;
 _err_close:
-    nng_close(m_sock);
-    memset(&m_sock, 0, sizeof(m_sock));
+    nng_close(nngsock);
 
     return false;
 }
 
-bool NngRepServer::Close() {
-    if (m_sock.id != 0) {
-        LOG_TRACE("close m_sock[%d]", m_sock.id);
-        nng_close(m_sock);
-        memset(&m_sock, 0, sizeof(m_sock));
+bool CMsgCommRepServer::Close() {
+    ZC_ASSERT(m_psock != nullptr);
+    nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+    if (psock->id != 0) {
+        LOG_TRACE("close sock[%d]", psock->id);
+        nng_close(*psock);
     }
 
     return true;
 }
 
-void *NngRepServer::runThread(void *p) {
-    static_cast<NngRepServer *>(p)->runThreadProc();
+void *CMsgCommRepServer::runThread(void *p) {
+    static_cast<CMsgCommRepServer *>(p)->runThreadProc();
     return nullptr;
 }
 
-void NngRepServer::runThreadProc() {
-    LOG_INFO("run into m_sock[%d]", m_sock.id);
+void CMsgCommRepServer::runThreadProc() {
+    ZC_ASSERT(m_psock != nullptr);
+    nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+    LOG_INFO("run into sock[%p], id[%d]", psock, psock->id);
     int rv;
     char rbuf[ZC_NNGREPMSG_SIZE];
     char sbuf[ZC_NNGREPMSG_SIZE];
     size_t rlen = 0;
     size_t slen = 0;
+
     while (m_running) {
-        if ((rv = nng_recv(m_sock, rbuf, &rlen, ZC_NNGREPMSG_RECVFLAG)) != 0) {
+        if ((rv = nng_recv(*psock, rbuf, &rlen, ZC_NNGREPMSG_RECVFLAG)) != 0) {
             LOG_ERROR("recv msg error %d %s", rv, nng_strerror(rv));
             goto _done_err;
         }
 
-        LOG_ERROR("recv msg m_sock:%d len:%d", m_sock.id, rlen);
+        LOG_ERROR("recv msg sock:%d len:%d", psock->id, rlen);
         // handle
         if (m_handle) {
             slen = sizeof(sbuf);
             m_handle(rbuf, rlen, sbuf, &slen);
         }
 
-        if ((rv = nng_send(m_sock, sbuf, slen, ZC_NNGREPMSG_SENDFLAG)) != 0) {
+        if ((rv = nng_send(*psock, sbuf, slen, ZC_NNGREPMSG_SENDFLAG)) != 0) {
             LOG_ERROR("send msg error %d %s", rv, nng_strerror(rv));
             goto _done_err;
         }
     }
 _done_err:
 
-    LOG_INFO("run exit m_sock[%d]", m_sock);
+    LOG_INFO("run exit sock[%p][%d]", psock, psock->id);
     return;
 }
 
-bool NngRepServer::Start() {
-    if (m_sock.id == 0) {
+bool CMsgCommRepServer::Start() {
+    nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+    if (psock->id == 0) {
         LOG_ERROR("send error invalid socket");
         return false;
     }
@@ -121,7 +129,7 @@ bool NngRepServer::Start() {
     return false;
 }
 
-bool NngRepServer::Stop() {
+bool CMsgCommRepServer::Stop() {
     LOG_TRACE("Stop, m_tid[%d]", m_tid);
     if (m_running) {
         m_running = false;

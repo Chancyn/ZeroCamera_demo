@@ -10,7 +10,7 @@
 
 #include "zc_test_utilsxx.hpp"
 #include "zc_test_mod.hpp"
-#include "zc_test_nngxx.hpp"
+#include "zc_test_msgcomm.hpp"
 
 #define ZC_LOG_PATH "./log"
 #define ZC_LOG_APP_NAME "zc_app.log"
@@ -50,13 +50,13 @@ int main(int argc, char **argv) {
 
     // zc_test_utilsxx();
     // zc_test_mod();
-    zc_test_nngxx_start(nodetype);
+    zc_test_msgcomm_start(nodetype);
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep exit");
     }
     LOG_ERROR("app loop exit");
-    zc_test_nngxx_stop();
+    zc_test_msgcomm_stop();
     zc_log_uninit();
     printf("main exit\n");
     return 0;
