@@ -8,6 +8,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <functional>
+
 #include "MsgCommRepServer.hpp"
 #include "MsgCommReqClient.hpp"
 #include "zc_log.h"
@@ -51,7 +53,7 @@ char *date(void) {
     return (buffer);
 }
 
-static int msgcomm_msg_cbfun(char *in, size_t iqsize, char *out, size_t *opsize) {
+static int msgcomm_msg_cbfun(char *in, int iqsize, char *out, int *opsize) {
     LOG_DEBUG("msg_cbfun into");
     char *tmp = date();
     size_t len = strlen(tmp);
@@ -83,7 +85,11 @@ int main(int argc, char **argv) {
         cli.Send(msg, strlen(msg) + 1, 0);
     } else {
         LOG_DEBUG("NODE0 start NODE1");
-        ser.Open(NODE0_URL, msgcomm_msg_cbfun);
+        // std::function<int(char*, int, char*, int*)>
+        auto cb = std::bind(&msgcomm_msg_cbfun, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
+                            std::placeholders::_4);
+        ser.Open(NODE0_URL, cb);
+        // g_ser.Open(NODE0_URL, msgcomm_msg_cbfun);
         ser.Start();
     }
 

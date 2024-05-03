@@ -11,6 +11,9 @@ extern "C" {
 #include "zc_msg.h"
 #include "zc_type.h"
 
+#define ZC_RTSP_URL_IPC "ipc:///tmp/rtsp_rep"  // req/rep url
+#define ZC_RTSP_URL_PUB "ipc:///tmp/rtsp_pub"  // pub/sub url
+
 // module rtsp, msg main id
 typedef enum {
     ZC_MID_RTSP_MAN_E = 0,  // manager other module

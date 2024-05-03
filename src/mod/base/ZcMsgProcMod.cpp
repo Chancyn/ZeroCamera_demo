@@ -12,19 +12,19 @@
 #include "ZcType.hpp"
 
 #include "ZcMsg.hpp"
-#include "ZcMsgMod.hpp"
+#include "ZcMsgProcMod.hpp"
 
 namespace zc {
-CMsgMod::CMsgMod(ZC_U8 modid, ZC_U16 idmax) : m_modid(modid), m_idmax(idmax), m_init(false) {
+CMsgProcMod::CMsgProcMod(ZC_U8 modid, ZC_U16 idmax) : m_modid(modid), m_idmax(idmax), m_init(false) {
     LOG_TRACE("Constructor into, modid[%u] msgidmax[%u]", modid, idmax);
 }
 
-CMsgMod::~CMsgMod() {
+CMsgProcMod::~CMsgProcMod() {
     LOG_TRACE("Destructor into");
     uninit();
 }
 
-ZC_S32 CMsgMod::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+ZC_S32 CMsgProcMod::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     LOG_TRACE("MsgReqProc into, modid[%u], id[%hu],id[%hu]", m_modid, rep->id, rep->sid);
     ZC_U32 key = (rep->id << 16) | rep->sid;
     auto it = m_msgmap.find(key);
@@ -35,7 +35,7 @@ ZC_S32 CMsgMod::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize
     return 0;
 }
 
-ZC_S32 CMsgMod::MsgRepProc(zc_msg_t *rep, int size) {
+ZC_S32 CMsgProcMod::MsgRepProc(zc_msg_t *rep, int size) {
     if (m_init) {
         return -1;
     }
@@ -50,7 +50,7 @@ ZC_S32 CMsgMod::MsgRepProc(zc_msg_t *rep, int size) {
     return 0;
 }
 
-ZC_S32 CMsgMod::registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg) {
+ZC_S32 CMsgProcMod::registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg) {
     if (m_init || pMsg == nullptr) {
         return false;
     }
@@ -61,7 +61,7 @@ ZC_S32 CMsgMod::registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg) {
     return true;
 }
 
-bool CMsgMod::init() {
+bool CMsgProcMod::init() {
     if (m_init) {
         return false;
     }
@@ -76,7 +76,7 @@ bool CMsgMod::init() {
     return false;
 }
 
-bool CMsgMod::uninit() {
+bool CMsgProcMod::uninit() {
     if (!m_init) {
         return false;
     }

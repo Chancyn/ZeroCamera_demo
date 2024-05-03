@@ -6,20 +6,18 @@
 #include "zc_mod_base.h"
 
 #include "ZcMsg.hpp"
-#include "ZcMsgMod.hpp"
+#include "ZcMsgProcMod.hpp"
+#include "ZcModComm.hpp"
 
 namespace zc {
-class CMsgModRtsp : public CMsgMod {
+class CMsgProcModRtsp : public CMsgProcMod{
  public:
-    CMsgModRtsp();
-    virtual ~CMsgModRtsp();
+    CMsgProcModRtsp();
+    virtual ~CMsgProcModRtsp();
 
  public:
     virtual bool Init();
-    virtual bool Uninit();
-
-    ZC_S32 MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
-    ZC_S32 MsgRepProc(zc_msg_t *rep, int size);
+    virtual bool UnInit();
 
  private:
     // Manager

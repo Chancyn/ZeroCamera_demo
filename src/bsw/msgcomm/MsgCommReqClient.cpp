@@ -5,11 +5,11 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "zc_log.h"
-#include "zc_macros.h"
-
 #include <nng/protocol/reqrep0/rep.h>
 #include <nng/protocol/reqrep0/req.h>
+
+#include "zc_log.h"
+#include "zc_macros.h"
 
 #include "MsgCommReqClient.hpp"
 #include "ZcType.hpp"
@@ -20,7 +20,11 @@ CMsgCommReqClient::CMsgCommReqClient() : m_psock(new nng_socket()) {}
 
 CMsgCommReqClient::~CMsgCommReqClient() {
     Close();
-    ZC_SAFE_DELETE(m_psock);
+    if (m_psock) {
+        nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+        delete psock;
+        m_psock = nullptr;
+    }
 }
 
 bool CMsgCommReqClient::Open(const char *url) {

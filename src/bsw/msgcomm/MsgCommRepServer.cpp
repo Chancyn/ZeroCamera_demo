@@ -6,14 +6,14 @@
 #include <pthread.h>
 #include <string.h>
 
-#include "zc_log.h"
-#include "zc_macros.h"
-
 #include <nng/protocol/reqrep0/rep.h>
 #include <nng/protocol/reqrep0/req.h>
 
-#include "ZcType.hpp"
+#include "zc_log.h"
+#include "zc_macros.h"
+
 #include "MsgCommRepServer.hpp"
+#include "ZcType.hpp"
 
 namespace zc {
 #define ZC_NNGREPMSG_SIZE (4096)
@@ -25,10 +25,14 @@ CMsgCommRepServer::CMsgCommRepServer() : m_psock(new nng_socket()), m_handle(nul
 CMsgCommRepServer::~CMsgCommRepServer() {
     Stop();
     Close();
-    ZC_SAFE_DELETE(m_psock);
+    if (m_psock) {
+        nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+        delete psock;
+        m_psock = nullptr;
+    }
 }
 
-bool CMsgCommRepServer::Open(const char *url, NngReqSerHandleCb handle) {
+bool CMsgCommRepServer::Open(const char *url, MsgCommReqSerHandleCb handle) {
     ZC_ASSERT(m_psock != nullptr);
     nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
     if (psock->id) {
@@ -81,7 +85,7 @@ void CMsgCommRepServer::runThreadProc() {
     char rbuf[ZC_NNGREPMSG_SIZE];
     char sbuf[ZC_NNGREPMSG_SIZE];
     size_t rlen = 0;
-    size_t slen = 0;
+    int slen = 0;
 
     while (m_running) {
         if ((rv = nng_recv(*psock, rbuf, &rlen, ZC_NNGREPMSG_RECVFLAG)) != 0) {
@@ -93,7 +97,7 @@ void CMsgCommRepServer::runThreadProc() {
         // handle
         if (m_handle) {
             slen = sizeof(sbuf);
-            m_handle(rbuf, rlen, sbuf, &slen);
+            m_handle(rbuf, static_cast<int>(rlen), sbuf, &slen);
         }
 
         if ((rv = nng_send(*psock, sbuf, slen, ZC_NNGREPMSG_SENDFLAG)) != 0) {

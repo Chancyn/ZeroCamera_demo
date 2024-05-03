@@ -3,6 +3,11 @@
 
 #pragma once
 #include <cstddef>
+#include <functional>
+
+#include "zc_type.h"
+
+typedef std::function<ZC_S32(char *rep, int size)>MsgCommRepCliHandleCb;
 
 namespace zc {
 class CMsgCommReqClient {

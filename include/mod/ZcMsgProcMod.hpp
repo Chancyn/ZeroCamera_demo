@@ -9,12 +9,12 @@
 #include "zc_mod_base.h"
 
 namespace zc {
-class CMsgMod {
+class CMsgProcMod {
  public:
-    CMsgMod(ZC_U8 modid, ZC_U16 idmax);
-    virtual ~CMsgMod();
+    CMsgProcMod(ZC_U8 modid, ZC_U16 idmax);
+    virtual ~CMsgProcMod();
     virtual bool Init() = 0;
-    virtual bool Uninit() = 0;
+    virtual bool UnInit() = 0;
     ZC_S32 MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 MsgRepProc(zc_msg_t *rep, int size);
 

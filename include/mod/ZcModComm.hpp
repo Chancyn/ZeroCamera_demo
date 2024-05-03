@@ -3,20 +3,23 @@
 
 #pragma once
 #include "zc_mod_base.h"
+#include "zc_msg.h"
 
 #include "MsgCommRepServer.hpp"
 #include "MsgCommReqClient.hpp"
 
 namespace zc {
-class CModBase {
+class CModComm {
  public:
-    CModBase(ZC_U8 modid);
-    virtual ~CModBase();
+    CModComm();
+    virtual ~CModComm();
+
+    bool InitComm(const char *url, MsgCommReqSerHandleCb svrcb);
+    bool UnInitComm();
 
  private:
-    ZC_U8 m_modid;
-
-    CMsgCommRepServer m_svr;
-    CMsgCommReqClient m_cli;
+    ZC_U8 m_url[ZC_URL_SIZE];
+    bool m_init;
+    CMsgCommRepServer *m_psvr;
 };
-}
+}  // namespace zc

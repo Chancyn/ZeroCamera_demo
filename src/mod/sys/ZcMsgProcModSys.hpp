@@ -6,17 +6,17 @@
 #include "zc_mod_base.h"
 
 #include "ZcMsg.hpp"
-#include "ZcMsgMod.hpp"
+#include "ZcMsgProcMod.hpp"
 
 namespace zc {
-class CMsgModSys : public CMsgMod {
+class CMsgProcModSys : public CMsgProcMod {
  public:
-    CMsgModSys();
-    virtual ~CMsgModSys();
+    CMsgProcModSys();
+    virtual ~CMsgProcModSys();
 
  public:
     virtual bool Init();
-    virtual bool Uninit();
+    virtual bool UnInit();
 
     ZC_S32 MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 MsgRepProc(zc_msg_t *rep, int size);
