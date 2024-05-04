@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.22)
 aux_source_directory(./ DIR_SOURCE_SRCS)
 
+foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
+	get_filename_component(filename ${SOURCE_FILE} NAME)
+    set_source_files_properties(
+        ${SOURCE_FILE}
+        PROPERTIES
+        COMPILE_DEFINITIONS "__FILENAME__=\"${filename}\""
+    )
+endforeach()
+
 # set(NNG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/include)
 # set(NNG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/lib)
 

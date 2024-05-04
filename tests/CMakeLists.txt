@@ -1,7 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
-
+#aux_source_directory(./ DIR_SOURCE_SRCS)
 add_executable(zc_tests zc_test_main.cpp)
-#add_executable(zc_test zc_test_main.cpp)
+foreach(SOURCE_FILE zc_test_main.cpp)
+	get_filename_component(filename ${SOURCE_FILE} NAME)
+    set_source_files_properties(
+        ${SOURCE_FILE}
+        PROPERTIES
+        COMPILE_DEFINITIONS "__FILENAME__=\"${filename}\""
+    )
+endforeach()
+
+#add_executable(zc_tests zc_test_main.cpp)
 add_subdirectory(zc_test_utilsxx)
 add_subdirectory(zc_test_msgcomm)
 add_subdirectory(zc_test_mod)
@@ -18,8 +27,8 @@ ${UTILS_INC}
 ${MSGCOMM_INC}
 )
 
-target_link_directories(zc_tests PRIVATE
-)
+# target_link_directories(zc_tests PRIVATE
+# )
 
 #连接库
 target_link_libraries(zc_tests PRIVATE

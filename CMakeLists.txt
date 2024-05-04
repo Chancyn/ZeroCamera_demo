@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.22)
+
 project(zc_test VERSION 0.1.0 LANGUAGES C CXX)
 
 #set the project name
@@ -25,9 +26,6 @@ set (CXXFLAGS_SOC -mcpu=cortex-a55)
 else()
 message("build ${ZC_SOC}")
 endif()
-
-#set(filename "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/")
-#add_definitions(-D__FILENAME__="${filename}")
 
 set (CMAKE_C_COMPILER ${COMPILER_PREFIX}gcc)
 set (CMAKE_CXX_COMPILER ${COMPILER_PREFIX}g++)

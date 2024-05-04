@@ -20,6 +20,7 @@ enum LogLevel {
 };
 
 #ifndef __FILENAME__
+// #warning "nodefine __FILENAME__"
 #define __FILENAME__ __FILE__
 #endif
 
