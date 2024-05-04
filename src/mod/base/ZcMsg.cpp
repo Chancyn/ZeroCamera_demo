@@ -10,7 +10,7 @@
 
 namespace zc {
 CMsgBase::CMsgBase(ZC_U8 modid, ZC_U16 id, ZC_U16 sid, MsgReqProcCb reqcb, MsgRepProcCb repcb)
-    : m_modid(modid), m_id(id), m_reqcb(reqcb), m_repcb(repcb) {}
+    : m_modid(modid), m_id(id), m_sid(sid), m_reqcb(reqcb), m_repcb(repcb) {}
 
 CMsgBase::~CMsgBase() {}
 

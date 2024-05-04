@@ -9,14 +9,29 @@
 #include <memory>
 #include <string>
 
-#include "Timer.hpp"
-#include "ZcType.hpp"
 #include "zc_log.h"
+#include "zc_msg.h"
+#include "zc_msg_rtsp.h"
+#include "zc_msg_sys.h"
 
+#include "Timer.hpp"
 #include "ZcModFac.hpp"
+#include "ZcType.hpp"
 #include "zc_test_mod.hpp"
 
 zc::CModBase *g_ModTab[ZC_MODID_BUTT] = {};
+
+static int zc_test_mod_sendreg(int modid, int modidto) {
+    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
+    zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
+
+    g_ModTab[modid]->BuildReqMsgHdr(pmsg, modidto, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_REGISTER_E, 0,
+                                    sizeof(zc_mod_reg_t));
+    g_ModTab[modid]->MsgSendTo(pmsg, ZC_SYS_URL_IPC);
+    // g_ModTab[modid]->MsgSendTo(pmsg);
+
+    return 0;
+}
 
 // start
 int zc_test_mod_start(int modid) {
@@ -29,8 +44,12 @@ int zc_test_mod_start(int modid) {
         return false;
     }
     g_ModTab[modid]->Init();
-    LOG_INFO("test_mod modid[%d] start[%p] end\n", modid, g_ModTab[modid]);
 
+    if (modid != 0) {
+        LOG_ERROR("zc_test_mod_sendreg modid[%d] \n", modid);
+        zc_test_mod_sendreg(modid, 0);
+    }
+    LOG_INFO("test_mod modid[%d] start[%p] end\n", modid, g_ModTab[modid]);
     return 0;
 }
 

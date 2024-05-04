@@ -18,6 +18,11 @@ class CModBase : public CModComm {
     virtual ~CModBase();
     virtual bool Init() = 0;
     virtual bool UnInit() = 0;
+    bool BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modid, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size);
+    bool MsgSendTo(zc_msg_t *pmsg, const char *urlto);
+    bool MsgSendTo(zc_msg_t *pmsg);
+    const char *GetUrlbymodid(ZC_U8 modid);
+
  protected:
     bool registerMsgProcMod(CMsgProcMod *msgprocmod);
     bool unregisterMsgProcMod(CMsgProcMod *msgprocmod);
@@ -31,6 +36,7 @@ class CModBase : public CModComm {
  private:
     bool m_init;
     ZC_U8 m_modid;
+    ZC_U32 m_seqno;
     ZC_CHAR m_url[ZC_URL_SIZE];
     // msg handle
     CMsgProcMod *m_pmsgmodproc;

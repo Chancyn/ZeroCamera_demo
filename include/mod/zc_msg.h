@@ -10,6 +10,7 @@ extern "C" {
 
 #include "zc_type.h"
 
+#define ZC_MSG_VERSION (1)  //version 1
 #define ZC_URL_SIZE 128
 #define ZC_DATETIME_STR_SIZE 128  // 2024-04-30 00:00:00
 
@@ -52,10 +53,11 @@ typedef enum {
 typedef struct {
     ZC_U8 ver;        // version;
     ZC_U8 modid;      // modid,msg send moduleid zc_modid_e
+    ZC_U8 modidto;      // modid,msg send moduleid zc_modid_e
     ZC_U8 msgtype;    // req/rep pub; zc_msg_type_e
     ZC_U8 cmd;        // get/set/ctrl; zc_msgcmd_type_e
     ZC_S8 chn;        // chn reserve data
-    ZC_U8 rsv[3];     // reserve data
+    ZC_U8 rsv[2];     // reserve data
     ZC_U32 seq;       // seqno;
     ZC_U16 id;        // msgid;
     ZC_U16 sid;       // msgsubid;

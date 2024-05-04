@@ -1,22 +1,27 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
+#include <cstddef>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include <functional>
 
-#include "ZcType.hpp"
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_mod_base.h"
-
-#include "ZcModBase.hpp"
+#include "zc_msg_codec.h"
+#include "zc_msg_rtsp.h"
+#include "zc_msg_sys.h"
 #include "zc_type.h"
 
+#include "ZcModBase.hpp"
+#include "ZcType.hpp"
+
 namespace zc {
-CModBase::CModBase(ZC_U8 modid, const char *url) : m_init(false), m_modid(modid) {
+CModBase::CModBase(ZC_U8 modid, const char *url) : m_init(false), m_modid(modid), m_seqno(0) {
     strncpy(m_url, url, sizeof(m_url) - 1);
 }
 
@@ -94,5 +99,60 @@ ZC_S32 CModBase::_cliRecvRepProc(char *rep, int size) {
     // TODO(zhoucc) find msg procss mod
 
     return 0;
+}
+
+bool CModBase::BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modidto, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size) {
+    if (!pmsg) {
+        pmsg = reinterpret_cast<zc_msg_t *>(new char[sizeof(zc_msg_t) + size]());
+    }
+
+    pmsg->ver = ZC_MSG_VERSION;
+    pmsg->modidto = modidto;
+    pmsg->modid = m_modid;
+    pmsg->msgtype = ZC_MSG_TYPE_REQ_E;
+    pmsg->chn = chn;
+    pmsg->id = id;
+    pmsg->sid = sid;
+    pmsg->size = size;
+    pmsg->err = 0;
+
+    return true;
+}
+
+const char *g_Modurltab[ZC_MODID_BUTT] = {
+    ZC_SYS_URL_IPC,
+    ZC_CODEC_URL_IPC,
+    ZC_RTSP_URL_IPC,
+};
+
+const char *CModBase::GetUrlbymodid(ZC_U8 modid) {
+    if (modid >= ZC_MODID_BUTT) {
+        return nullptr;
+    }
+    return g_Modurltab[modid];
+}
+
+bool CModBase::MsgSendTo(zc_msg_t *pmsg, const char *urlto) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    pmsg->ts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    pmsg->seq = m_seqno++;
+    CMsgCommReqClient cli;
+    cli.Open(urlto);
+    cli.Send(pmsg, sizeof(zc_msg_t) + pmsg->size, 0);
+
+    return true;
+}
+
+bool CModBase::MsgSendTo(zc_msg_t *pmsg) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    pmsg->ts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    pmsg->seq = m_seqno++;
+    CMsgCommReqClient cli;
+    cli.Open(GetUrlbymodid(pmsg->modidto));
+    cli.Send(pmsg, sizeof(zc_msg_t) + pmsg->size, 0);
+
+    return true;
 }
 }  // namespace zc

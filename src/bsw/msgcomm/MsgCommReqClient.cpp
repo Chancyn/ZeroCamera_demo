@@ -70,7 +70,7 @@ bool CMsgCommReqClient::Send(void *buf, size_t len, int flags) {
     nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
     if (psock->id != 0) {
         int rv;
-        LOG_ERROR("into send msg %d %s", psock->id, buf);
+        LOG_TRACE("into send msg %d %s", psock->id, buf);
         if ((rv = nng_send(*psock, buf, len, flags)) != 0) {
             LOG_ERROR("send msg error %d %s", rv, nng_strerror(rv));
             return false;
