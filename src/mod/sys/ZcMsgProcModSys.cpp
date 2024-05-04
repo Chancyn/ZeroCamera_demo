@@ -10,7 +10,7 @@
 
 #include "ZcMsg.hpp"
 #include "ZcMsgProcMod.hpp"
-#include "ZcMsgProcModSys.hpp"
+#include "sys/ZcMsgProcModSys.hpp"
 #include "ZcType.hpp"
 
 namespace zc {
@@ -215,7 +215,7 @@ bool CMsgProcModSys::Init() {
     init();
     m_init = true;
 
-    LOG_ERROR("init ok");
+    LOG_TRACE("Init ok");
     return true;
 }
 
@@ -227,6 +227,7 @@ bool CMsgProcModSys::UnInit() {
 
     m_init = false;
     uninit();
+    LOG_TRACE("UnInit ok");
     return true;
 }
 

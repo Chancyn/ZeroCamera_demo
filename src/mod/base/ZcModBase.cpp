@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <functional>
 
 #include "ZcType.hpp"
@@ -20,16 +21,16 @@ CModBase::CModBase(ZC_U8 modid, const char *url) : m_init(false), m_modid(modid)
 }
 
 CModBase::~CModBase() {
-    UnInit();
+    unInit();
 }
 
-bool CModBase::Init() {
+bool CModBase::init() {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
     }
 
-    auto svrreq = std::bind(&CModBase::SvrRecvReqProc, this, std::placeholders::_1, std::placeholders::_2,
+    auto svrreq = std::bind(&CModBase::_svrRecvReqProc, this, std::placeholders::_1, std::placeholders::_2,
                             std::placeholders::_3, std::placeholders::_4);
 
     if (!InitComm(m_url, svrreq)) {
@@ -37,23 +38,25 @@ bool CModBase::Init() {
         goto _err;
     }
 
-    LOG_TRACE("Init ok");
+    LOG_TRACE("init ok");
     return true;
 
 _err:
-
+    LOG_ERROR("Init error");
     return false;
 }
 
-bool CModBase::UnInit() {
+bool CModBase::unInit() {
     if (!m_init) {
         return true;
     }
 
+    UnInitComm();
+    LOG_TRACE("unInit ok");
     return false;
 }
 
-bool CModBase::RegisterMsgProcMod(CMsgProcMod *msgprocmod) {
+bool CModBase::registerMsgProcMod(CMsgProcMod *msgprocmod) {
     // uinit status can register msgprocmod
     if (m_init) {
         return false;
@@ -65,7 +68,7 @@ bool CModBase::RegisterMsgProcMod(CMsgProcMod *msgprocmod) {
     return true;
 }
 
-bool CModBase::UnRegisterMsgProcMod(CMsgProcMod *msgprocmod) {
+bool CModBase::unregisterMsgProcMod(CMsgProcMod *msgprocmod) {
     // uinit status can register msgprocmod
     if (m_init) {
         return false;
@@ -77,7 +80,7 @@ bool CModBase::UnRegisterMsgProcMod(CMsgProcMod *msgprocmod) {
     return false;
 }
 
-ZC_S32 CModBase::SvrRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
+ZC_S32 CModBase::_svrRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
     // TODO(zhoucc) find msg procss mod
     if (m_pmsgmodproc) {
         return m_pmsgmodproc->MsgReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, reinterpret_cast<zc_msg_t *>(rep),
@@ -87,7 +90,7 @@ ZC_S32 CModBase::SvrRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
     return 0;
 }
 
-ZC_S32 CModBase::CliRecvRepProc(char *rep, int size) {
+ZC_S32 CModBase::_cliRecvRepProc(char *rep, int size) {
     // TODO(zhoucc) find msg procss mod
 
     return 0;

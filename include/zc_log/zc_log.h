@@ -19,14 +19,25 @@ enum LogLevel {
     LEVEL_BUTT = 6,
 };
 
-#define LOG_TRACE(fmt, ...) zc_log_levelout(LEVEL_TRACE, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt, ...) zc_log_levelout(LEVEL_DEBUG, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-// #define LOG_TRACE(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-// #define LOG_DEBUG(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_INFO(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_WARN(fmt, ...) zc_log_levelout(LEVEL_WARN, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) zc_log_levelout(LEVEL_ERROR, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_CRITI(fmt, ...) zc_log_levelout(LEVEL_CRITI, "[%s][%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#ifndef __FILENAME__
+#define __FILENAME__ __FILE__
+#endif
+
+#define LOG_TRACE(fmt, ...) \
+    zc_log_levelout(LEVEL_TRACE, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...) \
+    zc_log_levelout(LEVEL_DEBUG, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+// #define LOG_TRACE(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__,
+// ##__VA_ARGS__) #define LOG_DEBUG(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s %d][%s]" fmt, __FILENAME__, __LINE__,
+// __FUNCTION__, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...) \
+    zc_log_levelout(LEVEL_INFO, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define LOG_WARN(fmt, ...) \
+    zc_log_levelout(LEVEL_WARN, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) \
+    zc_log_levelout(LEVEL_ERROR, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define LOG_CRITI(fmt, ...) \
+    zc_log_levelout(LEVEL_CRITI, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 void zc_log_levelout(int level, const char *fmt, ...);
 int zc_log_init(const char *szName);

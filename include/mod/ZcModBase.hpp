@@ -12,17 +12,22 @@
 #include "zc_type.h"
 
 namespace zc {
-class CModBase:public CModComm {
+class CModBase : public CModComm {
  public:
     CModBase(ZC_U8 modid, const char *url);
     virtual ~CModBase();
+    virtual bool Init() = 0;
+    virtual bool UnInit() = 0;
+ protected:
+    bool registerMsgProcMod(CMsgProcMod *msgprocmod);
+    bool unregisterMsgProcMod(CMsgProcMod *msgprocmod);
+    bool init();
+    bool unInit();
 
-    bool Init();
-    bool UnInit();
-    bool RegisterMsgProcMod(CMsgProcMod *msgprocmod);
-    bool UnRegisterMsgProcMod(CMsgProcMod *msgprocmod);
-    ZC_S32 SvrRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
-    ZC_S32 CliRecvRepProc(char *rep, int size);
+ private:
+    ZC_S32 _svrRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
+    ZC_S32 _cliRecvRepProc(char *rep, int size);
+
  private:
     bool m_init;
     ZC_U8 m_modid;

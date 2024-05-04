@@ -3,5 +3,5 @@ aux_source_directory(./ DIR_SOURCE_SRCS)
 
 add_library(mod_rtsp SHARED ${DIR_SOURCE_SRCS})
 
-#install(TARGETS mod_base RUNTIME DESTINATION ${ZC_LIB_INSTALL})
+#install(TARGETS mod_rtsp RUNTIME DESTINATION ${ZC_LIB_INSTALL})
 install(TARGETS mod_rtsp DESTINATION ${ZC_LIB_INSTALL})

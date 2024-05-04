@@ -23,10 +23,13 @@ target_link_directories(zc_tests PRIVATE
 
 #连接库
 target_link_libraries(zc_tests PRIVATE
+zc_test_mod
+mod_rtsp
+mod_sys
+mod_base
 zc_test_msgcomm
 msgcomm
 zc_test_utilsxx
-zc_test_mod
 zc_log
 # plat_basic
 # bsw_basic

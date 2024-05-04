@@ -5,14 +5,14 @@
 
 #include "zc_log.h"
 #include "zc_msg.h"
-#include "zc_msg_sys.h"
 #include "zc_msg_rtsp.h"
+#include "zc_msg_sys.h"
 #include "zc_type.h"
 
 #include "ZcMsg.hpp"
 #include "ZcMsgProcMod.hpp"
-#include "ZcMsgProcModRtsp.hpp"
 #include "ZcType.hpp"
+#include "rtsp/ZcMsgProcModRtsp.hpp"
 
 namespace zc {
 CMsgProcModRtsp::CMsgProcModRtsp() : CMsgProcMod(ZC_MODID_RTSP_E, ZC_MID_RTSP_BUTT), m_init(false) {
@@ -106,7 +106,8 @@ bool CMsgProcModRtsp::Init() {
 
     // TODO(zhoucc) register all msgfunction
     // ZC_MID_RTSP_MAN_E
-    // REGISTER_MSG(m_modid, ZC_MID_RTSP_MAN_E, ZC_MSID_RTSP_MAN_REGISTER_E, &CMsgProcModRtsp::_handleReqRtspManRegister,
+    // REGISTER_MSG(m_modid, ZC_MID_RTSP_MAN_E, ZC_MSID_RTSP_MAN_REGISTER_E,
+    // &CMsgProcModRtsp::_handleReqRtspManRegister,
     //              &CMsgProcModRtsp::_handleRepRtspManRegister);
     REGISTER_MSG(m_modid, ZC_MID_RTSP_MAN_E, ZC_MSID_RTSP_MAN_VERSION_E, &CMsgProcModRtsp::_handleReqRtspManVersion,
                  &CMsgProcModRtsp::_handleRepRtspManVersion);
@@ -129,7 +130,7 @@ bool CMsgProcModRtsp::Init() {
 
     m_init = true;
 
-    LOG_ERROR("init ok");
+    LOG_TRACE("init ok");
     return true;
 }
 

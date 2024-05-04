@@ -3,9 +3,12 @@
 
 #pragma once
 
-#include "ZcModBase.hpp"
 #include "zc_log.h"
 #include "zc_msg.h"
+
+#include "ZcModBase.hpp"
+#include "rtsp/ZcModRtsp.hpp"
+#include "sys/ZcModSys.hpp"
 
 namespace zc {
 class CModFac {
@@ -16,10 +19,10 @@ class CModFac {
         CModBase *pmod = nullptr;
         switch (modid) {
         case ZC_MODID_SYS_E:
-            // pmod = new CModBase();
+            pmod = new CModSys();
             break;
         case ZC_MODID_RTSP_E:
-            // pmod = new CModBase();
+            pmod = new CModRtsp();
             break;
         default:
             LOG_ERROR("error, modid[%d]", modid);

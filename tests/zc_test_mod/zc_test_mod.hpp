@@ -3,4 +3,6 @@
 
 #pragma once
 
-int zc_test_mod();
+// 0 sys;1 codec, 2 rtsp
+int zc_test_mod_start(int modid);
+int zc_test_mod_stop(int modid);

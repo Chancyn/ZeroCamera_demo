@@ -20,6 +20,9 @@ class CMsgProcModRtsp : public CMsgProcMod{
     virtual bool UnInit();
 
  private:
+    bool _unInit();
+
+ private:
     // Manager
     ZC_S32 _handleReqRtspManVersion(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepRtspManVersion(zc_msg_t *rep, int size);

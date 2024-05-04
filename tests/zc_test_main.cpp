@@ -50,13 +50,15 @@ int main(int argc, char **argv) {
 
     // zc_test_utilsxx();
     // zc_test_mod();
-    zc_test_msgcomm_start(nodetype);
+    // zc_test_msgcomm_start(nodetype);
+    zc_test_mod_start(nodetype);
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep exit");
     }
     LOG_ERROR("app loop exit");
-    zc_test_msgcomm_stop();
+    // zc_test_msgcomm_stop();
+    zc_test_mod_stop(nodetype);
     zc_log_uninit();
     printf("main exit\n");
     return 0;
