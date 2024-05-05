@@ -25,7 +25,7 @@ class Thread {
     void Resume();
 
  protected:
-    virtual void process() = 0;
+    virtual int process() = 0;
 
  private:
     void _run();

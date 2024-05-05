@@ -1,7 +1,7 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
-#include <string>
 #include "Thread.hpp"
+#include <string>
 
 #include "zc_log.h"
 
@@ -59,7 +59,11 @@ void Thread::_run() {
     LOG_INFO("enter thread:,%s %d", m_name.c_str(), std::this_thread::get_id());
     pthread_setname_np(_thread->native_handle(), m_name.substr(0, 15).c_str());
     while (!_stopFlag) {
-        process();
+        if (process() < 0) {
+            LOG_ERROR("process error, pause thread:,%s %d", m_name.c_str(), std::this_thread::get_id());
+            _pauseFlag = true;
+        }
+
         if (_pauseFlag) {
             std::unique_lock<std::mutex> locker(_mutex);
             while (_pauseFlag) {

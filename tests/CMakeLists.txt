@@ -14,11 +14,13 @@ endforeach()
 add_subdirectory(zc_test_utilsxx)
 add_subdirectory(zc_test_msgcomm)
 add_subdirectory(zc_test_mod)
+add_subdirectory(zc_test_fifo)
 #头文件包含
 #头文件包含
 target_include_directories(zc_tests PRIVATE
 zc_test_utilsxx
 zc_test_mod
+zc_test_fifo
 zc_test_msgcomm
 ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
@@ -33,12 +35,14 @@ ${MSGCOMM_INC}
 #连接库
 target_link_libraries(zc_tests PRIVATE
 zc_test_mod
+zc_test_fifo
 mod_rtsp
 mod_sys
 mod_base
 zc_test_msgcomm
 msgcomm
 zc_test_utilsxx
+zcfifo
 zc_log
 # plat_basic
 # bsw_basic

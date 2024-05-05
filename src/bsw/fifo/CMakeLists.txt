@@ -10,10 +10,11 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-add_subdirectory(log)
-add_subdirectory(basic)
-add_subdirectory(fifo)
-add_subdirectory(utils)
-add_subdirectory(utilsxx)
-add_subdirectory(msgcomm)
+#.a/so
+add_library(zcfifo STATIC ${DIR_SOURCE_SRCS})
+#add_library(zcfifo SHARED ${DIR_SOURCE_SRCS})
 
+#target_include_directories(zcfifo PRIVATE ${ZC_LOG_INC})
+
+#install(TARGETS zcfifo RUNTIME DESTINATION ${ZC_LIB_INSTALL})
+install(TARGETS zcfifo DESTINATION ${ZC_LIB_INSTALL})

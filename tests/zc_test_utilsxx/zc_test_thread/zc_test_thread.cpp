@@ -76,10 +76,11 @@ class ThreadTest : public zc::Thread {
         LOG_WARN("Constructor into [%s]\n", m_name.c_str());
     }
     virtual ~ThreadTest() { LOG_WARN("~Destructor into [%s]\n", m_name.c_str()); }
-    virtual void process() {
+    virtual int process() {
         m_process_cnt++;
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
         LOG_INFO("ThreadTest process into[%s] [%d] ", m_name.c_str(), m_process_cnt);
+        return 0;
     }
 
  private:
