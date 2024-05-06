@@ -2,13 +2,15 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 // copy from linux kernel(2.6.32) zcfifo.move to userspace, lockfree fifo
 
+#include <cstddef>
+#include <cstdio>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
-
+#include "ZcFIFO.hpp"
+#include "ZcType.hpp"
 #include "zc_macros.h"
-#include "zcfifo.h"
 
 
 // userspace modify................
@@ -61,43 +63,24 @@ static inline unsigned int rounddown_pow_of_two(unsigned int n) {
 static inline bool is_power_of_2(unsigned int n) {
     return (n != 0 && ((n & (n - 1)) == 0));
 }
+
 // userspace modify................
-
-/**
- * zcfifo_init - allocates a new FIFO using a preallocated buffer
- * @buffer: the preallocated buffer to be used.
- * @size: the size of the internal buffer, this have to be a power of 2.
- *
- * Do NOT pass the zcfifo to zcfifo_free() after use! Simply free the
- * &zcfifo_t with kfree().
- */
-zcfifo_t *zcfifo_init(unsigned char *buffer, unsigned int size) {
-    zcfifo_t *fifo;
-
-    /* size must be a power of 2 */
-    BUG_ON(!is_power_of_2(size));
-
-    fifo = malloc(sizeof(zcfifo_t));
-    if (!fifo)
-        return NULL;
-
-    fifo->buffer = buffer;
-    fifo->size = size;
-    fifo->in = fifo->out = 0;
-
-    return fifo;
-}
-
+namespace zc {
 /**
  * zcfifo_alloc - allocates a new FIFO and its internal buffer
  * @size: the size of the internal buffer to be allocated.
  *
  * The size will be rounded-up to a power of 2.
  */
-zcfifo_t *zcfifo_alloc(unsigned int size) {
-    unsigned char *buffer;
-    zcfifo_t *ret;
+CFIFO::CFIFO(unsigned int size) {
+    _alloc(size);
+}
 
+CFIFO::~CFIFO() {
+    _free();
+}
+
+bool CFIFO::_alloc(unsigned int size) {
     /*
      * round up to the next power of 2, since our 'let the indices
      * wrap' technique works only in this case.
@@ -107,25 +90,24 @@ zcfifo_t *zcfifo_alloc(unsigned int size) {
         size = roundup_pow_of_two(size);
     }
 
-    buffer = malloc(size);
-    if (!buffer)
-        return NULL;
+    m_fifo.buffer = new unsigned char[size]();
+    if (!m_fifo.buffer)
+        return false;
 
-    ret = zcfifo_init(buffer, size);
+    m_fifo.size = size;
+    m_fifo.in = m_fifo.out = 0;
 
-    if (!ret)
-        free(buffer);
-
-    return ret;
+    return true;
 }
 
 /**
  * zcfifo_free - frees the FIFO
  * @fifo: the fifo to be freed.
  */
-void zcfifo_free(zcfifo_t *fifo) {
-    free(fifo->buffer);
-    free(fifo);
+void CFIFO::_free() {
+    ZC_SAFE_DELETEA(m_fifo.buffer);
+    m_fifo.size = 0;
+    m_fifo.in = m_fifo.out = 0;
 }
 
 /**
@@ -141,28 +123,28 @@ void zcfifo_free(zcfifo_t *fifo) {
  * Note that with only one concurrent reader and one concurrent
  * writer, you don't need extra locking to use these functions.
  */
-unsigned int zcfifo_put(zcfifo_t *fifo, const unsigned char *buffer, unsigned int len) {
+unsigned int CFIFO::Put(const unsigned char *buffer, unsigned int len) {
     unsigned int l;
 
-    len = min(len, fifo->size - fifo->in + fifo->out);
+    len = min(len, m_fifo.size - m_fifo.in + m_fifo.out);
 
     /*
-     * Ensure that we sample the fifo->out index -before- we
+     * Ensure that we sample the m_fifo.out index -before- we
      * start putting bytes into the zcfifo.
      */
-    // 加内存屏障，保证在开始放入数据之前，fifo->out取到正确的值（另一个CPU可能正在改写out值）
+    // 加内存屏障，保证在开始放入数据之前，m_fifo.out取到正确的值（另一个CPU可能正在改写out值）
     smp_mb();
 
-    /* first put the data starting from fifo->in to buffer end */
-    l = min(len, fifo->size - (fifo->in & (fifo->size - 1)));
-    memcpy(fifo->buffer + (fifo->in & (fifo->size - 1)), buffer, l);
+    /* first put the data starting from m_fifo.in to buffer end */
+    l = min(len, m_fifo.size - (m_fifo.in & (m_fifo.size - 1)));
+    memcpy(m_fifo.buffer + (m_fifo.in & (m_fifo.size - 1)), buffer, l);
 
     /* then put the rest (if any) at the beginning of the buffer */
-    memcpy(fifo->buffer, buffer + l, len - l);
+    memcpy(m_fifo.buffer, buffer + l, len - l);
 
     /*
      * Ensure that we add the bytes to the zcfifo -before-
-     * we update the fifo->in index.
+     * we update the m_fifo.in index.
      */
 
     // 加写内存屏障，保证in 加之前，memcpy的字节已经全部写入buffer，
@@ -170,7 +152,7 @@ unsigned int zcfifo_put(zcfifo_t *fifo, const unsigned char *buffer, unsigned in
     // 来判断的。
     smp_wmb();
 
-    fifo->in += len;
+    m_fifo.in += len;
 
     return len;
 }
@@ -187,56 +169,57 @@ unsigned int zcfifo_put(zcfifo_t *fifo, const unsigned char *buffer, unsigned in
  * Note that with only one concurrent reader and one concurrent
  * writer, you don't need extra locking to use these functions.
  */
-unsigned int zcfifo_get(zcfifo_t *fifo, unsigned char *buffer, unsigned int len) {
+unsigned int CFIFO::Get(unsigned char *buffer, unsigned int len) {
     unsigned int l;
 
-    len = min(len, fifo->in - fifo->out);
+    len = min(len, m_fifo.in - m_fifo.out);
 
     /*
-     * Ensure that we sample the fifo->in index -before- we
+     * Ensure that we sample the m_fifo.in index -before- we
      * start removing bytes from the zcfifo.
      */
 
-    // 加读内存屏障，保证在开始取数据之前，fifo->in取到正确的值（另一个CPU可能正在改写in值）
+    // 加读内存屏障，保证在开始取数据之前，m_fifo.in取到正确的值（另一个CPU可能正在改写in值）
     smp_rmb();
 
-    /* first get the data from fifo->out until the end of the buffer */
-    l = min(len, fifo->size - (fifo->out & (fifo->size - 1)));
-    memcpy(buffer, fifo->buffer + (fifo->out & (fifo->size - 1)), l);
+    /* first get the data from m_fifo.out until the end of the buffer */
+    l = min(len, m_fifo.size - (m_fifo.out & (m_fifo.size - 1)));
+    memcpy(buffer, m_fifo.buffer + (m_fifo.out & (m_fifo.size - 1)), l);
 
     /* then get the rest (if any) from the beginning of the buffer */
-    memcpy(buffer + l, fifo->buffer, len - l);
+    memcpy(buffer + l, m_fifo.buffer, len - l);
 
     /*
      * Ensure that we remove the bytes from the zcfifo -before-
-     * we update the fifo->out index.
+     * we update the m_fifo.out index.
      */
 
     // 加内存屏障，保证在修改out前，已经从buffer中取走了数据，
-    // 如果不加屏障，可能先执行了增加out的操作，数据还没取完，令一个CPU可能已经往buffer写数据，将数据破坏，因为写数据是通过fifo->size
-    // - (fifo->in & (fifo->size - 1))来判断的 。
+    // 如果不加屏障，可能先执行了增加out的操作，数据还没取完，令一个CPU可能已经往buffer写数据，将数据破坏，因为写数据是通过m_fifo.size
+    // - (m_fifo.in & (m_fifo.size - 1))来判断的 。
 
     smp_mb();
 
-    fifo->out += len;
+    m_fifo.out += len;
 
     return len;
 }
 
-// nolcok version unsafe be careful use, stop read/write and reset it
-void zcfifo_reset(zcfifo_t *fifo) {
-    fifo->in = fifo->out = 0;
+// unsafe be careful use
+void CFIFO::Reset() {
+     m_fifo.in = m_fifo.out = 0;
+     return;
 }
 
-unsigned int zcfifo_len(zcfifo_t *fifo) {
-    return fifo->in - fifo->out;
+unsigned int CFIFO::Len() {
+    return m_fifo.in - m_fifo.out;
 }
 
-// bool zcfifo_is_empty(zcfifo_t *fifo) {
-//     return (fifo->in == fifo->out);
-// }
+bool CFIFO::IsEmpty() {
+    return (m_fifo.in == m_fifo.out);
+}
 
-// // zcfifo_is_full - returns true if the fifo is full
-// bool zcfifo_is_full(zcfifo_t *fifo) {
-//     return ((fifo->in - fifo->out) >= fifo->size);
-// }
+bool CFIFO::IsFull() {
+    return ((m_fifo.in - m_fifo.out) >= m_fifo.size);
+}
+}  // namespace zc

@@ -30,6 +30,14 @@ ThreadPutLock cnt[1000000]errcnt[22377434],ret[1024000000],cos[1008]ms
 ThreadGetLock cnt[1000000]errcnt[34575],ret[1024000000],cos[1008]ms
 */
 
+C++版本实现性能说明
+// 性能说明 CFIFO C++无锁版本 ret[1024000000],cos[108-120]ms;性能与c 语言版本一致
+// 性能说明 CFIFOSafe(std::lock_guard mutex锁版本) ret[1024000000],cos[630-680]ms;std::lock_guard性能略差于c 语言版本pthread_mutex_lock(588-620)
+
+
+// 性能说明 ThreadPutLock ret[1024000000],cos[630-680]ms;std::lock_guard性能略差于c 语言版本pthread_mutex_lock(588-620)
+
+
 ### 不带锁版本测试
 ```
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.

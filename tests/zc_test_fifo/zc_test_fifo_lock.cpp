@@ -13,7 +13,10 @@
 #include "zcfifo_safe.h"
 
 #include "Thread.hpp"
+#include "ZcFIFO.hpp"
 #include "ZcType.hpp"
+
+#define TEST_FIFO_CXX 0  // cxx test
 
 #define FIFO_TEST_LOOPCNT 1000
 #define FIFO_TEST_BUFFLEN 1024
@@ -22,6 +25,7 @@
 static zcfifo_safe_t *g_fifo = nullptr;
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
 static ZC_U8 g_buffer[FIFO_TEST_BUFFLEN] = {};
+static zc::CFIFOSafe *g_cxxfifo = nullptr;
 
 class ThreadPutLock : public zc::Thread {
  public:
@@ -40,8 +44,13 @@ class ThreadPutLock : public zc::Thread {
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
         for (unsigned i = 0; i < loopcnt;) {
+#if TEST_FIFO_CXX  // cxx test
+            if (!g_cxxfifo->IsFull()) {
+                ret += g_cxxfifo->Put(buffer, sizeof(buffer));
+#else
             if (!zcfifo_safe_is_full(g_fifo)) {
                 ret += zcfifo_safe_put(g_fifo, buffer, sizeof(buffer));
+#endif
                 i++;
             } else {
                 errcnt++;
@@ -78,8 +87,13 @@ class ThreadGetLock : public zc::Thread {
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
         for (unsigned i = 0; i < loopcnt;) {
+#if TEST_FIFO_CXX  // cxx test
+            if (!g_cxxfifo->IsEmpty()) {
+                ret = g_cxxfifo->Get(buffer, sizeof(buffer));
+#else
             if (!zcfifo_safe_is_empty(g_fifo)) {
                 ret = zcfifo_safe_get(g_fifo, buffer, sizeof(buffer));
+#endif
                 retcnt += ret;
                 cmp = memcmp(g_buffer, buffer, sizeof(g_buffer));
                 if (cmp != 0) {
@@ -108,17 +122,21 @@ static ThreadGetLock *g_threadget = nullptr;
 static ThreadPutLock *g_threadput = nullptr;
 static zcfifo_safe_lock_t g_lock;
 
-
 static int _zc_test_fifo_start() {
     for (unsigned int i = 0; i < sizeof(g_buffer); i++) {
         g_buffer[i] = i % 255;
     }
 
+#if TEST_FIFO_CXX  // cxx test
+    g_cxxfifo = new zc::CFIFOSafe(FIFO_TEST_FIFOSIZE);
+    ZC_ASSERT(g_cxxfifo != nullptr);
+#else
     ZCFIFO_LOCK_INIT(&g_lock);
     // pthread_spin_init(&g_lock, PTHREAD_PROCESS_PRIVATE);
-
     g_fifo = zcfifo_safe_alloc(FIFO_TEST_FIFOSIZE, &g_lock);
     ZC_ASSERT(g_fifo != NULL);
+#endif
+
     g_threadput = new ThreadPutLock("fifoput");
     g_threadget = new ThreadGetLock("fifoget");
     ZC_ASSERT(g_threadput != nullptr);
@@ -142,10 +160,14 @@ int zc_test_fifo_lock_start(int cnt) {
 }
 
 int zc_test_fifo_lock_stop(int cnt) {
+#if TEST_FIFO_CXX  // cxx test
+    ZC_SAFE_DELETE(g_cxxfifo);
+#else
     if (g_fifo) {
         zcfifo_safe_free(g_fifo);
         g_fifo = nullptr;
     }
+#endif
 
     ZC_SAFE_DELETE(g_threadput);
     ZC_SAFE_DELETE(g_threadget);
@@ -154,6 +176,7 @@ int zc_test_fifo_lock_stop(int cnt) {
 /*
 ### 无锁队列测试性能 1000000 次，每次写入1024个字节耗时105ms速度 1024000000/105ms=9300M/s
 
-[2024-05-05 19:26:39.571][info][tid 197267] [zc_test_fifo.cpp 52][process]ThreadPutLock cnt[1000000]errcnt[2575175],ret[1024000000],cos[105]ms
-[2024-05-05 19:26:39.571][info][tid 197268] [zc_test_fifo.cpp 96][process]ThreadGetLock cnt[1000000]errcnt[124640],ret[1024000000],cos[105]ms
+[2024-05-05 19:26:39.571][info][tid 197267] [zc_test_fifo.cpp 52][process]ThreadPutLock
+cnt[1000000]errcnt[2575175],ret[1024000000],cos[105]ms [2024-05-05 19:26:39.571][info][tid 197268] [zc_test_fifo.cpp
+96][process]ThreadGetLock cnt[1000000]errcnt[124640],ret[1024000000],cos[105]ms
 */

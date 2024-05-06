@@ -1,10 +1,10 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
-// copy from linux kernel(2.6.32) zcfifo_safe.move to userspace, freelock fifo
+// copy from linux kernel(2.6.32) zcfifo_safe.move to userspace, lockfree fifo
 
 #ifndef __ZCFIFO_SAFE_H__
 #define __ZCFIFO_SAFE_H__
-// copy from linux kernel(2.6.32) zcfifo_safe.move to userspace, freelock fifo
+// copy from linux kernel(2.6.32) zcfifo_safe.move to userspace, lockfree fifo
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +14,7 @@ extern "C" {
 #include <stdbool.h>
 
 // 定义锁类型 0无锁/1自旋锁/2互斥锁/
-#define ZC_FIFO_LOCK_MUTEX 0
+#define ZC_FIFO_LOCK_MUTEX 2
 
 #if (ZC_FIFO_LOCK_MUTEX == 0)
 #warning "fifo no lock"
@@ -54,6 +54,7 @@ extern void zcfifo_safe_free(zcfifo_safe_t *fifo);
 
 unsigned int zcfifo_safe_put(zcfifo_safe_t *fifo, const unsigned char *buffer, unsigned int len);
 unsigned int zcfifo_safe_get(zcfifo_safe_t *fifo, unsigned char *buffer, unsigned int len);
+void zcfifo_safe_reset(zcfifo_safe_t *fifo);
 unsigned int zcfifo_safe_len(zcfifo_safe_t *fifo);
 bool zcfifo_safe_is_empty(zcfifo_safe_t *fifo);
 bool zcfifo_safe_is_full(zcfifo_safe_t *fifo);
