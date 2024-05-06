@@ -38,12 +38,12 @@ class ThreadPut : public zc::Thread {
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
         for (unsigned i = 0; i < loopcnt;) {
-            if (!__zcfifo_is_full(g_fifo)) {
-                ret += __zcfifo_put(g_fifo, buffer, sizeof(buffer));
+            if (!zcfifo_is_full(g_fifo)) {
+                ret += zcfifo_put(g_fifo, buffer, sizeof(buffer));
                 i++;
             } else {
                 errcnt++;
-                 usleep(1*1000);
+                // usleep(1*1000);
                 // LOG_WARN("fifo full, i[%u], errcnt[%u]", i, errcnt);
             }
         }
@@ -76,8 +76,8 @@ class ThreadGet : public zc::Thread {
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
         for (unsigned i = 0; i < loopcnt;) {
-            if (!__zcfifo_is_empty(g_fifo)) {
-                ret = __zcfifo_get(g_fifo, buffer, sizeof(buffer));
+            if (!zcfifo_is_empty(g_fifo)) {
+                ret = zcfifo_get(g_fifo, buffer, sizeof(buffer));
                 retcnt += ret;
                 cmp = memcmp(g_buffer, buffer, sizeof(g_buffer));
                 if (cmp != 0) {
@@ -87,7 +87,7 @@ class ThreadGet : public zc::Thread {
                 i++;
             } else {
                 errcnt++;
-                usleep(1*1000);
+                // usleep(1*1000);
                 // LOG_WARN("fifo empty, i[%u], errcnt[%u]", i, errcnt);
             }
         }
@@ -110,7 +110,7 @@ static int _zc_test_fifo_start() {
         g_buffer[i] = i % 255;
     }
 
-    g_fifo = zcfifo_alloc(FIFO_TEST_FIFOSIZE, NULL);
+    g_fifo = zcfifo_alloc(FIFO_TEST_FIFOSIZE);
     ZC_ASSERT(g_fifo != NULL);
     g_threadput = new ThreadPut("fifoput");
     g_threadget = new ThreadGet("fifoget");

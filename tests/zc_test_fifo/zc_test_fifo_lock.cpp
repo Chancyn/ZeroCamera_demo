@@ -10,6 +10,7 @@
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zcfifo.h"
+#include "zcfifo_safe.h"
 
 #include "Thread.hpp"
 #include "ZcType.hpp"
@@ -18,7 +19,7 @@
 #define FIFO_TEST_BUFFLEN 1024
 #define FIFO_TEST_FIFOSIZE (1024 * 1024)
 
-static zcfifo_t *g_fifo = nullptr;
+static zcfifo_safe_t *g_fifo = nullptr;
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
 static ZC_U8 g_buffer[FIFO_TEST_BUFFLEN] = {};
 
@@ -39,8 +40,8 @@ class ThreadPutLock : public zc::Thread {
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
         for (unsigned i = 0; i < loopcnt;) {
-            if (!zcfifo_is_full(g_fifo)) {
-                ret += zcfifo_put(g_fifo, buffer, sizeof(buffer));
+            if (!zcfifo_safe_is_full(g_fifo)) {
+                ret += zcfifo_safe_put(g_fifo, buffer, sizeof(buffer));
                 i++;
             } else {
                 errcnt++;
@@ -77,8 +78,8 @@ class ThreadGetLock : public zc::Thread {
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
         for (unsigned i = 0; i < loopcnt;) {
-            if (!zcfifo_is_empty(g_fifo)) {
-                ret = zcfifo_get(g_fifo, buffer, sizeof(buffer));
+            if (!zcfifo_safe_is_empty(g_fifo)) {
+                ret = zcfifo_safe_get(g_fifo, buffer, sizeof(buffer));
                 retcnt += ret;
                 cmp = memcmp(g_buffer, buffer, sizeof(g_buffer));
                 if (cmp != 0) {
@@ -105,7 +106,7 @@ class ThreadGetLock : public zc::Thread {
 
 static ThreadGetLock *g_threadget = nullptr;
 static ThreadPutLock *g_threadput = nullptr;
-static zcfifo_lock_t g_lock;
+static zcfifo_safe_lock_t g_lock;
 
 
 static int _zc_test_fifo_start() {
@@ -116,7 +117,7 @@ static int _zc_test_fifo_start() {
     ZCFIFO_LOCK_INIT(&g_lock);
     // pthread_spin_init(&g_lock, PTHREAD_PROCESS_PRIVATE);
 
-    g_fifo = zcfifo_alloc(FIFO_TEST_FIFOSIZE, &g_lock);
+    g_fifo = zcfifo_safe_alloc(FIFO_TEST_FIFOSIZE, &g_lock);
     ZC_ASSERT(g_fifo != NULL);
     g_threadput = new ThreadPutLock("fifoput");
     g_threadget = new ThreadGetLock("fifoget");
@@ -142,7 +143,7 @@ int zc_test_fifo_lock_start(int cnt) {
 
 int zc_test_fifo_lock_stop(int cnt) {
     if (g_fifo) {
-        zcfifo_free(g_fifo);
+        zcfifo_safe_free(g_fifo);
         g_fifo = nullptr;
     }
 

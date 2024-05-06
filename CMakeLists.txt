@@ -72,6 +72,7 @@ set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 
 include_directories(include
 include/zc_log
+include/fifo
 include/utilsxx
 include/utils
 include/msgcomm

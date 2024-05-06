@@ -12,7 +12,7 @@ endforeach()
 
 #.a/so
 # add_library(zc_test_mod STATIC ${SUB_DIR_SOURCE_SRCS})
-add_library(zc_test_mod SHARED ${SUB_DIR_SOURCE_SRCS})
+add_library(zc_test_mod STATIC ${SUB_DIR_SOURCE_SRCS})
 #add_library(zc_test_mod STATIC ${SUB_DIR_SOURCE_SRCS})
 
 

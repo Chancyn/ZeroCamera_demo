@@ -11,8 +11,8 @@ foreach(SOURCE_FILE ${SUB_DIR_SOURCE_SRCS})
 endforeach()
 
 #.a/so
-add_library(zc_test_fifo SHARED ${SUB_DIR_SOURCE_SRCS})
-
+#add_library(zc_test_fifo SHARED ${SUB_DIR_SOURCE_SRCS})
+add_library(zc_test_fifo STATIC ${SUB_DIR_SOURCE_SRCS})
 
 
 #头文件包含
