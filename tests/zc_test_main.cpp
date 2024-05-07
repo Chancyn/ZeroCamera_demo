@@ -10,6 +10,8 @@
 
 #include "zc_test_fifo_lock.hpp"
 #include "zc_test_fifo_nolock.hpp"
+#include "zc_test_shmfifo.hpp"
+
 #include "zc_test_mod.hpp"
 #include "zc_test_msgcomm.hpp"
 #include "zc_test_utilsxx.hpp"
@@ -56,21 +58,29 @@ int main(int argc, char **argv) {
     // zc_test_mod();
     // zc_test_msgcomm_start(nodetype);
     // zc_test_mod_start(nodetype);
-    if (fifotype == 0) {
-        zc_test_fifo_nolock_start(nodetype);
-    } else {
-        zc_test_fifo_lock_start(nodetype);
-    }
+
+    // lock-nolock test
+    // if (fifotype == 0) {
+    //     zc_test_fifo_nolock_start(nodetype);
+    // } else {
+    //     zc_test_fifo_lock_start(nodetype);
+    // }
+
+    // shm fifo test
+    zc_test_shmfifo_start(fifotype, nodetype);
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep exit");
     }
     LOG_ERROR("app loop exit");
-    if (fifotype == 0) {
-        zc_test_fifo_nolock_stop(nodetype);
-    } else {
-        zc_test_fifo_lock_stop(nodetype);
-    }
+
+    zc_test_shmfifo_stop(nodetype);
+    // if (fifotype == 0) {
+    //     zc_test_fifo_nolock_stop(nodetype);
+    // } else {
+    //     zc_test_fifo_lock_stop(nodetype);
+    // }
+
     // zc_test_mod_stop(nodetype);
     //  zc_test_msgcomm_stop();
     zc_log_uninit();

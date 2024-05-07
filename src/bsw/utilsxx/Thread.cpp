@@ -9,7 +9,7 @@
 namespace zc {
 
 Thread::Thread(std::string name)
-    : m_name(name), _thread(nullptr), _pauseFlag(false), _stopFlag(false), _state(Stoped) {}
+    : _stopFlag(false), m_name(name), _thread(nullptr), _pauseFlag(false), _state(Stoped) {}
 
 Thread::~Thread() {
     Stop();
@@ -32,6 +32,7 @@ void Thread::Stop() {
     if (_thread != nullptr) {
         _pauseFlag = false;
         _stopFlag = true;
+        _state = Stoping;
         _condition.notify_all();  // Notify one waiting thread, if there is one.
         _thread->join();          // wait for thread finished
         delete _thread;
@@ -64,7 +65,7 @@ void Thread::_run() {
             _pauseFlag = true;
         }
 
-        if (_pauseFlag) {
+        if (!_stopFlag && _pauseFlag) {
             std::unique_lock<std::mutex> locker(_mutex);
             while (_pauseFlag) {
                 _condition.wait(locker);  // Unlock _mutex and wait to be notified

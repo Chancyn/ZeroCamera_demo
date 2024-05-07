@@ -11,28 +11,28 @@
 
 /*spinlock版本fifo
 ### 无锁队列测试性能 1000000 次，每次写入1024个字节耗时105ms速度 1024000000/105ms=9300MB/s
-ThreadPut cnt[1000000]errcnt[2575175],ret[1024000000],cos[105]ms
-ThreadGet cnt[1000000]errcnt[124640],ret[1024000000],cos[105]ms
+ThreadPut ,cos[105]ms ThreadGet ,cos[105]ms
 
 
 ### mutex_lock 队列测试性能 1000000 次，每次写入1024个字节耗时105ms速度 1024000000/600ms=1627MB/s
-ThreadPutLock cnt[1000000]errcnt[11819395],ret[1024000000],cos[603]ms
-ThreadGetLock cnt[1000000]errcnt[0],ret[1024000000],cos[603]ms
+ThreadPutLock cos[603]ms ThreadGetLock,cos[603]ms
 
 /*spinlock版本fifo
 ### 测试性能事件不等
 ### spinlock队列测试性能 1000000 次，每次写入1024个字节耗时245~1100ms不等，速度 1024000000/200ms=3985~968MB/s
-ThreadPutLock cnt[1000000]errcnt[1335560],ret[1024000000],cos[245]ms
-ThreadGetLock cnt[1000000]errcnt[613737],ret[1024000000],cos[245]ms
-ThreadPutLock cnt[1000000]errcnt[5234015],ret[1024000000],cos[397]ms
-ThreadGetLock cnt[1000000]errcnt[166652],ret[1024000000],cos[397]ms
-ThreadPutLock cnt[1000000]errcnt[22377434],ret[1024000000],cos[1008]ms
-ThreadGetLock cnt[1000000]errcnt[34575],ret[1024000000],cos[1008]ms
+ThreadPutLock ,cos[245]ms ThreadGetLock cos[245]ms
+
+ThreadPutLock ,cos[397]ms ThreadGetLock cos[397]ms
+
+ThreadPutLock ,cos[1008]ms ThreadGetLock cos[1008]ms
+
 */
 
 C++版本实现性能说明
 // 性能说明 CFIFO C++无锁版本 ret[1024000000],cos[108-120]ms;性能与c 语言版本一致
+
 // 性能说明 CFIFOSafe(std::lock_guard mutex锁版本) ret[1024000000],cos[630-680]ms;std::lock_guard性能略差于c 语言版本pthread_mutex_lock(588-620)
+
 
 
 // 性能说明 ThreadPutLock ret[1024000000],cos[630-680]ms;std::lock_guard性能略差于c 语言版本pthread_mutex_lock(588-620)

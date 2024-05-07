@@ -13,19 +13,22 @@
 #include "zcfifo_safe.h"
 
 #include "Thread.hpp"
-#include "ZcFIFO.hpp"
+#include "ZcShmFIFO.hpp"
 #include "ZcType.hpp"
 
-#define TEST_FIFO_CXX 0  // cxx test
+#define TEST_FIFO_CXX 1  // cxx test
 
 #define FIFO_TEST_LOOPCNT 1000
 #define FIFO_TEST_BUFFLEN 1024
 #define FIFO_TEST_FIFOSIZE (1024 * 1024)
+#define FIFO_TEST_SHM_PATH "video"
+#define FIFO_TEST_SHM_CHN 1
 
 static zcfifo_safe_t *g_fifo = nullptr;
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
 static ZC_U8 g_buffer[FIFO_TEST_BUFFLEN] = {};
-static zc::CFIFOSafe *g_cxxfifo = nullptr;
+static zc::CShmFIFOR *g_cxxfifor = nullptr;
+static zc::CShmFIFOW *g_cxxfifow = nullptr;
 
 class ThreadPutLock : public zc::Thread {
  public:
@@ -43,10 +46,11 @@ class ThreadPutLock : public zc::Thread {
         unsigned int ret = 0;
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
-        for (unsigned i = 0; i < loopcnt;) {
+        unsigned int i = 0;
+        while (State() == Running /*&&  i < loopcnt*/) {
 #if TEST_FIFO_CXX  // cxx test
-            if (!g_cxxfifo->IsFull()) {
-                ret += g_cxxfifo->Put(buffer, sizeof(buffer));
+            if (1/*!g_cxxfifow->IsFull()*/) {
+                ret += g_cxxfifow->Put(buffer, sizeof(buffer));
 #else
             if (!zcfifo_safe_is_full(g_fifo)) {
                 ret += zcfifo_safe_put(g_fifo, buffer, sizeof(buffer));
@@ -86,10 +90,11 @@ class ThreadGetLock : public zc::Thread {
         int cmp = 0;
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
-        for (unsigned i = 0; i < loopcnt;) {
+        unsigned int i = 0;
+        while (State() == Running/* && i < loopcnt*/) {
 #if TEST_FIFO_CXX  // cxx test
-            if (!g_cxxfifo->IsEmpty()) {
-                ret = g_cxxfifo->Get(buffer, sizeof(buffer));
+            if (!g_cxxfifor->IsEmpty()) {
+                ret = g_cxxfifor->Get(buffer, sizeof(buffer));
 #else
             if (!zcfifo_safe_is_empty(g_fifo)) {
                 ret = zcfifo_safe_get(g_fifo, buffer, sizeof(buffer));
@@ -122,49 +127,68 @@ static ThreadGetLock *g_threadget = nullptr;
 static ThreadPutLock *g_threadput = nullptr;
 static zcfifo_safe_lock_t g_lock;
 
-static int _zc_test_fifo_start() {
+static int _zc_test_shmfifo_start(int type) {
     for (unsigned int i = 0; i < sizeof(g_buffer); i++) {
         g_buffer[i] = i % 255;
     }
 
 #if TEST_FIFO_CXX  // cxx test
-    g_cxxfifo = new zc::CFIFOSafe(FIFO_TEST_FIFOSIZE);
-    ZC_ASSERT(g_cxxfifo != nullptr);
+    if (type == 1) {
+        g_cxxfifow = new zc::CShmFIFOW(FIFO_TEST_FIFOSIZE, FIFO_TEST_SHM_PATH, FIFO_TEST_SHM_CHN);
+        ZC_ASSERT(g_cxxfifow != nullptr);
+        g_cxxfifow->ShmAlloc();
+    } else if (type == 0) {
+        g_cxxfifor = new zc::CShmFIFOR(FIFO_TEST_FIFOSIZE, FIFO_TEST_SHM_PATH, FIFO_TEST_SHM_CHN);
+        ZC_ASSERT(g_cxxfifor != nullptr);
+        g_cxxfifor->ShmAlloc();
+    } else {
+        g_cxxfifow = new zc::CShmFIFOW(FIFO_TEST_FIFOSIZE, FIFO_TEST_SHM_PATH, FIFO_TEST_SHM_CHN);
+        ZC_ASSERT(g_cxxfifow != nullptr);
+        g_cxxfifow->ShmAlloc();
+        g_cxxfifor = new zc::CShmFIFOR(FIFO_TEST_FIFOSIZE, FIFO_TEST_SHM_PATH, FIFO_TEST_SHM_CHN);
+        ZC_ASSERT(g_cxxfifor != nullptr);
+        g_cxxfifor->ShmAlloc();
+    }
 #else
     ZCFIFO_LOCK_INIT(&g_lock);
     // pthread_spin_init(&g_lock, PTHREAD_PROCESS_PRIVATE);
     g_fifo = zcfifo_safe_alloc(FIFO_TEST_FIFOSIZE, &g_lock);
     ZC_ASSERT(g_fifo != NULL);
 #endif
+    if (g_cxxfifow) {
+        g_threadput = new ThreadPutLock("fifoput");
+        ZC_ASSERT(g_threadput != nullptr);
+        g_threadput->Start();
+    }
 
-    g_threadput = new ThreadPutLock("fifoput");
-    g_threadget = new ThreadGetLock("fifoget");
-    ZC_ASSERT(g_threadput != nullptr);
-    ZC_ASSERT(g_threadget != nullptr);
-    g_threadput->Start();
-    g_threadget->Start();
+    if (g_cxxfifor) {
+        g_threadget = new ThreadGetLock("fifoget");
+        ZC_ASSERT(g_threadget != nullptr);
+        g_threadget->Start();
+    }
 
     return 0;
 }
 
 // start
-int zc_test_fifo_lock_start(int cnt) {
+int zc_test_shmfifo_start(int type, int cnt) {
     if (cnt != 0) {
         g_loopcnt = cnt;
     }
-    LOG_INFO("test_mod fifo start[%d] into\n", g_loopcnt);
-    _zc_test_fifo_start();
-    LOG_INFO("test_mod fifo start[%d] end\n", g_loopcnt);
+    LOG_INFO("test_mod fifo start type[%d] [%d] into\n", type, g_loopcnt);
+    _zc_test_shmfifo_start(type);
+    LOG_INFO("test_mod fifo start type[%d] [%d] end\n", type, g_loopcnt);
 
     return 0;
 }
 
-int zc_test_fifo_lock_stop(int cnt) {
+int zc_test_shmfifo_stop(int cnt) {
     ZC_SAFE_DELETE(g_threadput);
     ZC_SAFE_DELETE(g_threadget);
 
 #if TEST_FIFO_CXX  // cxx test
-    ZC_SAFE_DELETE(g_cxxfifo);
+    ZC_SAFE_DELETE(g_cxxfifor);
+    ZC_SAFE_DELETE(g_cxxfifow);
 #else
     if (g_fifo) {
         zcfifo_safe_free(g_fifo);

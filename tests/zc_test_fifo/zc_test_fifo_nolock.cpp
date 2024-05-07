@@ -155,6 +155,9 @@ int zc_test_fifo_nolock_start(int cnt) {
 }
 
 int zc_test_fifo_nolock_stop(int cnt) {
+    ZC_SAFE_DELETE(g_threadput);
+    ZC_SAFE_DELETE(g_threadget);
+
 #if TEST_FIFO_CXX  // cxx test
     ZC_SAFE_DELETE(g_cxxfifo);
 #else
@@ -163,9 +166,6 @@ int zc_test_fifo_nolock_stop(int cnt) {
         g_fifo = nullptr;
     }
 #endif
-
-    ZC_SAFE_DELETE(g_threadput);
-    ZC_SAFE_DELETE(g_threadget);
     return 0;
 }
 /*

@@ -15,7 +15,8 @@ class Thread {
     enum State_e {
         Stoped,   // stoped or ide
         Running,  // running
-        Paused    // Paused
+        Paused,   // Paused
+        Stoping,  // stoping
     };
 
     State_e State() const;
@@ -29,7 +30,6 @@ class Thread {
 
  private:
     void _run();
-
  private:
     std::string m_name;
     std::thread *_thread;
