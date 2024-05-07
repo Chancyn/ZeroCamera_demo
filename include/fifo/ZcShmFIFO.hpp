@@ -3,7 +3,7 @@
 // copy from linux kernel(2.6.32) zcfifo.move to userspace, lockfree fifo,
 // no locking version just use 1 producer 1 consumer
 
-// copy from linux kernel(2.6.32) zcfifo.move to userspace, lockfree fifo
+// shm fifo
 
 #pragma once
 #include <pthread.h>

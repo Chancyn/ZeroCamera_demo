@@ -66,15 +66,16 @@ int main(int argc, char **argv) {
     //     zc_test_fifo_lock_start(nodetype);
     // }
 
+    zc_test_utilsxx_epoll_start();
     // shm fifo test
-    zc_test_shmfifo_start(fifotype, nodetype);
+    //zc_test_shmfifo_start(fifotype, nodetype);
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep exit");
     }
     LOG_ERROR("app loop exit");
-
-    zc_test_shmfifo_stop(nodetype);
+    zc_test_utilsxx_epoll_stop();
+    // zc_test_shmfifo_stop(nodetype);
     // if (fifotype == 0) {
     //     zc_test_fifo_nolock_stop(nodetype);
     // } else {

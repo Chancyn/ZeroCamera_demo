@@ -9,12 +9,13 @@
 #include <memory>
 #include <string>
 
-#include "zc_log.h"
 #include "Timer.hpp"
+#include "zc_log.h"
 
-#include "zc_test_thread/zc_test_thread.hpp"
 #include "zc_test_observer/zc_test_observer.hpp"
 #include "zc_test_singleton/zc_test_singleton.hpp"
+#include "zc_test_thread/zc_test_thread.hpp"
+#include "zc_test_epoll/zc_test_epoll.hpp"
 #include "zc_test_timer/zc_test_timer.hpp"
 #include "zc_test_utilsxx.hpp"
 
@@ -27,4 +28,12 @@ int zc_test_utilsxx() {
     LOG_INFO("test_utilsxx exit\n");
 
     return 0;
+}
+
+int zc_test_utilsxx_epoll_start() {
+    return zc_test_epoll_start();
+}
+
+int zc_test_utilsxx_epoll_stop() {
+    return zc_test_epoll_stop();
 }

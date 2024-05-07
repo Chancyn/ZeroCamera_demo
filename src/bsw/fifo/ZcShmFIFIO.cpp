@@ -1,6 +1,6 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
-// copy from linux kernel(2.6.32) zcfifo.move to userspace, lockfree fifo
+// shm fifo
 
 #include <cerrno>
 #include <cstddef>
@@ -186,7 +186,7 @@ void CShmFIFO::ShmFree() {
  * writer, you don't need extra locking to use these functions.
  */
 unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
-    ZC_ASSERT(m_pfifo.fifo!=nullptr);
+    ZC_ASSERT(m_pfifo.fifo != nullptr);
     unsigned int l;
 
     // len = min(len, m_pfifo.fifo->size - m_pfifo.fifo->in + m_pfifo.fifo->out);
@@ -233,7 +233,7 @@ unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
  * writer, you don't need extra locking to use these functions.
  */
 unsigned int CShmFIFO::get(unsigned char *buffer, unsigned int len) {
-    ZC_ASSERT(m_pfifo.fifo!=nullptr);
+    ZC_ASSERT(m_pfifo.fifo != nullptr);
     unsigned int l;
 
     len = min(len, m_pfifo.fifo->in - m_pfifo.fifo->out);
@@ -271,23 +271,23 @@ unsigned int CShmFIFO::get(unsigned char *buffer, unsigned int len) {
 
 // unsafe be careful use
 void CShmFIFO::Reset() {
-    ZC_ASSERT(m_pfifo.fifo!=nullptr);
+    ZC_ASSERT(m_pfifo.fifo != nullptr);
     m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
     return;
 }
 
 unsigned int CShmFIFO::Len() {
-    ZC_ASSERT(m_pfifo.fifo!=nullptr);
+    ZC_ASSERT(m_pfifo.fifo != nullptr);
     return m_pfifo.fifo->in - m_pfifo.fifo->out;
 }
 
 bool CShmFIFO::IsEmpty() {
-    ZC_ASSERT(m_pfifo.fifo!=nullptr);
+    ZC_ASSERT(m_pfifo.fifo != nullptr);
     return (m_pfifo.fifo->in == m_pfifo.fifo->out);
 }
 
 bool CShmFIFO::IsFull() {
-    ZC_ASSERT(m_pfifo.fifo!=nullptr);
+    ZC_ASSERT(m_pfifo.fifo != nullptr);
     return ((m_pfifo.fifo->in - m_pfifo.fifo->out) >= m_pfifo.fifo->size);
 }
 }  // namespace zc

@@ -29,6 +29,7 @@ zc_test_observer
 zc_test_singleton
 zc_test_thread
 zc_test_timer
+zc_test_epoll
 plat_basic
 bsw_basic
 utilsxx
@@ -40,6 +41,7 @@ add_subdirectory(zc_test_observer)
 add_subdirectory(zc_test_singleton)
 add_subdirectory(zc_test_thread)
 add_subdirectory(zc_test_timer)
+add_subdirectory(zc_test_epoll)
 #add_subdirectory(zc_test_utilsxx_main)
 
 install(TARGETS zc_test_utilsxx DESTINATION ${ZC_LIB_INSTALL})

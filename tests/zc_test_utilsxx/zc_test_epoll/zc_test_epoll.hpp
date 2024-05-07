@@ -3,6 +3,5 @@
 
 #pragma once
 
-int zc_test_utilsxx();
-int zc_test_utilsxx_epoll_start();
-int zc_test_utilsxx_epoll_stop();
+int zc_test_epoll_start();
+int zc_test_epoll_stop();
