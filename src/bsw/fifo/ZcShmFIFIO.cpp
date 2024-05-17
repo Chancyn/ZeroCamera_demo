@@ -81,6 +81,7 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
     m_pfifo.shmid = 0;
     m_pfifo.fifo = nullptr;
     char szpath[64] = {"/tmp/shmfifo_video"};
+    // /dev/shm/shmfifo
     snprintf(szpath, sizeof(szpath) - 1, "/tmp/shmfifo_%.8s", name);
     if (access(szpath, F_OK) != 0) {
         LOG_ERROR("[%s] filenotexist, touch", szpath);

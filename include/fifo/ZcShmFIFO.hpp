@@ -57,6 +57,7 @@ class CShmFIFO : public NonCopyable {
  private:
     zcshmfifo_t m_pfifo;
     pthread_mutex_t m_lock;
+    // std::mutex m_mutex;
     unsigned int m_size;
     int m_shmkey;
     bool m_bwrite;  // read/write flag
@@ -77,55 +78,4 @@ class CShmFIFOR : public CShmFIFO {
 
     unsigned int Get(unsigned char *buffer, unsigned int len) { return get(buffer, len); }
 };
-#if 0
-// mutex SAFE
-// 性能说明 ThreadPutLock ret[1024000000],cos[630-680]ms;std::lock_guard性能略差于c 语言版本pthread_mutex_lock(588-620)
-class CFIFOSafe : public CShmFIFO {
- public:
-    explicit CFIFOSafe(unsigned int size) : CShmFIFO(size) {}
-    virtual ~CFIFOSafe() {}
-
-    virtual unsigned int Put(const unsigned char *buffer, unsigned int len) {
-        std::lock_guard<std::mutex> locker(m_mutex);
-        return CShmFIFO::Put(buffer, len);
-    }
-
-    virtual unsigned int Get(unsigned char *buffer, unsigned int len) {
-        std::lock_guard<std::mutex> locker(m_mutex);
-        return CShmFIFO::Get(buffer, len);
-    }
-
-    virtual unsigned int Len() {
-        std::lock_guard<std::mutex> locker(m_mutex);
-        return CShmFIFO::Len();
-    }
-
-    // - returns true if the fifo is empty
-    virtual bool IsEmpty() {
-        std::lock_guard<std::mutex> locker(m_mutex);
-        return CShmFIFO::IsEmpty();
-    }
-    // - returns true if the fifo is full
-    virtual bool IsFull() {
-        std::lock_guard<std::mutex> locker(m_mutex);
-        return CShmFIFO::IsFull();
-    }
-
-    virtual void Reset() {
-        std::lock_guard<std::mutex> locker(m_mutex);
-        return CShmFIFO::Reset();
-    }
-
-    // lockfree interface
-    unsigned int Putlockfree(const unsigned char *buffer, unsigned int len) { return CShmFIFO::Put(buffer, len); }
-    unsigned int Getlockfree(unsigned char *buffer, unsigned int len) { return CShmFIFO::Get(buffer, len); }
-    void Resetlockfree() { return CShmFIFO::Reset(); }
-    unsigned int Lenlockfree() { return CShmFIFO::Len(); }
-    bool IsEmptylockfree() { return CShmFIFO::IsEmpty(); }
-    bool IsFulllockfree() { return CShmFIFO::IsFull(); }
-
- private:
-    std::mutex m_mutex;
-};
-#endif
 }  // namespace zc

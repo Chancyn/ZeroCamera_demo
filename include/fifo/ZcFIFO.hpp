@@ -7,6 +7,8 @@
 
 #pragma once
 #include "NonCopyable.hpp"
+#include "Semaphore.hpp"
+#include "zc_log.h"
 #include <mutex>
 
 namespace zc {
@@ -25,6 +27,7 @@ class CFIFO : public NonCopyable {
 
     virtual unsigned int Put(const unsigned char *buffer, unsigned int len);
     virtual unsigned int Get(unsigned char *buffer, unsigned int len);
+    virtual unsigned int GetBlock(unsigned char *buffer, unsigned int len, int msec) { return Get(buffer, len); }
     // nolcok version unsafe be careful use, stop read/write and reset it
     virtual void Reset();
     virtual unsigned int Len();
@@ -45,19 +48,36 @@ class CFIFO : public NonCopyable {
 // 性能说明 ThreadPutLock ret[1024000000],cos[630-680]ms;std::lock_guard性能略差于c 语言版本pthread_mutex_lock(588-620)
 class CFIFOSafe : public CFIFO {
  public:
-    explicit CFIFOSafe(unsigned int size) : CFIFO(size) {}
+    explicit CFIFOSafe(unsigned int size) : CFIFO(size), m_semput(new CUnSem()) { m_semput->Init(); }
     virtual ~CFIFOSafe() {}
 
     virtual unsigned int Put(const unsigned char *buffer, unsigned int len) {
+        unsigned int ret = 0;
         std::lock_guard<std::mutex> locker(m_mutex);
-        return CFIFO::Put(buffer, len);
+        ret = CFIFO::Put(buffer, len);
+        m_semput->Post();
+        return ret;
     }
 
     virtual unsigned int Get(unsigned char *buffer, unsigned int len) {
         std::lock_guard<std::mutex> locker(m_mutex);
+
         return CFIFO::Get(buffer, len);
     }
 
+    virtual unsigned int GetBlock(unsigned char *buffer, unsigned int len, int msec) {
+        unsigned int ret = 0;
+        std::lock_guard<std::mutex> locker(m_mutex);
+        if (m_semput->Wait(msec)) {
+            if (!CFIFO::IsEmpty()) {
+                ret = CFIFO::Get(buffer, len);
+            } else {
+                LOG_WARN("zhoucc empty");
+            }
+        }
+
+        return ret;
+    }
     virtual unsigned int Len() {
         std::lock_guard<std::mutex> locker(m_mutex);
         return CFIFO::Len();
@@ -89,5 +109,6 @@ class CFIFOSafe : public CFIFO {
 
  private:
     std::mutex m_mutex;
+    CUnSem *m_semput;
 };
 }  // namespace zc

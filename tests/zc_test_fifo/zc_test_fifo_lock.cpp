@@ -16,7 +16,7 @@
 #include "ZcFIFO.hpp"
 #include "ZcType.hpp"
 
-#define TEST_FIFO_CXX 0  // cxx test
+#define TEST_FIFO_CXX 1  // cxx test
 
 #define FIFO_TEST_LOOPCNT 1000
 #define FIFO_TEST_BUFFLEN 1024
@@ -88,35 +88,47 @@ class ThreadGetLock : public zc::Thread {
         unsigned int loopcnt = g_loopcnt;
         for (unsigned i = 0; i < loopcnt;) {
 #if TEST_FIFO_CXX  // cxx test
+#if 0
             if (!g_cxxfifo->IsEmpty()) {
                 ret = g_cxxfifo->Get(buffer, sizeof(buffer));
+#else
+            if (1/*!g_cxxfifo->IsEmpty()*/) {
+                ret = g_cxxfifo->GetBlock(buffer, sizeof(buffer), 100);
+                if (ret == 0) {
+                    errcnt++;
+                    // LOG_WARN("fifo empty, i[%u], errcnt[%u]", i, errcnt);
+                    continue;
+                }
+
+#endif
 #else
             if (!zcfifo_safe_is_empty(g_fifo)) {
                 ret = zcfifo_safe_get(g_fifo, buffer, sizeof(buffer));
 #endif
-                retcnt += ret;
-                cmp = memcmp(g_buffer, buffer, sizeof(g_buffer));
-                if (cmp != 0) {
-                    LOG_ERROR("ThreadGetLock data different cmp[%d], ret[%u],%u", cmp, ret, retcnt);
-                }
-                ZC_ASSERT(cmp == 0);
-                i++;
-            } else {
-                errcnt++;
-                // usleep(5*1000);
-                // LOG_WARN("fifo empty, i[%u], errcnt[%u]", i, errcnt);
+            retcnt += ret;
+            cmp = memcmp(g_buffer, buffer, sizeof(g_buffer));
+            if (cmp != 0) {
+                LOG_ERROR("ThreadGetLock data different cmp[%d], ret[%u],%u", cmp, ret, retcnt);
             }
+            ZC_ASSERT(cmp == 0);
+            i++;
         }
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        endts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-        LOG_INFO("ThreadGetLock cnt[%u]errcnt[%u],ret[%u],cos[%llu]ms", loopcnt, errcnt, retcnt, endts - startts);
-        return -1;
+        else {
+            errcnt++;
+            // usleep(5*1000);
+            // LOG_WARN("fifo empty, i[%u], errcnt[%u]", i, errcnt);
+        }
     }
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    endts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    LOG_INFO("ThreadGetLock cnt[%u]errcnt[%u],ret[%u],cos[%llu]ms", loopcnt, errcnt, retcnt, endts - startts);
+    return -1;
+}
 
- private:
-    std::string m_name;
-    unsigned int m_process_cnt;
-};
+private : std::string m_name;
+unsigned int m_process_cnt;
+}
+;
 
 static ThreadGetLock *g_threadget = nullptr;
 static ThreadPutLock *g_threadput = nullptr;

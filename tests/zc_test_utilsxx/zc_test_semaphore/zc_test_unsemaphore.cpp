@@ -3,7 +3,7 @@
 
 // 测试信号量
 
-#include <cstddef>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>

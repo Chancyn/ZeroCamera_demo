@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     // if (fifotype == 0) {
     //     zc_test_fifo_nolock_start(nodetype);
     // } else {
-    //     zc_test_fifo_lock_start(nodetype);
+         zc_test_fifo_lock_start(nodetype);
     // }
 
     // zc_test_utilsxx_epoll_start();
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     // zc_test_shmfifo_start(fifotype, nodetype);
 
     // zc_test_utilsxx_semaphore();
-    zc_test_utilsxx_unsemaphore();
+    // zc_test_utilsxx_unsemaphore();
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep exit");
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     // if (fifotype == 0) {
     //     zc_test_fifo_nolock_stop(nodetype);
     // } else {
-    //     zc_test_fifo_lock_stop(nodetype);
+         zc_test_fifo_lock_stop(nodetype);
     // }
 
     // zc_test_mod_stop(nodetype);
