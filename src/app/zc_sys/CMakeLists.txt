@@ -10,22 +10,29 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-add_executable(zc_test ${DIR_SOURCE_SRCS})
+add_executable(zc_sys ${DIR_SOURCE_SRCS})
 
-target_include_directories(zc_test PRIVATE
+target_include_directories(zc_sys PRIVATE
+# ${NNG_INC}
 ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
+${MSGCOMM_INC}
 )
 
-# target_link_directories(zc_test PRIVATE
-# ${SPDLOG_LIBPATH}
+# target_link_directories(zc_sys PRIVATE
+# # ${NNG_LIBPATH}
 # )
 
-target_link_libraries(zc_test PUBLIC
+target_link_libraries(zc_sys PRIVATE
+mod_sys
+mod_base
+msgcomm
 plat_basic
 bsw_basic
 zc_log
+msgcomm
+# nng
+pthread
 )
 
-#install(TARGETS zc_test RUNTIME DESTINATION ${ZC_BIN_INSTALL})
-install(TARGETS zc_test DESTINATION ${ZC_BIN_INSTALL})
+install(TARGETS zc_sys RUNTIME DESTINATION ${ZC_BIN_INSTALL})

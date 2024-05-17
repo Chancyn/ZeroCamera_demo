@@ -6,12 +6,11 @@
 #include <unistd.h>
 
 #include "zc_log.h"
-#include "zc_app_add.h"
-#include "zc_bsw_add.h"
-#include "zc_plat_add.h"
+
+#include "ZcCodecServer.hpp"
 
 #define ZC_LOG_PATH "./log"
-#define ZC_LOG_APP_NAME "zc_app.log"
+#define ZC_LOG_APP_NAME "zc_codec.log"
 
 #ifndef BOOL
 #define BOOL int
@@ -39,14 +38,6 @@ int main(int argc, char **argv) {
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
     LOG_DEBUG("app into");
-    int a = zc_app_add(10, 20);
-    LOG_WARN("app add a=%d", a);
-    int b = zc_app_dec(a, 5);
-    LOG_WARN("app dec a=%d", b);
-    b = zc_bsw_add(a, 5);
-    LOG_INFO("app bsw dec a=%d", b);
-    b = zc_plat_dec(a, 1);
-    LOG_WARN("app plat dec a=%d", b);
 
     while (!bExitFlag) {
         sleep(1);

@@ -10,7 +10,7 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-add_subdirectory(zc_man)
-add_subdirectory(zc_app)
-#add_subdirectory(zc_test)
+add_subdirectory(zc_sys)
+add_subdirectory(zc_codec)
+add_subdirectory(zc_rtsp)
 

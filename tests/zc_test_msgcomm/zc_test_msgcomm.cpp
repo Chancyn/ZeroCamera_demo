@@ -15,9 +15,6 @@
 #include "zc_log.h"
 #include "zc_test_msgcomm.hpp"
 
-#define ZC_LOG_PATH "./log"
-#define ZC_LOG_APP_NAME "zc_man.log"
-
 #define NODE0_URL "tcp://127.0.0.1:5555"
 #define NODE1_URL "tcp://127.0.0.1:5555"
 #define DATE "DATE"

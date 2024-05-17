@@ -82,7 +82,7 @@ int zc_log_init(const char *szName) {
                          "./app.log"};
     if (!g_binit) {
         g_ZCLogInstance.Init(conf);
-        zc_log_test();
+        // zc_log_test();
         g_binit = true;
     }
 
