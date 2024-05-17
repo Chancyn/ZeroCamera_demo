@@ -15,9 +15,9 @@ class CEpoll {
     ~CEpoll();
     bool Create();
     void Destroy();
-    bool Add(int fd, epoll_event *event);
-    bool Mod(int fd, epoll_event *event);
-    bool Del(int fd, epoll_event *event);
+    bool Add(int fd, unsigned int event);
+    bool Mod(int fd, unsigned int event);
+    bool Del(int fd);
     int Wait();
     const epoll_event *Events() const;
     // overload [] operator

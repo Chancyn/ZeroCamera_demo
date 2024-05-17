@@ -92,7 +92,7 @@ class ThreadGetLock : public zc::Thread {
             if (!g_cxxfifo->IsEmpty()) {
                 ret = g_cxxfifo->Get(buffer, sizeof(buffer));
 #else
-            if (1/*!g_cxxfifo->IsEmpty()*/) {
+            if (1 /*!g_cxxfifo->IsEmpty()*/) {
                 ret = g_cxxfifo->GetBlock(buffer, sizeof(buffer), 100);
                 if (ret == 0) {
                     errcnt++;
@@ -112,8 +112,7 @@ class ThreadGetLock : public zc::Thread {
             }
             ZC_ASSERT(cmp == 0);
             i++;
-        }
-        else {
+        } else {
             errcnt++;
             // usleep(5*1000);
             // LOG_WARN("fifo empty, i[%u], errcnt[%u]", i, errcnt);

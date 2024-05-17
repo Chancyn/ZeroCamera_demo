@@ -11,6 +11,7 @@
 #include <mutex>
 
 #include "NonCopyable.hpp"
+#include "zc_log.h"
 
 namespace zc {
 // fifo buf
@@ -24,8 +25,8 @@ typedef struct _zcshmbuf_ {
 //
 typedef struct _zcshmfifo_ {
     zcshmbuf_t *fifo;
-    int shmid;   // shmid
-    int evfifo;  // for evevnt
+    int shmid;  // shmid
+    int evfd;   // for evevnt
     unsigned int out;
 } zcshmfifo_t;
 // 性能说明 ThreadPutLock ret[1024000000],cos[108-120]ms;性能与c 语言版本一致
@@ -48,11 +49,28 @@ class CShmFIFO : public NonCopyable {
     bool IsEmpty();
     // - returns true if the fifo is full
     bool IsFull();
+    int GetEvFd() {
+        if (!m_pfifo.fifo) {
+            return -1;
+        }
+        return m_pfifo.evfd;
+    }
+
+    int CloseEvFd() {
+        if (m_pfifo.evfd > 0) {
+            LOG_WARN("close evfd[%d]", m_pfifo.evfd);
+            close(m_pfifo.evfd);
+            m_pfifo.evfd = -1;
+        }
+        return 0;
+    }
 
  private:
     bool _shmalloc(unsigned int size, int shmkey, bool bwrite);
     void _shmfree();
     int _getkey(const char *name, unsigned char chn);
+    unsigned int _put(const unsigned char *buffer, unsigned int len);
+    unsigned int _get(unsigned char *buffer, unsigned int len);
 
  private:
     zcshmfifo_t m_pfifo;
@@ -61,6 +79,8 @@ class CShmFIFO : public NonCopyable {
     unsigned int m_size;
     int m_shmkey;
     bool m_bwrite;  // read/write flag
+    char m_szfifoname[128];
+    char m_szevname[128];
 };
 
 class CShmFIFOW : public CShmFIFO {

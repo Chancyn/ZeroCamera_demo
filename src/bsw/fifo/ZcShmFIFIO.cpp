@@ -2,15 +2,18 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 // shm fifo
 
-#include <cerrno>
-#include <cstddef>
-#include <cstdio>
+#include <asm-generic/errno-base.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "ZcShmFIFO.hpp"
@@ -35,6 +38,9 @@
 #endif
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
+
+#define ZC_FILE_MODE (0644)    // (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#define ZC_EVFIFO_SIZE (2048)  // evfifo
 
 // 一个数向上取整到最接近的2的幂
 static inline unsigned int roundup_pow_of_two(unsigned int n) {
@@ -80,18 +86,19 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
     m_pfifo.out = 0;
     m_pfifo.shmid = 0;
     m_pfifo.fifo = nullptr;
-    char szpath[64] = {"/tmp/shmfifo_video"};
     // /dev/shm/shmfifo
-    snprintf(szpath, sizeof(szpath) - 1, "/tmp/shmfifo_%.8s", name);
-    if (access(szpath, F_OK) != 0) {
-        LOG_ERROR("[%s] filenotexist, touch", szpath);
+    snprintf(m_szfifoname, sizeof(m_szfifoname) - 1, "/tmp/shmfifo_%.8s", name);
+    if (access(m_szfifoname, F_OK) != 0) {
+        LOG_ERROR("[%s] filenotexist, touch", m_szfifoname);
         char cmd[256];
-        snprintf(cmd, sizeof(cmd) - 1, "touch %s", szpath);
+        snprintf(cmd, sizeof(cmd) - 1, "touch %s", m_szfifoname);
         system(cmd);
     }
-
-    m_shmkey = _getkey(szpath, chn);
+    m_shmkey = _getkey(m_szfifoname, chn);
     m_bwrite = bwrite;
+
+    // ev mkfifo
+    snprintf(m_szevname, sizeof(m_szevname) - 1, "/tmp/evfifo_%.8s", name);
 }
 
 int CShmFIFO::_getkey(const char *name, unsigned char chn) {
@@ -114,15 +121,17 @@ bool CShmFIFO::ShmAlloc() {
 
 bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
     int shmid = 0;
+    int evfd = 0;
     void *p = nullptr;
 
     unsigned int shmsize = sizeof(zcshmbuf_t) + m_size;
     shmid = shmget(shmkey, 0, 0);
     if (shmid == -1) {
-        if (!bwrite) {
-            LOG_ERROR("err read shmget error,shmkey[%d], errno[%d]", shmkey, errno);
-            goto _err;
-        }
+
+        // if (!bwrite) {
+        //     LOG_ERROR("err read shmget error,shmkey[%d], errno[%d]", shmkey, errno);
+        //     goto _err;
+        // }
         shmid = shmget(shmkey, shmsize, IPC_CREAT | 0644);
         if (shmid == -1) {
             LOG_ERROR("err shmget ");
@@ -131,20 +140,44 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
     }
 
     p = shmat(shmid, NULL, 0);
-    if (p == reinterpret_cast<void *>(01)) {
+    if (p == reinterpret_cast<void *>(-1)) {
         p = nullptr;
         LOG_ERROR("err shmat .");
         goto _err_ctl;
+    }
+
+    if (mkfifo(m_szevname, ZC_FILE_MODE) != 0 && errno != EEXIST) {
+        LOG_ERROR("ev mkfifo error[%s] errno[%d]", m_szevname, errno);
+        ZC_ASSERT(0);
+    }
+
+    if (m_bwrite) {
+        // open nonblcok
+        // evfd = open(m_szevname, O_WRONLY | O_NONBLOCK, 0);
+        evfd = open(m_szevname, O_WRONLY, 0);
+    } else {
+        // evfd = open(m_szevname, O_RDONLY | O_NONBLOCK, 0);
+        evfd = open(m_szevname, O_RDONLY, 0);
+    }
+
+    if (evfd < 0) {
+        LOG_ERROR("ev open error[%s] [%d]", m_szevname, errno);
+        ZC_ASSERT(0);
+        goto _err_open;
     }
     m_pfifo.out = 0;
     m_pfifo.shmid = shmid;
     m_pfifo.fifo = reinterpret_cast<zcshmbuf_t *>(p);
     m_pfifo.fifo->size = m_size;
     m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
-
+    m_pfifo.evfd = evfd;
     LOG_ERROR("shmalloc ok shmid[%d],shmkey[%d]", shmid, shmkey);
     return true;
-
+_err_open:
+    if (m_bwrite) {
+        unlink(m_szevname);
+    }
+    shmdt(reinterpret_cast<zcshmbuf_t *>(p));
 _err_ctl:
     shmctl(shmid, IPC_RMID, NULL);
 _err:
@@ -159,6 +192,13 @@ _err:
 void CShmFIFO::_shmfree() {
     if (m_pfifo.fifo) {
         LOG_TRACE("_shmfree shmdt shmid[%d]", m_pfifo.shmid);
+        if (m_pfifo.evfd > 0) {
+            close(m_pfifo.evfd);
+            m_pfifo.evfd = 0;
+            if (m_bwrite) {
+                unlink(m_szevname);
+            }
+        }
         shmdt(m_pfifo.fifo);
         m_pfifo.fifo = nullptr;
         if (m_bwrite) {
@@ -186,7 +226,7 @@ void CShmFIFO::ShmFree() {
  * Note that with only one concurrent reader and one concurrent
  * writer, you don't need extra locking to use these functions.
  */
-unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
+unsigned int CShmFIFO::_put(const unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     unsigned int l;
 
@@ -233,7 +273,7 @@ unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
  * Note that with only one concurrent reader and one concurrent
  * writer, you don't need extra locking to use these functions.
  */
-unsigned int CShmFIFO::get(unsigned char *buffer, unsigned int len) {
+unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     unsigned int l;
 
@@ -269,6 +309,22 @@ unsigned int CShmFIFO::get(unsigned char *buffer, unsigned int len) {
 
     return len;
 }
+unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
+    unsigned int ret = 0;
+    ret = _put(buffer, len);
+
+    // write evfd
+    if (ret && m_pfifo.evfd > 0 && write(m_pfifo.evfd, "w", 1) < 0) {
+        // char buf[ZC_EVFIFO_SIZE];
+        // LOG_ERROR("warn write evfifo error, read clear");
+        // read(m_pfifo.evfd, buf, sizeof(buf));
+    }
+    return ret;
+}
+
+unsigned int CShmFIFO::get(unsigned char *buffer, unsigned int len) {
+    return _get(buffer, len);
+}
 
 // unsafe be careful use
 void CShmFIFO::Reset() {
@@ -291,4 +347,5 @@ bool CShmFIFO::IsFull() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     return ((m_pfifo.fifo->in - m_pfifo.fifo->out) >= m_pfifo.fifo->size);
 }
+
 }  // namespace zc

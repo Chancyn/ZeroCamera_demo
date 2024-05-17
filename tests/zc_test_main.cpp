@@ -11,7 +11,7 @@
 #include "zc_test_fifo_lock.hpp"
 #include "zc_test_fifo_nolock.hpp"
 #include "zc_test_shmfifo.hpp"
-
+#include "zc_test_shmfifoev.hpp"
 #include "zc_test_mod.hpp"
 #include "zc_test_msgcomm.hpp"
 #include "zc_test_utilsxx.hpp"
@@ -63,12 +63,12 @@ int main(int argc, char **argv) {
     // if (fifotype == 0) {
     //     zc_test_fifo_nolock_start(nodetype);
     // } else {
-         zc_test_fifo_lock_start(nodetype);
+    //     zc_test_fifo_lock_start(nodetype);
     // }
 
     // zc_test_utilsxx_epoll_start();
     // shm fifo test
-    // zc_test_shmfifo_start(fifotype, nodetype);
+     zc_test_shmfifoev_start(fifotype, nodetype);
 
     // zc_test_utilsxx_semaphore();
     // zc_test_utilsxx_unsemaphore();
@@ -78,11 +78,11 @@ int main(int argc, char **argv) {
     }
     LOG_ERROR("app loop exit");
     // zc_test_utilsxx_epoll_stop();
-    // zc_test_shmfifo_stop(nodetype);
+     zc_test_shmfifoev_stop(nodetype);
     // if (fifotype == 0) {
     //     zc_test_fifo_nolock_stop(nodetype);
     // } else {
-         zc_test_fifo_lock_stop(nodetype);
+    //     zc_test_fifo_lock_stop(nodetype);
     // }
 
     // zc_test_mod_stop(nodetype);

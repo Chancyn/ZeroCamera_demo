@@ -41,33 +41,42 @@ bool CEpoll::Create() {
     return true;
 }
 
-bool CEpoll::Add(int fd, epoll_event *event) {
+bool CEpoll::Add(int fd, unsigned int event) {
     if (m_epfd > 0) {
-        if (epoll_ctl(m_epfd, EPOLL_CTL_ADD, fd, event) != 0) {
+        epoll_event ev;
+        ev.data.fd = fd;
+        ev.events = event;
+        if (epoll_ctl(m_epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
             LOG_ERROR("epoll_ctl ADD error m_epfd[%d], fd[%d] errno[%d]", m_epfd, fd, errno);
             return false;
         }
+
+        LOG_TRACE("Add m_epfd[%d], fd[%d], event[0x%x]", m_epfd, fd, event);
         return true;
     }
 
     return false;
 }
 
-bool CEpoll::Mod(int fd, epoll_event *event) {
+bool CEpoll::Mod(int fd, unsigned int event) {
     if (m_epfd > 0) {
-        if (epoll_ctl(m_epfd, EPOLL_CTL_MOD, fd, event) != 0) {
+        epoll_event ev;
+        ev.data.fd = fd;
+        ev.events = event;
+        if (epoll_ctl(m_epfd, EPOLL_CTL_MOD, fd, &ev) != 0) {
             LOG_ERROR("epoll_ctl MOD error m_epfd[%d], fd[%d] errno[%d]", m_epfd, fd, errno);
             return false;
         }
+        LOG_TRACE("Mod m_epfd[%d], fd[%d], event[0x%x]", m_epfd, fd, event);
         return true;
     }
 
     return false;
 }
 
-bool CEpoll::Del(int fd, epoll_event *event) {
+bool CEpoll::Del(int fd) {
     if (m_epfd > 0) {
-        if (epoll_ctl(m_epfd, EPOLL_CTL_DEL, fd, event) != 0) {
+        if (epoll_ctl(m_epfd, EPOLL_CTL_DEL, fd, NULL) != 0) {
             LOG_ERROR("epoll_ctl DEL error m_epfd[%d], fd[%d] errno[%d]", m_epfd, fd, errno);
             return false;
         }
