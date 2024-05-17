@@ -108,9 +108,9 @@ class ThreadGetLockev : public zc::Thread {
             } else if (ret > 0) {
                 for (int i = 0; i < ret; i++) {
                     if (ep[i].data.fd == g_cxxfifor->GetEvFd()) {
-                        LOG_TRACE("epoll wait ok ret[%d], fd[%d]", ret, ep[i].data.fd);
+                        // LOG_TRACE("epoll wait ok ret[%d], fd[%d]", ret, ep[i].data.fd);
                         if (read(g_cxxfifor->GetEvFd(), buf, sizeof(buf)) <= 0) {
-                            LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, ep[i].data.fd);
+                            // LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, ep[i].data.fd);
                             g_cxxfifor->CloseEvFd();
                             return -1;
                         }

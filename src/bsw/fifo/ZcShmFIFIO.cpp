@@ -154,10 +154,10 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
     if (m_bwrite) {
         // open nonblcok
         // evfd = open(m_szevname, O_WRONLY | O_NONBLOCK, 0);
-        evfd = open(m_szevname, O_WRONLY, 0);
+        evfd = open(m_szevname, O_WRONLY | O_NONBLOCK, 0);
     } else {
         // evfd = open(m_szevname, O_RDONLY | O_NONBLOCK, 0);
-        evfd = open(m_szevname, O_RDONLY, 0);
+        evfd = open(m_szevname, O_RDONLY | O_NONBLOCK, 0);
     }
 
     if (evfd < 0) {
