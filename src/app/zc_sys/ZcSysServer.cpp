@@ -62,6 +62,8 @@ bool CSysServer::Start() {
         return false;
     }
 
+    CModSys::Start();
+
     m_running = true;
     return true;
 }
@@ -70,6 +72,8 @@ bool CSysServer::Stop() {
     if (!m_running) {
         return false;
     }
+
+    CModSys::Stop();
 
     m_running = false;
     return true;

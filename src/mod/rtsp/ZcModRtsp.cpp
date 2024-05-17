@@ -13,12 +13,13 @@
 #include "zc_msg_rtsp.h"
 #include "zc_type.h"
 
-#include "rtsp/ZcModRtsp.hpp"
-#include "rtsp/ZcMsgProcModRtsp.hpp"
 #include "ZcType.hpp"
+#include "rtsp/ZcModRtsp.hpp"
+#include "rtsp/ZcMsgProcModRtsp.hpp"2
 
 namespace zc {
-CModRtsp::CModRtsp() : CModBase(ZC_MODID_RTSP_E, ZC_RTSP_URL_IPC), m_pMsgProc(new CMsgProcModRtsp()), m_init(false) {}
+CModRtsp::CModRtsp()
+    : CModBase(ZC_MODID_RTSP_E), m_pMsgProc(new CMsgProcModRtsp()), m_init(false) {}
 
 CModRtsp::~CModRtsp() {
     _unInit();

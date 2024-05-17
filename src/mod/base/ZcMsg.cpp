@@ -15,7 +15,7 @@ CMsgBase::CMsgBase(ZC_U8 modid, ZC_U16 id, ZC_U16 sid, MsgReqProcCb reqcb, MsgRe
 CMsgBase::~CMsgBase() {}
 
 ZC_S32 CMsgBase::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
-    LOG_TRACE("ReqProc into, modid[%u], id[%hu],id[%hu]", m_modid, m_id, m_sid);
+    LOG_TRACE("ReqProc into, modid[%u], id[%hu],m_sid[%hu]", m_modid, m_id, m_sid);
     ZC_ASSERT(req->id == m_id);
     ZC_ASSERT(req->sid == m_sid);
     m_reqcb(req, iqsize, rep, opsize);

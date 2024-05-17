@@ -10,8 +10,8 @@
 
 #include "ZcMsg.hpp"
 #include "ZcMsgProcMod.hpp"
-#include "sys/ZcMsgProcModSys.hpp"
 #include "ZcType.hpp"
+#include "sys/ZcMsgProcModSys.hpp"
 
 namespace zc {
 CMsgProcModSys::CMsgProcModSys() : CMsgProcMod(ZC_MODID_SYS_E, ZC_MID_SYS_BUTT), m_init(false) {
@@ -68,6 +68,24 @@ ZC_S32 CMsgProcModSys::_handleReqSysManShutdown(zc_msg_t *req, int iqsize, zc_ms
 
 ZC_S32 CMsgProcModSys::_handleRepSysManShutdown(zc_msg_t *rep, int size) {
     LOG_TRACE("handle RepSysManShutdown,size[%d]", size);
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleReqSysManKeepalive(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    LOG_TRACE("handle _handleReqSysManKeepalive,iqsize[%d]", iqsize);
+    zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(req->data);
+    LOG_TRACE("handle keepalive mid[%u] seqno[%u] status[%d]", pkeepalive->mid, pkeepalive->seqno,
+              pkeepalive->status);
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleRepSysManKeepalive(zc_msg_t *rep, int size) {
+    LOG_TRACE("handle _handleRepSysManKeepalive,size[%d]", size);
+    zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(rep->data);
+    LOG_TRACE("handle keepalive mid[%u] seqno[%u] status[%d]", pkeepalive->mid, pkeepalive->seqno,
+              pkeepalive->status);
 
     return 0;
 }
@@ -188,6 +206,8 @@ bool CMsgProcModSys::Init() {
                  &CMsgProcModSys::_handleRepSysManRestart);
     REGISTER_MSG(m_modid, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_SHUTDOWN_E, &CMsgProcModSys::_handleReqSysManShutdown,
                  &CMsgProcModSys::_handleRepSysManShutdown);
+    REGISTER_MSG(m_modid, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_KEEPALIVE_E, &CMsgProcModSys::_handleReqSysManKeepalive,
+                 &CMsgProcModSys::_handleRepSysManKeepalive);
 
     // ZC_MID_SYS_TIME_E
     REGISTER_MSG(m_modid, ZC_MID_SYS_TIME_E, ZC_MSID_SYS_TIME_GET_E, &CMsgProcModSys::_handleReqSysTimeGet,

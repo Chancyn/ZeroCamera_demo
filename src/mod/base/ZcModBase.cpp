@@ -21,8 +21,40 @@
 #include "ZcType.hpp"
 
 namespace zc {
-CModBase::CModBase(ZC_U8 modid, const char *url) : m_init(false), m_modid(modid), m_seqno(0) {
-    strncpy(m_url, url, sizeof(m_url) - 1);
+const char *g_Modurltab[ZC_MODID_BUTT] = {
+    ZC_SYS_URL_IPC,
+    ZC_CODEC_URL_IPC,
+    ZC_RTSP_URL_IPC,
+};
+
+const char *g_Modnametab[ZC_MODID_BUTT] = {
+    ZC_SYS_MODNAME,
+    ZC_CODEC_MODNAME,
+    ZC_RTSP_MODNAME,
+};
+
+static inline const char *get_url_bymodid(ZC_U8 modid) {
+    if (modid >= ZC_MODID_BUTT) {
+        return nullptr;
+    }
+    return g_Modurltab[modid];
+}
+
+static inline const char *get_name_bymodid(ZC_U8 modid) {
+    if (modid >= ZC_MODID_BUTT) {
+        return nullptr;
+    }
+    return g_Modnametab[modid];
+}
+
+const char *CModBase::GetUrlbymodid(ZC_U8 modid) {
+    return get_url_bymodid(modid);
+}
+
+CModBase::CModBase(ZC_U8 modid)
+    : Thread(std::string(get_name_bymodid(modid))), m_init(false), m_status(false), m_modid(modid), m_seqno(0) {
+    strncpy(m_url, get_url_bymodid(modid), sizeof(m_url) - 1);
+    strncpy(m_name, get_name_bymodid(modid), sizeof(m_name) - 1);
 }
 
 CModBase::~CModBase() {
@@ -119,19 +151,6 @@ bool CModBase::BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modidto, ZC_U16 id, ZC_U16 s
     return true;
 }
 
-const char *g_Modurltab[ZC_MODID_BUTT] = {
-    ZC_SYS_URL_IPC,
-    ZC_CODEC_URL_IPC,
-    ZC_RTSP_URL_IPC,
-};
-
-const char *CModBase::GetUrlbymodid(ZC_U8 modid) {
-    if (modid >= ZC_MODID_BUTT) {
-        return nullptr;
-    }
-    return g_Modurltab[modid];
-}
-
 bool CModBase::MsgSendTo(zc_msg_t *pmsg, const char *urlto) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -155,4 +174,80 @@ bool CModBase::MsgSendTo(zc_msg_t *pmsg) {
 
     return true;
 }
+
+int CModBase::_sendRegisterMsg() {
+    if (m_modid == ZC_MODID_SYS_E) {
+        return -1;
+    }
+
+    LOG_TRACE("send register msg into[%s] into", m_name);
+    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
+    zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
+
+    BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_REGISTER_E, 0, sizeof(zc_mod_reg_t));
+    MsgSendTo(pmsg, ZC_SYS_URL_IPC);
+    // MsgSendTo(pmsg);
+
+    return 0;
+}
+
+// send keepalive
+int CModBase::_sendKeepaliveMsg() {
+    if (m_modid == ZC_MODID_SYS_E) {
+        return -1;
+    }
+    static ZC_U32 s_seqno = 0;
+    LOG_TRACE("send keepalive msg into[%s] into", m_name);
+    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_t)] = {0};
+    zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
+    zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(pmsg->data);
+    pkeepalive->seqno = s_seqno++;
+    pkeepalive->status = m_status;
+    pkeepalive->mid = m_modid;
+    BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_KEEPALIVE_E, 0, sizeof(zc_mod_keepalive_t));
+    MsgSendTo(pmsg, ZC_SYS_URL_IPC);
+    LOG_TRACE("send keepalive msg into id[%d] sid[%d] into", pmsg->id, pmsg->sid);
+    // MsgSendTo(pmsg);
+
+    return 0;
+}
+
+int CModBase::_process_sys() {
+    unsigned int ret = 0;
+    unsigned int errcnt = 0;
+    LOG_WARN("process into[%s] into", m_name);
+    while (State() == Running) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        LOG_INFO("process sleep[%s]", m_name);
+    }
+    LOG_WARN("process into[%s] exit", m_name);
+    return -1;
+}
+
+int CModBase::_process_mod() {
+    unsigned int ret = 0;
+    unsigned int errcnt = 0;
+    LOG_WARN("process into[%s] into", m_name);
+    _sendRegisterMsg();
+    while (State() == Running) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        LOG_INFO("process sleep[%s]", m_name);
+        _sendKeepaliveMsg();
+    }
+    LOG_WARN("process into[%s] exit", m_name);
+    return -1;
+}
+
+int CModBase::process() {
+    LOG_INFO("process into[%s] into", m_name);
+    if (m_modid != ZC_MODID_SYS_E) {
+        _process_mod();
+    } else {
+        _process_sys();
+    }
+
+    LOG_INFO("process into[%s] exit", m_name);
+    return -1;
+}
+
 }  // namespace zc

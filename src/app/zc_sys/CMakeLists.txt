@@ -27,10 +27,11 @@ target_link_libraries(zc_sys PRIVATE
 mod_sys
 mod_base
 msgcomm
+utilsxx
+utils
 plat_basic
 bsw_basic
 zc_log
-msgcomm
 # nng
 pthread
 )

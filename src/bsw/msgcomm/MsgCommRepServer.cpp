@@ -93,7 +93,7 @@ void CMsgCommRepServer::runThreadProc() {
             goto _done_err;
         }
 
-        LOG_ERROR("recv msg sock:%d len:%d", psock->id, rlen);
+        LOG_TRACE("recv msg sock:%d len:%d", psock->id, rlen);
         // handle
         if (m_handle) {
             slen = sizeof(sbuf);

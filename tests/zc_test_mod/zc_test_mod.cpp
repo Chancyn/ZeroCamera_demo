@@ -47,7 +47,7 @@ int zc_test_mod_start(int modid) {
 
     if (modid != 0) {
         LOG_ERROR("zc_test_mod_sendreg modid[%d] \n", modid);
-        zc_test_mod_sendreg(modid, 0);
+        // zc_test_mod_sendreg(modid, 0);
     }
     LOG_INFO("test_mod modid[%d] start[%p] end\n", modid, g_ModTab[modid]);
     return 0;

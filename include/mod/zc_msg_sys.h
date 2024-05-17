@@ -11,6 +11,7 @@ extern "C" {
 #include "zc_msg.h"
 #include "zc_type.h"
 
+#define ZC_SYS_MODNAME "modsys"              // modname
 #define ZC_SYS_URL_IPC "ipc:///tmp/sys_rep"  // req/rep url
 #define ZC_SYS_URL_PUB "ipc:///tmp/sys_pub"  // pub/sub url
 
@@ -27,10 +28,11 @@ typedef enum {
 
 // msg sub id for manager ZC_MID_SYS_MAN_E
 typedef enum {
-    ZC_MSID_SYS_MAN_REGISTER_E = 0,     // register submsg
-    ZC_MSID_SYS_MAN_VERSION_E,  // version  submsg
-    ZC_MSID_SYS_MAN_RESTART_E,      // restart submsg
-    ZC_MSID_SYS_MAN_SHUTDOWN_E,     // shutdown submsg
+    ZC_MSID_SYS_MAN_REGISTER_E = 0,  // register submsg
+    ZC_MSID_SYS_MAN_VERSION_E,       // version  submsg
+    ZC_MSID_SYS_MAN_RESTART_E,       // restart submsg
+    ZC_MSID_SYS_MAN_SHUTDOWN_E,      // shutdown submsg
+    ZC_MSID_SYS_MAN_KEEPALIVE_E,      // keepalive
 
     ZC_MSID_SYS_MAN_BUTT,  // end
 } zc_msid_sys_man_e;
@@ -59,7 +61,6 @@ typedef enum {
     ZC_MSID_SYS_USER_BUTT,  // end
 } zc_msid_sys_user_e;
 
-
 // module system, msg sub id ZC_MID_SYS_UPG_E
 typedef enum {
     ZC_MSID_SYS_UPG_START_E = 0,
@@ -76,6 +77,14 @@ typedef struct {
     ZC_U32 ver;                        // mod version
     ZC_U8 date[ZC_DATETIME_STR_SIZE];  // build time
 } zc_mod_reg_t;
+
+// register ZC_MSID_SYS_MAN_KEEPALIVE_E
+typedef struct {
+    ZC_U8 mid;      // mod id
+    ZC_U8 rsv[3];   // mod rsv
+    ZC_U32 seqno;   // mod version
+    ZC_S32 status;  // mod status
+} zc_mod_keepalive_t;
 
 // pub/sub
 typedef enum {

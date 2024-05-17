@@ -13,12 +13,13 @@
 #include "zc_msg_sys.h"
 #include "zc_type.h"
 
+#include "ZcType.hpp"
 #include "sys/ZcModSys.hpp"
 #include "sys/ZcMsgProcModSys.hpp"
-#include "ZcType.hpp"
 
 namespace zc {
-CModSys::CModSys() : CModBase(ZC_MODID_SYS_E, ZC_SYS_URL_IPC), m_pMsgProc(new CMsgProcModSys()), m_init(false) {}
+CModSys::CModSys()
+    : CModBase(ZC_MODID_SYS_E), m_pMsgProc(new CMsgProcModSys()), m_init(false) {}
 
 CModSys::~CModSys() {
     UnInit();

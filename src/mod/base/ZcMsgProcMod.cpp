@@ -25,8 +25,8 @@ CMsgProcMod::~CMsgProcMod() {
 }
 
 ZC_S32 CMsgProcMod::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
-    LOG_TRACE("MsgReqProc into, modid[%u], id[%hu],id[%hu]", m_modid, rep->id, rep->sid);
-    ZC_U32 key = (rep->id << 16) | rep->sid;
+    LOG_TRACE("MsgReqProc into, modid[%u], id[%hu],id[%hu]", m_modid, req->id, req->sid);
+    ZC_U32 key = (req->id << 16) | req->sid;
     auto it = m_msgmap.find(key);
     if (it != m_msgmap.end()) {
         it->second->MsgReqProc(req, iqsize, rep, opsize);

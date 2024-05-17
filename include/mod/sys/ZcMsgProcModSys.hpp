@@ -31,6 +31,9 @@ class CMsgProcModSys : public CMsgProcMod {
     ZC_S32 _handleRepSysManRestart(zc_msg_t *rep, int size);
     ZC_S32 _handleReqSysManShutdown(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepSysManShutdown(zc_msg_t *rep, int size);
+    ZC_S32 _handleReqSysManKeepalive(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    ZC_S32 _handleRepSysManKeepalive(zc_msg_t *rep, int size);
+
     // Time
     ZC_S32 _handleReqSysTimeGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepSysTimeGet(zc_msg_t *rep, int size);

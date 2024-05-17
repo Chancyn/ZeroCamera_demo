@@ -62,6 +62,7 @@ bool CRtspServer::Start() {
         return false;
     }
 
+    CModRtsp::Start();
     m_running = true;
     return true;
 }
@@ -71,6 +72,7 @@ bool CRtspServer::Stop() {
         return false;
     }
 
+    CModRtsp::Stop();
     m_running = false;
     return true;
 }

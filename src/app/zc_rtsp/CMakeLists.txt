@@ -25,6 +25,8 @@ target_link_libraries(zc_rtsp PUBLIC
 mod_rtsp
 mod_base
 msgcomm
+utilsxx
+utils
 plat_basic
 bsw_basic
 zc_log
