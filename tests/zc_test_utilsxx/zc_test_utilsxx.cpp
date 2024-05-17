@@ -12,6 +12,8 @@
 #include "Timer.hpp"
 #include "zc_log.h"
 
+#include "zc_test_semaphore/zc_test_semaphore.hpp"
+#include "zc_test_semaphore/zc_test_unsemaphore.hpp"
 #include "zc_test_observer/zc_test_observer.hpp"
 #include "zc_test_singleton/zc_test_singleton.hpp"
 #include "zc_test_thread/zc_test_thread.hpp"
@@ -37,3 +39,12 @@ int zc_test_utilsxx_epoll_start() {
 int zc_test_utilsxx_epoll_stop() {
     return zc_test_epoll_stop();
 }
+
+int zc_test_utilsxx_semaphore() {
+    return zc_test_semaphore();
+}
+
+int zc_test_utilsxx_unsemaphore() {
+    return zc_test_unsemaphore();
+}
+

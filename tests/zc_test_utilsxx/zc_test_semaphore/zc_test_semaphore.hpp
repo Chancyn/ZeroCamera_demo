@@ -3,8 +3,4 @@
 
 #pragma once
 
-int zc_test_utilsxx();
-int zc_test_utilsxx_epoll_start();
-int zc_test_utilsxx_epoll_stop();
-int zc_test_utilsxx_semaphore();
-int zc_test_utilsxx_unsemaphore();
+int zc_test_semaphore();

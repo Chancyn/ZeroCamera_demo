@@ -25,6 +25,7 @@ ${UTILS_INC}
 
 # #连接库
 target_link_libraries(zc_test_utilsxx PUBLIC
+zc_test_semaphore
 zc_test_observer
 zc_test_singleton
 zc_test_thread
@@ -36,7 +37,7 @@ utilsxx
 utils
 )
 
-
+add_subdirectory(zc_test_semaphore)
 add_subdirectory(zc_test_observer)
 add_subdirectory(zc_test_singleton)
 add_subdirectory(zc_test_thread)
