@@ -15,7 +15,7 @@
 namespace zc {
 class CModBase : public CModComm, public Thread {
  public:
-    CModBase(ZC_U8 modid);
+    explicit CModBase(ZC_U8 modid);
     virtual ~CModBase();
     virtual bool Init() = 0;
     virtual bool UnInit() = 0;
@@ -37,7 +37,7 @@ class CModBase : public CModComm, public Thread {
     int _process_sys();
     int _process_mod();
     int _sendRegisterMsg();
-   int _sendKeepaliveMsg();
+    int _sendKeepaliveMsg();
 
  private:
     bool m_init;
@@ -48,6 +48,5 @@ class CModBase : public CModComm, public Thread {
     ZC_CHAR m_name[ZC_MODNAME_SIZE];
     // msg handle
     CMsgProcMod *m_pmsgmodproc;
-
 };
 }  // namespace zc

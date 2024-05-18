@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <string>
+
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zcfifo.h"
@@ -15,6 +17,7 @@
 #include "Thread.hpp"
 #include "ZcFIFO.hpp"
 #include "ZcType.hpp"
+#include "zc_test_fifo_lock.hpp"
 
 #define TEST_FIFO_CXX 1  // cxx test
 
@@ -22,14 +25,17 @@
 #define FIFO_TEST_BUFFLEN 1024
 #define FIFO_TEST_FIFOSIZE (1024 * 1024)
 
+#if !TEST_FIFO_CXX  // cxx test
 static zcfifo_safe_t *g_fifo = nullptr;
+#endif
+
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
 static ZC_U8 g_buffer[FIFO_TEST_BUFFLEN] = {};
 static zc::CFIFOSafe *g_cxxfifo = nullptr;
 
 class ThreadPutLock : public zc::Thread {
  public:
-    explicit ThreadPutLock(std::string name) : Thread(name), m_name(name), m_process_cnt(0) {
+    explicit ThreadPutLock(std::string name) : Thread(name), m_name(name) {
         LOG_WARN("Constructor into [%s]\n", m_name.c_str());
     }
     virtual ~ThreadPutLock() { LOG_WARN("~Destructor into [%s]\n", m_name.c_str()); }
@@ -66,12 +72,11 @@ class ThreadPutLock : public zc::Thread {
 
  private:
     std::string m_name;
-    unsigned int m_process_cnt;
 };
 
 class ThreadGetLock : public zc::Thread {
  public:
-    explicit ThreadGetLock(std::string name) : Thread(name), m_name(name), m_process_cnt(0) {
+    explicit ThreadGetLock(std::string name) : Thread(name), m_name(name) {
         LOG_WARN("Constructor into [%s]\n", m_name.c_str());
     }
     virtual ~ThreadGetLock() { LOG_WARN("~Destructor into [%s]\n", m_name.c_str()); }
@@ -118,16 +123,16 @@ class ThreadGetLock : public zc::Thread {
             // LOG_WARN("fifo empty, i[%u], errcnt[%u]", i, errcnt);
         }
     }
+
     clock_gettime(CLOCK_MONOTONIC, &ts);
     endts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
     LOG_INFO("ThreadGetLock cnt[%u]errcnt[%u],ret[%u],cos[%llu]ms", loopcnt, errcnt, retcnt, endts - startts);
     return -1;
 }
 
-private : std::string m_name;
-unsigned int m_process_cnt;
-}
-;
+ private :
+    std::string m_name;
+};
 
 static ThreadGetLock *g_threadget = nullptr;
 static ThreadPutLock *g_threadput = nullptr;

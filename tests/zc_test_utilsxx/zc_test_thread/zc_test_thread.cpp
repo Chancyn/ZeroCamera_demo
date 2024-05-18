@@ -1,7 +1,7 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
-#include <cstddef>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -29,7 +29,7 @@ static void multiply(const int a, const int b) {
 }
 
 #if 0
-// TODO debug
+// TODO(zhoucc) debug threadpool
 static int test_threadpool() {
     LOG_INFO("test into\n");
     ThreadPool pool(4);

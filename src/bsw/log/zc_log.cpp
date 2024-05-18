@@ -46,7 +46,7 @@ void zc_log_levelout(int level, const char *fmt, ...) {
 }
 
 // for test
-static void zc_log_test() {
+void zc_log_test() {
 #if ZC_DEBUG
     std::string teststr = {"bbb std::string"};
     int num = 3;

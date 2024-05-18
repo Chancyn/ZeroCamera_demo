@@ -6,10 +6,12 @@
 // copy from linux kernel(2.6.32) zcfifo.move to userspace, lockfree fifo
 
 #pragma once
+#include <mutex>
+
 #include "NonCopyable.hpp"
 #include "Semaphore.hpp"
 #include "zc_log.h"
-#include <mutex>
+
 
 namespace zc {
 typedef struct _zcfifo_ {

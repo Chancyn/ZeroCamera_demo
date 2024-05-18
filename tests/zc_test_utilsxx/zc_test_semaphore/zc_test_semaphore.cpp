@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <semaphore.h>
+#include <sys/stat.h>
 
 #include <memory>
 #include <string>
@@ -98,10 +102,7 @@ static int test_thread() {
     return 0;
 }
 
-#include <errno.h>
-#include <fcntl.h>
-#include <semaphore.h>
-#include <sys/stat.h>
+
 
 // c语言测试有名信号量
 int zc_test_semaphore_c() {

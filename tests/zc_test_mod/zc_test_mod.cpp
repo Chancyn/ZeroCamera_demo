@@ -21,6 +21,7 @@
 
 zc::CModBase *g_ModTab[ZC_MODID_BUTT] = {};
 
+#if 1
 static int zc_test_mod_sendreg(int modid, int modidto) {
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
     zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
@@ -32,6 +33,7 @@ static int zc_test_mod_sendreg(int modid, int modidto) {
 
     return 0;
 }
+#endif
 
 // start
 int zc_test_mod_start(int modid) {
@@ -47,7 +49,7 @@ int zc_test_mod_start(int modid) {
 
     if (modid != 0) {
         LOG_ERROR("zc_test_mod_sendreg modid[%d] \n", modid);
-        // zc_test_mod_sendreg(modid, 0);
+        zc_test_mod_sendreg(modid, 0);
     }
     LOG_INFO("test_mod modid[%d] start[%p] end\n", modid, g_ModTab[modid]);
     return 0;

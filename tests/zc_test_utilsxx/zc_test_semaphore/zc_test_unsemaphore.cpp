@@ -8,6 +8,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
+#include <semaphore.h>
 
 #include <memory>
 #include <string>
@@ -107,8 +109,6 @@ _done_err:
     return 0;
 }
 
-#include <errno.h>
-#include <semaphore.h>
 
 // c语言测试有名信号量
 int zc_test_unsemaphore_c() {

@@ -9,7 +9,7 @@
 namespace zc {
 
 Thread::Thread(std::string name)
-    : _stopFlag(false), m_name(name), _thread(nullptr), _pauseFlag(false), _state(Stoped) {}
+    : m_name(name), _thread(nullptr), _pauseFlag(false), _stopFlag(false), _state(Stoped) {}
 
 Thread::~Thread() {
     Stop();

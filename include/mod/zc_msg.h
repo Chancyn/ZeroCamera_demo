@@ -10,7 +10,7 @@ extern "C" {
 
 #include "zc_type.h"
 
-#define ZC_MSG_VERSION (1)  //version 1
+#define ZC_MSG_VERSION (1)  // version 1
 #define ZC_MODNAME_SIZE 32
 #define ZC_URL_SIZE 128
 #define ZC_DATETIME_STR_SIZE 128  // 2024-04-30 00:00:00

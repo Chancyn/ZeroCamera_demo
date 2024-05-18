@@ -15,7 +15,7 @@
 
 #include "ZcType.hpp"
 #include "rtsp/ZcModRtsp.hpp"
-#include "rtsp/ZcMsgProcModRtsp.hpp"2
+#include "rtsp/ZcMsgProcModRtsp.hpp"
 
 namespace zc {
 CModRtsp::CModRtsp()

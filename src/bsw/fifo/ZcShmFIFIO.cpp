@@ -24,7 +24,7 @@
 // userspace modify................
 
 #ifndef smp_wmb
-#warning "zhoucc nodefine smp_wmb"
+// #warning "zhoucc nodefine smp_wmb"
 #ifdef __GNUC__
 #define ZC_MBARRIER_FULL __sync_synchronize
 #define smp_wmb ZC_MBARRIER_FULL
@@ -59,6 +59,7 @@ static inline unsigned int roundup_pow_of_two(unsigned int n) {
     return n + 1;
 }
 
+#if 0
 static inline unsigned int rounddown_pow_of_two(unsigned int n) {
     // 找到n中最高位的1，并把它以下的所有位都置为0
     // 这可以通过对n进行位与操作，操作数是n的二进制表示中最高位的1左移一位后减1得到的
@@ -70,6 +71,7 @@ static inline unsigned int rounddown_pow_of_two(unsigned int n) {
     // 由于上面的位或操作，n现在是一个所有低于最高位1的位都被置为1的数
     return (n >> 1) + 1;
 }
+#endif
 
 static inline bool is_power_of_2(unsigned int n) {
     return (n != 0 && ((n & (n - 1)) == 0));
@@ -127,7 +129,6 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
     unsigned int shmsize = sizeof(zcshmbuf_t) + m_size;
     shmid = shmget(shmkey, 0, 0);
     if (shmid == -1) {
-
         // if (!bwrite) {
         //     LOG_ERROR("err read shmget error,shmkey[%d], errno[%d]", shmkey, errno);
         //     goto _err;

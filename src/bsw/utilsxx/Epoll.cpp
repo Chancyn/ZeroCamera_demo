@@ -1,6 +1,6 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
-#include <cerrno>
+#include <errno.h>
 #include <unistd.h>
 
 #include "ZcType.hpp"
@@ -11,7 +11,8 @@
 
 namespace zc {
 
-CEpoll::CEpoll(int maxevents, int timeout) : m_epfd(-1), m_timeout(timeout), m_maxevents(maxevents), m_backEvents(nullptr) {}
+CEpoll::CEpoll(int maxevents, int timeout)
+    : m_epfd(-1), m_timeout(timeout), m_maxevents(maxevents), m_backEvents(nullptr) {}
 
 CEpoll::~CEpoll() {
     Destroy();

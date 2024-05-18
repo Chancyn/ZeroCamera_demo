@@ -1,7 +1,6 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
-#include <cstddef>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -213,8 +212,8 @@ int CModBase::_sendKeepaliveMsg() {
 }
 
 int CModBase::_process_sys() {
-    unsigned int ret = 0;
-    unsigned int errcnt = 0;
+    // unsigned int ret = 0;
+    // unsigned int errcnt = 0;
     LOG_WARN("process into[%s] into", m_name);
     while (State() == Running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -225,8 +224,8 @@ int CModBase::_process_sys() {
 }
 
 int CModBase::_process_mod() {
-    unsigned int ret = 0;
-    unsigned int errcnt = 0;
+    // unsigned int ret = 0;
+    // unsigned int errcnt = 0;
     LOG_WARN("process into[%s] into", m_name);
     _sendRegisterMsg();
     while (State() == Running) {
