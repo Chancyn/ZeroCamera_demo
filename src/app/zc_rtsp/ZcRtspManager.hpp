@@ -4,13 +4,13 @@
 #pragma once
 #include "zc_type.h"
 
-#include "sys/ZcModSys.hpp"
+#include "rtsp/ZcModRtsp.hpp"
 
 namespace zc {
-class CSysServer : public CModSys {
+class CRtspManager : public CModRtsp {
  public:
-    CSysServer();
-    virtual ~CSysServer();
+    CRtspManager();
+    virtual ~CRtspManager();
 
  public:
     bool Init();

@@ -7,7 +7,7 @@
 
 #include "zc_log.h"
 
-#include "ZcCodecServer.hpp"
+#include "ZcCodecManager.hpp"
 
 #define ZC_LOG_PATH "./log"
 #define ZC_LOG_APP_NAME "zc_codec.log"

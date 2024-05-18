@@ -5,17 +5,17 @@
 
 #include "zc_log.h"
 
-#include "ZcSysServer.hpp"
+#include "ZcSysManager.hpp"
 #include "ZcType.hpp"
 
 namespace zc {
-CSysServer::CSysServer() : m_init(false), m_running(0) {}
+CSysManager::CSysManager() : m_init(false), m_running(0) {}
 
-CSysServer::~CSysServer() {
+CSysManager::~CSysManager() {
     _unInit();
 }
 
-bool CSysServer::Init() {
+bool CSysManager::Init() {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
@@ -37,7 +37,7 @@ _err:
     return false;
 }
 
-bool CSysServer::_unInit() {
+bool CSysManager::_unInit() {
     if (!m_init) {
         return true;
     }
@@ -46,7 +46,7 @@ bool CSysServer::_unInit() {
     return false;
 }
 
-bool CSysServer::UnInit() {
+bool CSysManager::UnInit() {
     if (!m_init) {
         return true;
     }
@@ -57,7 +57,7 @@ bool CSysServer::UnInit() {
     return false;
 }
 
-bool CSysServer::Start() {
+bool CSysManager::Start() {
     if (m_running) {
         return false;
     }
@@ -68,7 +68,7 @@ bool CSysServer::Start() {
     return true;
 }
 
-bool CSysServer::Stop() {
+bool CSysManager::Stop() {
     if (!m_running) {
         return false;
     }

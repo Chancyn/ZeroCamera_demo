@@ -6,19 +6,25 @@
 #include "zc_log.h"
 
 #include "ZcRtspServer.hpp"
+#include "ZcRtspManager.hpp"
 #include "ZcType.hpp"
 
 namespace zc {
-CRtspServer::CRtspServer() : m_init(false), m_running(0) {}
+CRtspManager::CRtspManager() : m_init(false), m_running(0) {}
 
-CRtspServer::~CRtspServer() {
+CRtspManager::~CRtspManager() {
     UnInit();
 }
 
-bool CRtspServer::Init() {
+bool CRtspManager::Init() {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
+    }
+
+    if (!CModRtsp::Init()) {
+        LOG_TRACE("CModRtsp Init error");
+        goto _err;
     }
 
     m_init = true;
@@ -32,14 +38,13 @@ _err:
     return false;
 }
 
-bool CRtspServer::_unInit() {
-
+bool CRtspManager::_unInit() {
     Stop();
-
+    CModRtsp::UnInit();
     return false;
 }
 
-bool CRtspServer::UnInit() {
+bool CRtspManager::UnInit() {
     if (!m_init) {
         return true;
     }
@@ -49,21 +54,22 @@ bool CRtspServer::UnInit() {
     m_init = false;
     return false;
 }
-bool CRtspServer::Start() {
+bool CRtspManager::Start() {
     if (m_running) {
         return false;
     }
 
-
+    CModRtsp::Start();
     m_running = true;
     return true;
 }
 
-bool CRtspServer::Stop() {
+bool CRtspManager::Stop() {
     if (!m_running) {
         return false;
     }
 
+    CModRtsp::Stop();
     m_running = false;
     return true;
 }

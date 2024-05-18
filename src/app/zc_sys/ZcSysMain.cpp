@@ -8,7 +8,7 @@
 
 #include "zc_log.h"
 
-#include "ZcSysServer.hpp"
+#include "ZcSysManager.hpp"
 
 #define ZC_LOG_PATH "./log"
 #define ZC_LOG_APP_NAME "zc_sys.log"
@@ -32,17 +32,17 @@ int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-    zc::CSysServer syssvr;
-    syssvr.Init();
-    syssvr.Start();
+    zc::CSysManager sys;
+    sys.Init();
+    sys.Start();
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep ");
     }
 
     LOG_ERROR("app loop exit");
-    syssvr.Stop();
-    syssvr.UnInit();
+    sys.Stop();
+    sys.UnInit();
     zc_log_uninit();
     printf("main exit\n");
     return 0;

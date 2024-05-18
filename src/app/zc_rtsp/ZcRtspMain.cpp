@@ -8,7 +8,7 @@
 
 #include "zc_log.h"
 
-#include "ZcRtspServer.hpp"
+#include "ZcRtspManager.hpp"
 
 #define ZC_LOG_PATH "./log"
 #define ZC_LOG_APP_NAME "zc_rtsp.log"
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-    zc::CRtspServer rtspsvr;
+    zc::CRtspManager rtspsvr;
     rtspsvr.Init();
     rtspsvr.Start();
     while (!bExitFlag) {
