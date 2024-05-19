@@ -5,9 +5,10 @@
 #include "zc_type.h"
 
 #include "rtsp/ZcModRtsp.hpp"
+#include "ZcRtspServer.hpp"
 
 namespace zc {
-class CRtspManager : public CModRtsp {
+class CRtspManager : public CModRtsp, public CRtspServer {
  public:
     CRtspManager();
     virtual ~CRtspManager();

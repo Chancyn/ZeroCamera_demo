@@ -27,6 +27,11 @@ bool CRtspManager::Init() {
         goto _err;
     }
 
+    if (!CRtspServer::Init()) {
+        LOG_TRACE("CModRtsp Init error");
+        goto _err;
+    }
+
     m_init = true;
     LOG_TRACE("Init ok");
     return true;
@@ -41,6 +46,7 @@ _err:
 bool CRtspManager::_unInit() {
     Stop();
     CModRtsp::UnInit();
+    CRtspServer::UnInit();
     return false;
 }
 
@@ -60,6 +66,7 @@ bool CRtspManager::Start() {
     }
 
     CModRtsp::Start();
+    CRtspServer::Start();
     m_running = true;
     return true;
 }
@@ -70,6 +77,7 @@ bool CRtspManager::Stop() {
     }
 
     CModRtsp::Stop();
+    CRtspServer::Stop();
     m_running = false;
     return true;
 }

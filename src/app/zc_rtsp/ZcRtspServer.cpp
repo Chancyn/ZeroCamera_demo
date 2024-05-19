@@ -8,36 +8,36 @@
 #include "zc_log.h"
 #include "zc_macros.h"
 
-#include "cstringext.h"     // strstartswith
-#include "sys/system.h"     // system_clock
-#include "path.h"
 #include "aio-socket.h"
 #include "aio-worker.h"
+#include "cstringext.h"  // strstartswith
+#include "path.h"
 #include "rtp-tcp-transport.h"
 #include "rtp-udp-transport.h"
 #include "rtsp-server-aio.h"
+#include "sys/system.h"  // system_clock
 #include "uri-parse.h"
 #include "urlcodec.h"
 
 #include "ZcRtspServer.hpp"
 #include "ZcType.hpp"
+#include "zc_type.h"
 
 #define ZC_N_AIO_THREAD (4)  // aio thread num
 #define ZC_SUPPORT_VOD 0     // video on Demand 点播
 
 namespace zc {
 
-int CRtspServer::rtsp_uri_parse(const char* uri, std::string& path)
-{
-	char path1[256];
-	struct uri_t* r = uri_parse(uri, strlen(uri));
-	if(!r)
-		return -1;
+int CRtspServer::rtsp_uri_parse(const char *uri, std::string &path) {
+    char path1[256];
+    struct uri_t *r = uri_parse(uri, strlen(uri));
+    if (!r)
+        return -1;
 
-	url_decode(r->path, strlen(r->path), path1, sizeof(path1));
-	path = path1;
-	uri_free(r);
-	return 0;
+    url_decode(r->path, strlen(r->path), path1, sizeof(path1));
+    path = path1;
+    uri_free(r);
+    return 0;
 }
 
 int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
@@ -200,7 +200,7 @@ TSessions::iterator it;
         return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
     }
 
-    #if 0
+#if 0
     // TODO(zhoucc) find session
     rtsp_media_t &item = it->second;
     if (RTSP_TRANSPORT_RTP_TCP == transport->transport) {
@@ -273,7 +273,7 @@ TSessions::iterator it;
                  transport->destination[0] ? ";destination=" : "",
                  transport->destination[0] ? transport->destination : "");
     }
-    #endif
+#endif
 
     // return rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
 }
@@ -310,7 +310,7 @@ int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, c
     }
 #endif
 
-    #if 0
+#if 0
     if (npt && 0 != source->Seek(*npt)) {
         // 457 Invalid Range
         return rtsp_server_reply_play(rtsp, 457, NULL, NULL, NULL);
@@ -337,9 +337,9 @@ int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, c
         mp4->SendRTCP(system_clock());
 
     it->second.status = 1;
-    #else
+#else
     char rtpinfo[512] = {0};
-    #endif
+#endif
 
     return rtsp_server_reply_play(rtsp, 200, npt, NULL, rtpinfo);
 }
@@ -566,6 +566,9 @@ bool CRtspServer::Init() {
         return false;
     }
 
+    if (!_init()) {
+        goto _err;
+    }
     m_init = true;
     LOG_TRACE("Init ok");
     return true;
@@ -579,7 +582,10 @@ _err:
 
 bool CRtspServer::_unInit() {
     Stop();
-
+    aio_worker_clean(ZC_N_AIO_THREAD);
+    rtsp_server_unlisten(m_psvr);
+    m_psvr = nullptr;
+    ZC_SAFE_FREE(m_phandle);
     return false;
 }
 
