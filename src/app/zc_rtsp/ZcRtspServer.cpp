@@ -56,24 +56,6 @@ static const char *s_workdir = "d:\\";
 static const char *s_workdir = "./";
 #endif
 
-// static ThreadLocker s_locker;
-
-struct rtsp_media_t {
-    std::shared_ptr<IMediaSource> media;
-    std::shared_ptr<IRTPTransport> transport;
-    uint8_t channel;  // rtp over rtsp interleaved channel
-    int status;       // setup-init, 1-play, 2-pause
-    rtsp_server_t *rtsp;
-};
-typedef std::map<std::string, rtsp_media_t> TSessions;
-static TSessions s_sessions;
-
-struct TFileDescription {
-    int64_t duration;
-    std::string sdpmedia;
-};
-static std::map<std::string, TFileDescription> s_describes;
-
 namespace zc {
 
 int CRtspServer::rtsp_uri_parse(const char *uri, std::string &path) {
@@ -88,9 +70,8 @@ int CRtspServer::rtsp_uri_parse(const char *uri, std::string &path) {
     return 0;
 }
 
+// zhoucc ptr=rtsp->param; ptr2=session,
 int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p],url[%s]", ptr, rtsp, rtsp->param, uri);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_ondescribe(ptr, rtsp, uri);
 }
@@ -135,8 +116,8 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
     {
         // AutoThreadLocker locker(s_locker);
         std::lock_guard<std::mutex> locker(m_mutex);
-        it = s_describes.find(filename);
-        if (it == s_describes.end()) {
+        it = m_describes.find(filename);
+        if (it == m_describes.end()) {
             // unlock
             TFileDescription describe;
             std::shared_ptr<IMediaSource> source;
@@ -170,7 +151,7 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
             source->GetSDPMedia(describe.sdpmedia);
 
             // re-lock
-            it = s_describes.insert(std::make_pair(filename, describe)).first;
+            it = m_describes.insert(std::make_pair(filename, describe)).first;
         }
     }
 
@@ -181,8 +162,6 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
 
 int CRtspServer::rtsp_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                               const struct rtsp_header_transport_t transports[], size_t num) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onsetup(ptr, rtsp, uri, session, transports, num);
 }
@@ -218,8 +197,8 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
     TSessions::iterator it;
     if (session) {
         std::lock_guard<std::mutex> locker(m_mutex);
-        it = s_sessions.find(session);
-        if (it == s_sessions.end()) {
+        it = m_sessions.find(session);
+        if (it == m_sessions.end()) {
             // 454 Session Not Found
             return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
         } else {
@@ -259,7 +238,7 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
         snprintf(rtspsession, sizeof(rtspsession), "%p", item.media.get());
 
         std::lock_guard<std::mutex> locker(m_mutex);
-        it = s_sessions.insert(std::make_pair(rtspsession, item)).first;
+        it = m_sessions.insert(std::make_pair(rtspsession, item)).first;
     }
 #endif
     assert(NULL == transport);
@@ -358,8 +337,6 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
 
 int CRtspServer::rtsp_onplay(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session, const int64_t *npt,
                              const double *scale) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onplay(ptr, rtsp, uri, session, npt, scale);
 }
@@ -372,8 +349,8 @@ int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, c
     TSessions::iterator it;
     {
         std::lock_guard<std::mutex> locker(m_mutex);
-        it = s_sessions.find(session ? session : "");
-        if (it == s_sessions.end()) {
+        it = m_sessions.find(session ? session : "");
+        if (it == m_sessions.end()) {
             // 454 Session Not Found
             return rtsp_server_reply_play(rtsp, 454, NULL, NULL, NULL);
         } else {
@@ -423,8 +400,6 @@ int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, c
 
 int CRtspServer::rtsp_onpause(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                               const int64_t *npt) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onpause(ptr, rtsp, uri, session, npt);
 }
@@ -436,8 +411,8 @@ int CRtspServer::_onpause(void *ptr, rtsp_server_t *rtsp, const char *uri, const
     {
         // AutoThreadLocker locker(s_locker);
         std::lock_guard<std::mutex> locker(m_mutex);
-        it = s_sessions.find(session ? session : "");
-        if (it == s_sessions.end()) {
+        it = m_sessions.find(session ? session : "");
+        if (it == m_sessions.end()) {
             // 454 Session Not Found
             return rtsp_server_reply_pause(rtsp, 454);
         } else {
@@ -461,8 +436,6 @@ int CRtspServer::_onpause(void *ptr, rtsp_server_t *rtsp, const char *uri, const
 }
 
 int CRtspServer::rtsp_onteardown(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onteardown(ptr, rtsp, uri, session);
 }
@@ -473,14 +446,14 @@ int CRtspServer::_onteardown(void *ptr, rtsp_server_t *rtsp, const char *uri, co
     TSessions::iterator it;
     {
         std::lock_guard<std::mutex> locker(m_mutex);
-        it = s_sessions.find(session ? session : "");
-        if (it == s_sessions.end()) {
+        it = m_sessions.find(session ? session : "");
+        if (it == m_sessions.end()) {
             // 454 Session Not Found
             return rtsp_server_reply_teardown(rtsp, 454);
         }
 
         source = it->second.media;
-        s_sessions.erase(it);
+        m_sessions.erase(it);
     }
 #endif
 
@@ -488,8 +461,6 @@ int CRtspServer::_onteardown(void *ptr, rtsp_server_t *rtsp, const char *uri, co
 }
 
 int CRtspServer::rtsp_onannounce(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *sdp, int len) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onannounce(ptr, rtsp, uri, sdp, len);
 }
@@ -500,20 +471,16 @@ int CRtspServer::_onannounce(void *ptr, rtsp_server_t *rtsp, const char *uri, co
 
 int CRtspServer::rtsp_onrecord(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session, const int64_t *npt,
                                const double *scale) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onrecord(ptr, rtsp, uri, session, npt, scale);
 }
 
-int CRtspServer::_onrecord(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, const char *session,
+int CRtspServer::_onrecord(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                            const int64_t *npt, const double *scale) {
     return rtsp_server_reply_record(rtsp, 200, NULL, NULL);
 }
 
 int CRtspServer::rtsp_onoptions(void *ptr, rtsp_server_t *rtsp, const char *uri) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onoptions(ptr, rtsp, uri);
 }
@@ -525,8 +492,6 @@ int CRtspServer::_onoptions(void *ptr, rtsp_server_t *rtsp, const char *uri) {
 
 int CRtspServer::rtsp_ongetparameter(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                                      const void *content, int bytes) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_ongetparameter(ptr, rtsp, uri, session, content, bytes);
 }
@@ -541,8 +506,6 @@ int CRtspServer::_ongetparameter(void *ptr, rtsp_server_t *rtsp, const char *uri
 
 int CRtspServer::rtsp_onsetparameter(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                                      const void *content, int bytes) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onsetparameter(ptr, rtsp, uri, session, content, bytes);
 }
@@ -573,8 +536,6 @@ int CRtspServer::_onclose(void *ptr2) {
 }
 
 void CRtspServer::rtsp_onerror(void *ptr, rtsp_server_t *rtsp, int code) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
-    // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_onerror(ptr, rtsp, code);
 }
@@ -584,10 +545,10 @@ void CRtspServer::_onerror(void *ptr, rtsp_server_t *rtsp, int code) {
 #if ZC_TEST_SESSION
     TSessions::iterator it;
     std::lock_guard<std::mutex> locker(m_mutex);
-    for (it = s_sessions.begin(); it != s_sessions.end(); ++it) {
+    for (it = m_sessions.begin(); it != m_sessions.end(); ++it) {
         if (rtsp == it->second.rtsp) {
             it->second.media->Pause();
-            s_sessions.erase(it);
+            m_sessions.erase(it);
             break;
         }
     }
@@ -694,7 +655,7 @@ bool CRtspServer::UnInit() {
 bool CRtspServer::_aio_work() {
     TSessions::iterator it;
     std::lock_guard<std::mutex> locker(m_mutex);
-    for (it = s_sessions.begin(); it != s_sessions.end(); ++it) {
+    for (it = m_sessions.begin(); it != m_sessions.end(); ++it) {
         rtsp_media_t &session = it->second;
         if (1 == session.status)
             session.media->Play();

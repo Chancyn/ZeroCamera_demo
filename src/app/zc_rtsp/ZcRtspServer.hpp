@@ -2,15 +2,40 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
+#include <string>
+#include <map>
+#include <memory>
+#include <mutex>
+
 #include "zc_type.h"
 
 #include "rtsp-server-internal.h"
 #include "rtsp-server.h"
 
+#include "rtp-tcp-transport.h"
+#include "rtp-udp-transport.h"
+
 #include "Thread.hpp"
 #include "rtsp/ZcModRtsp.hpp"
 
 namespace zc {
+struct rtsp_media_t {
+    std::shared_ptr<IMediaSource> media;
+    std::shared_ptr<IRTPTransport> transport;
+    uint8_t channel;  // rtp over rtsp interleaved channel
+    int status;       // setup-init, 1-play, 2-pause
+    rtsp_server_t *rtsp;
+};
+
+typedef std::map<std::string, rtsp_media_t> TSessions;
+// static TSessions s_sessions;
+
+struct TFileDescription {
+    int64_t duration;
+    std::string sdpmedia;
+};
+// static std::map<std::string, TFileDescription> s_describes;
+
 class CRtspServer : public Thread {
  public:
     CRtspServer();
@@ -72,5 +97,7 @@ class CRtspServer : public Thread {
     void *m_phandle;  // handle
     void *m_psvr;     // server
     std::mutex m_mutex;
+    TSessions m_sessions;
+    std::map<std::string, TFileDescription> m_describes;
 };
 }  // namespace zc
