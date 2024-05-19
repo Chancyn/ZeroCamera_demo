@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.22)
+aux_source_directory(./ SUB_DIR_SOURCE_SRCS)
+
+foreach(SOURCE_FILE ${SUB_DIR_SOURCE_SRCS})
+	get_filename_component(filename ${SOURCE_FILE} NAME)
+    set_source_files_properties(
+        ${SOURCE_FILE}
+        PROPERTIES
+        COMPILE_DEFINITIONS "__FILENAME__=\"${filename}\""
+    )
+endforeach()
+
+#.a/so
+add_library(${MEDIARTSPMEDIA} STATIC ${SUB_DIR_SOURCE_SRCS})
+#add_library(${MEDIARTSPMEDIA} SHARED ${SUB_DIR_SOURCE_SRCS})
+
+target_include_directories(${MEDIARTSPMEDIA} PRIVATE
+${MEDIAAVCODEC_INC}
+${MEDIAAVBSF_INC}
+${MEDIAMPEG_INC}
+${MEDIAMOV_INC}
+${MEDIAFLV_INC}
+${MEDIAMKV_INC}
+${MEDIARTP_INC}
+${MEDIARTSP_INC}
+${MEDIAAIO_INC}
+${MEDIASDK_INC}
+)
+
+#install(TARGETS ${MEDIARTSPMEDIA} RUNTIME DESTINATION ${ZC_LIB_INSTALL})
+install(TARGETS ${MEDIARTSPMEDIA} DESTINATION ${ZC_LIB_INSTALL})

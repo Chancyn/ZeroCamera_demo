@@ -2,15 +2,26 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 // start media-server
+#include <cstddef>
 #include <cstdlib>
 #include <stdio.h>
+
+#include <map>
+#include <memory>
+#include <mutex>
 
 #include "zc_log.h"
 #include "zc_macros.h"
 
 #include "aio-socket.h"
 #include "aio-worker.h"
+
 #include "cstringext.h"  // strstartswith
+#include "media/h264-file-source.h"
+#include "media/h265-file-source.h"
+#include "media/mp4-file-source.h"
+#include "media/ps-file-source.h"
+#include "ntp-time.h"
 #include "path.h"
 #include "rtp-tcp-transport.h"
 #include "rtp-udp-transport.h"
@@ -24,7 +35,44 @@
 #include "zc_type.h"
 
 #define ZC_N_AIO_THREAD (4)  // aio thread num
+#define ZC_TEST_SESSION 1    // test示例代码
 #define ZC_SUPPORT_VOD 0     // video on Demand 点播
+
+#if defined(_HAVE_FFMPEG_)
+#include "media/ffmpeg-file-source.h"
+#include "media/ffmpeg-live-source.h"
+#endif
+
+#define UDP_MULTICAST_ADDR "239.0.0.2"
+#define UDP_MULTICAST_PORT 6000
+
+// ffplay rtsp://127.0.0.1/vod/video/abc.mp4
+// Windows --> d:\video\abc.mp4
+// Linux   --> ./video/abc.mp4
+
+#if defined(OS_WINDOWS)
+static const char *s_workdir = "d:\\";
+#else
+static const char *s_workdir = "./";
+#endif
+
+// static ThreadLocker s_locker;
+
+struct rtsp_media_t {
+    std::shared_ptr<IMediaSource> media;
+    std::shared_ptr<IRTPTransport> transport;
+    uint8_t channel;  // rtp over rtsp interleaved channel
+    int status;       // setup-init, 1-play, 2-pause
+    rtsp_server_t *rtsp;
+};
+typedef std::map<std::string, rtsp_media_t> TSessions;
+static TSessions s_sessions;
+
+struct TFileDescription {
+    int64_t duration;
+    std::string sdpmedia;
+};
+static std::map<std::string, TFileDescription> s_describes;
 
 namespace zc {
 
@@ -41,7 +89,7 @@ int CRtspServer::rtsp_uri_parse(const char *uri, std::string &path) {
 }
 
 int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
-    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p]", ptr, rtsp, rtsp->param);
+    LOG_WARN("ptr[%p], rtsp[%p], rtsp->param[%p],url[%s]", ptr, rtsp, rtsp->param, uri);
     // TODO(zhoucc)
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_ondescribe(ptr, rtsp, uri);
@@ -67,6 +115,7 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
                                       "a=control:*\n";  // aggregate control
 
     std::string filename;
+    std::map<std::string, TFileDescription>::const_iterator it;
 
     rtsp_uri_parse(uri, filename);
     if (strstartswith(filename.c_str(), "/live/")) {
@@ -83,10 +132,50 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
     }
 
     char buffer[1024] = {0};
-    // TODO(zhoucc) find session sdp
+    {
+        // AutoThreadLocker locker(s_locker);
+        std::lock_guard<std::mutex> locker(m_mutex);
+        it = s_describes.find(filename);
+        if (it == s_describes.end()) {
+            // unlock
+            TFileDescription describe;
+            std::shared_ptr<IMediaSource> source;
+            if (0 == strcmp(filename.c_str(), "camera")) {
+#if defined(_HAVE_FFMPEG_)
+                source.reset(new FFLiveSource("video=Integrated Webcam"));
+#endif
+                int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
+                assert(offset > 0 && offset + 1 < sizeof(buffer));
+            } else {
+                if (strendswith(filename.c_str(), ".ps"))
+                    source.reset(new PSFileSource(filename.c_str()));
+                else if (strendswith(filename.c_str(), ".h264"))
+                    source.reset(new H264FileSource(filename.c_str()));
+                else if (strendswith(filename.c_str(), ".h265"))
+                    source.reset(new H265FileSource(filename.c_str()));
+                else {
+#if defined(_HAVE_FFMPEG_)
+                    source.reset(new FFFileSource(filename.c_str()));
+#else
+                    source.reset(new MP4FileSource(filename.c_str()));
+#endif
+                }
+                source->GetDuration(describe.duration);
+
+                int offset = snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri,
+                                      describe.duration / 1000.0);
+                assert(offset > 0 && offset + 1 < sizeof(buffer));
+            }
+
+            source->GetSDPMedia(describe.sdpmedia);
+
+            // re-lock
+            it = s_describes.insert(std::make_pair(filename, describe)).first;
+        }
+    }
 
     std::string sdp = buffer;
-    // sdp += it->second.sdpmedia;
+    sdp += it->second.sdpmedia;
     return rtsp_server_reply_describe(rtsp, 200, sdp.c_str());
 }
 
@@ -125,64 +214,53 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
         filename.erase(basename - filename.c_str() - 1, std::string::npos);
 
 // TODO(zhoucc) find session
-#if 0
-TSessions::iterator it;
-	if(session)
-	{
-		AutoThreadLocker locker(s_locker);
-		it = s_sessions.find(session);
-		if(it == s_sessions.end())
-		{
-			// 454 Session Not Found
-			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
-		}
-		else
-		{
-			// don't support aggregate control
-			if (0)
-			{
-				// 459 Aggregate Operation Not Allowed
-				return rtsp_server_reply_setup(rtsp, 459, NULL, NULL);
-			}
-		}
-	}
-	else
-	{
-		rtsp_media_t item;
-		item.rtsp = rtsp;
-		item.channel = 0;
-		item.status = 0;
+#if ZC_TEST_SESSION
+    TSessions::iterator it;
+    if (session) {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        it = s_sessions.find(session);
+        if (it == s_sessions.end()) {
+            // 454 Session Not Found
+            return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+        } else {
+            // don't support aggregate control
+            if (0) {
+                // 459 Aggregate Operation Not Allowed
+                return rtsp_server_reply_setup(rtsp, 459, NULL, NULL);
+            }
+        }
+    } else {
+        rtsp_media_t item;
+        item.rtsp = rtsp;
+        item.channel = 0;
+        item.status = 0;
 
-		if (0 == strcmp(filename.c_str(), "camera"))
-		{
+        if (0 == strcmp(filename.c_str(), "camera")) {
 #if defined(_HAVE_FFMPEG_)
-			item.media.reset(new FFLiveSource("video=Integrated Webcam"));
+            item.media.reset(new FFLiveSource("video=Integrated Webcam"));
 #endif
-		}
-		else
-		{
-			if (strendswith(filename.c_str(), ".ps"))
-				item.media.reset(new PSFileSource(filename.c_str()));
-			else if (strendswith(filename.c_str(), ".h264"))
-				item.media.reset(new H264FileSource(filename.c_str()));
-			else if (strendswith(filename.c_str(), ".h265"))
-				item.media.reset(new H265FileSource(filename.c_str()));
-			else
-			{
+        } else {
+            if (strendswith(filename.c_str(), ".ps"))
+                item.media.reset(new PSFileSource(filename.c_str()));
+            else if (strendswith(filename.c_str(), ".h264"))
+                item.media.reset(new H264FileSource(filename.c_str()));
+            else if (strendswith(filename.c_str(), ".h265"))
+                item.media.reset(new H265FileSource(filename.c_str()));
+            else {
 #if defined(_HAVE_FFMPEG_)
-				item.media.reset(new FFFileSource(filename.c_str()));
+                item.media.reset(new FFFileSource(filename.c_str()));
 #else
-				item.media.reset(new MP4FileSource(filename.c_str()));
+                item.media.reset(new MP4FileSource(filename.c_str()));
 #endif
-			}
-		}
+            }
+        }
 
-		char rtspsession[32];
-		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media.get());
+        char rtspsession[32];
+        snprintf(rtspsession, sizeof(rtspsession), "%p", item.media.get());
 
-		AutoThreadLocker locker(s_locker);
-		it = s_sessions.insert(std::make_pair(rtspsession, item)).first;
-	}
+        std::lock_guard<std::mutex> locker(m_mutex);
+        it = s_sessions.insert(std::make_pair(rtspsession, item)).first;
+    }
 #endif
     assert(NULL == transport);
     for (size_t i = 0; i < num && !transport; i++) {
@@ -200,7 +278,7 @@ TSessions::iterator it;
         return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
     }
 
-#if 0
+#if ZC_TEST_SESSION
     // TODO(zhoucc) find session
     rtsp_media_t &item = it->second;
     if (RTSP_TRANSPORT_RTP_TCP == transport->transport) {
@@ -275,7 +353,7 @@ TSessions::iterator it;
     }
 #endif
 
-    // return rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
+    return rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
 }
 
 int CRtspServer::rtsp_onplay(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session, const int64_t *npt,
@@ -288,12 +366,12 @@ int CRtspServer::rtsp_onplay(void *ptr, rtsp_server_t *rtsp, const char *uri, co
 
 int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, const char *session, const int64_t *npt,
                          const double *scale) {
-#if 0
+#if ZC_TEST_SESSION
     // TODO(zhoucc) find session
     std::shared_ptr<IMediaSource> source;
     TSessions::iterator it;
     {
-        AutoThreadLocker locker(s_locker);
+        std::lock_guard<std::mutex> locker(m_mutex);
         it = s_sessions.find(session ? session : "");
         if (it == s_sessions.end()) {
             // 454 Session Not Found
@@ -310,7 +388,7 @@ int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, c
     }
 #endif
 
-#if 0
+#if ZC_TEST_SESSION
     if (npt && 0 != source->Seek(*npt)) {
         // 457 Invalid Range
         return rtsp_server_reply_play(rtsp, 457, NULL, NULL, NULL);
@@ -329,7 +407,6 @@ int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, c
     // 2. A mapping from RTP timestamps to NTP timestamps (wall clock) is available via RTCP.
     char rtpinfo[512] = {0};
     source->GetRTPInfo(uri, rtpinfo, sizeof(rtpinfo));
-
 
     // for vlc 2.2.2
     MP4FileSource *mp4 = dynamic_cast<MP4FileSource *>(source.get());
@@ -353,11 +430,12 @@ int CRtspServer::rtsp_onpause(void *ptr, rtsp_server_t *rtsp, const char *uri, c
 }
 
 int CRtspServer::_onpause(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session, const int64_t *npt) {
-#if 0
+#if ZC_TEST_SESSION
     std::shared_ptr<IMediaSource> source;
     TSessions::iterator it;
     {
-        AutoThreadLocker locker(s_locker);
+        // AutoThreadLocker locker(s_locker);
+        std::lock_guard<std::mutex> locker(m_mutex);
         it = s_sessions.find(session ? session : "");
         if (it == s_sessions.end()) {
             // 454 Session Not Found
@@ -375,7 +453,7 @@ int CRtspServer::_onpause(void *ptr, rtsp_server_t *rtsp, const char *uri, const
     }
 #endif
 
-    // source->Pause();
+    source->Pause();
 
     // 457 Invalid Range
 
@@ -390,11 +468,11 @@ int CRtspServer::rtsp_onteardown(void *ptr, rtsp_server_t *rtsp, const char *uri
 }
 
 int CRtspServer::_onteardown(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session) {
-#if 0
+#if ZC_TEST_SESSION
     std::shared_ptr<IMediaSource> source;
     TSessions::iterator it;
     {
-        AutoThreadLocker locker(s_locker);
+        std::lock_guard<std::mutex> locker(m_mutex);
         it = s_sessions.find(session ? session : "");
         if (it == s_sessions.end()) {
             // 454 Session Not Found
@@ -503,9 +581,9 @@ void CRtspServer::rtsp_onerror(void *ptr, rtsp_server_t *rtsp, int code) {
 
 void CRtspServer::_onerror(void *ptr, rtsp_server_t *rtsp, int code) {
     printf("rtsp_onerror code=%d, rtsp=%p\n", code, rtsp);
-#if 0
+#if ZC_TEST_SESSION
     TSessions::iterator it;
-    AutoThreadLocker locker(s_locker);
+    std::lock_guard<std::mutex> locker(m_mutex);
     for (it = s_sessions.begin(); it != s_sessions.end(); ++it) {
         if (rtsp == it->second.rtsp) {
             it->second.media->Pause();
@@ -518,7 +596,20 @@ void CRtspServer::_onerror(void *ptr, rtsp_server_t *rtsp, int code) {
     return;
 }
 
-CRtspServer::CRtspServer() : m_init(false), m_running(0) {}
+int CRtspServer::rtsp_send(void *ptr, const void *data, size_t bytes) {
+    // TODO(zhoucc)
+    CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
+    return psvr->_send(ptr, data, bytes);
+}
+
+int CRtspServer::_send(void *ptr, const void *data, size_t bytes) {
+    socket_t socket = (socket_t)(intptr_t)ptr;
+
+    // TODO: send multiple rtp packet once time
+    return bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
+}
+
+CRtspServer::CRtspServer() : Thread("RtspServer"), m_init(false) {}
 
 CRtspServer::~CRtspServer() {
     UnInit();
@@ -542,7 +633,7 @@ bool CRtspServer::_init() {
     phandler->base.onoptions = rtsp_onoptions;
     phandler->base.ongetparameter = rtsp_ongetparameter;
     phandler->base.onsetparameter = rtsp_onsetparameter;
-    // phandler->base.send; // ignore
+    phandler->base.send = nullptr;  // ignore rtsp_send;
     phandler->onerror = rtsp_onerror;
 
     // 1. check s_workdir, MUST be end with '/' or '\\'
@@ -599,21 +690,24 @@ bool CRtspServer::UnInit() {
     m_init = false;
     return false;
 }
-bool CRtspServer::Start() {
-    if (m_running) {
-        return false;
+
+bool CRtspServer::_aio_work() {
+    TSessions::iterator it;
+    std::lock_guard<std::mutex> locker(m_mutex);
+    for (it = s_sessions.begin(); it != s_sessions.end(); ++it) {
+        rtsp_media_t &session = it->second;
+        if (1 == session.status)
+            session.media->Play();
     }
 
-    m_running = true;
     return true;
 }
-
-bool CRtspServer::Stop() {
-    if (!m_running) {
-        return false;
+int CRtspServer::process() {
+    LOG_WARN("process into\n");
+    while (State() == Running /*&&  i < loopcnt*/) {
+        _aio_work();
     }
-
-    m_running = false;
-    return true;
+    LOG_WARN("process exit\n");
+    return -1;
 }
 }  // namespace zc

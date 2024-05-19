@@ -7,10 +7,11 @@
 #include "rtsp-server-internal.h"
 #include "rtsp-server.h"
 
+#include "Thread.hpp"
 #include "rtsp/ZcModRtsp.hpp"
 
 namespace zc {
-class CRtspServer {
+class CRtspServer : public Thread {
  public:
     CRtspServer();
     virtual ~CRtspServer();
@@ -18,15 +19,14 @@ class CRtspServer {
  public:
     bool Init();
     bool UnInit();
-    bool Start();
-    bool Stop();
 
  private:
     bool _init();
     bool _unInit();
-    int rtsp_uri_parse(const char* uri, std::string& path);
+    virtual int process();
+    bool _aio_work();
 
-
+    int rtsp_uri_parse(const char *uri, std::string &path);
 
     static int rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri);
     int _ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri);
@@ -60,14 +60,17 @@ class CRtspServer {
                         int bytes);
     static int rtsp_onclose(void *ptr2);
     int _onclose(void *ptr2);
-
     static void rtsp_onerror(void *ptr, rtsp_server_t *rtsp, int code);
     void _onerror(void *ptr, rtsp_server_t *rtsp, int code);
+
+    static int rtsp_send(void *ptr, const void *data, size_t bytes);
+    int _send(void *ptr, const void *data, size_t bytes);
 
  private:
     bool m_init;
     int m_running;
     void *m_phandle;  // handle
     void *m_psvr;     // server
+    std::mutex m_mutex;
 };
 }  // namespace zc

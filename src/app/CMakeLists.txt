@@ -10,6 +10,8 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
+add_definitions(-D__ERROR__=00*10000000+__LINE__*1000)
+
 add_subdirectory(zc_sys)
 add_subdirectory(zc_codec)
 add_subdirectory(zc_rtsp)

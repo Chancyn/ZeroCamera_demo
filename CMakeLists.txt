@@ -72,14 +72,45 @@ set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 
 #set(MEDIARTSP_INC ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server/media-server/librtsp/include)
 set(MEDIARTSPAIO rtspaio)
+set(MEDIARTSPMEDIA rtspmedia)
+set(MEDIAFILEBUF movfilebuf)
 set(MEDIARTSP rtsp)
 set(MEDIARTSP_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/debug.ubuntu22.04-linux64)
 set(MEDIARTSP_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/include)
 set(MEDIARTSP_INC2 ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/source/server)
+
+set(MEDIARTP rtp)
+set(MEDIARTP_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtp/debug.ubuntu22.04-linux64)
+set(MEDIARTP_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtp/include)
+
+set(MEDIAFLV flv)
+set(MEDIAFLV_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libflv/debug.ubuntu22.04-linux64)
+set(MEDIAFLV_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libflv/include)
+
+set(MEDIAMOV mov)
+set(MEDIAMOV_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libmov/debug.ubuntu22.04-linux64)
+set(MEDIAMOV_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libmov/include)
+
+set(MEDIAMPEG mpeg)
+set(MEDIAMPEG_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libmpeg/debug.ubuntu22.04-linux64)
+set(MEDIAMPEG_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libmpeg/include)
+
+set(MEDIAMKV mkv)
+set(MEDIAMKV_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libmkv/debug.ubuntu22.04-linux64)
+set(MEDIAMKV_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/libmkv/include)
+
 set(MEDIASDK sdk)
 set(MEDIASDK_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libsdk/debug.ubuntu22.04-linux64)
 set(MEDIASDK_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/include)
-set(MEDIACODEC_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/codec/include)
+
+set(MEDIAAVCODEC avcodec)
+set(MEDIAAVCODEC_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/avcodec/avcodec/include)
+set(MEDIAAVCODEC_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/avcodec/avcodec/debug.ubuntu22.04-linux64)
+
+set(MEDIAAVBSF avbsf)
+set(MEDIAAVBSF_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/avcodec/avbsf/include)
+set(MEDIAAVBSF_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/avcodec/avbsf/debug.ubuntu22.04-linux64)
+
 set(MEDIAHTTP http)
 set(MEDIAHTTP_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libhttp/debug.ubuntu22.04-linux64)
 set(MEDIAHTTP_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libhttp/include)
