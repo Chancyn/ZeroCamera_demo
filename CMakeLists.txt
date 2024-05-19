@@ -71,6 +71,7 @@ set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 
 #set(MEDIARTSP_INC ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server/media-server/librtsp/include)
+set(MEDIARTSPAIO rtspaio)
 set(MEDIARTSP rtsp)
 set(MEDIARTSP_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/debug.ubuntu22.04-linux64)
 set(MEDIARTSP_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/include)

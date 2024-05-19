@@ -47,7 +47,7 @@ bool CMsgCommReqClient::Open(const char *url) {
     }
 
     memcpy(m_psock, &nngsock, sizeof(nng_socket));
-    LOG_TRACE("open m_sock[%d] ok", nngsock.id);
+    // LOG_TRACE("open m_sock[%d] ok", nngsock.id);
     return true;
 _err_close:
     nng_close(nngsock);
@@ -59,7 +59,7 @@ bool CMsgCommReqClient::Close() {
     ZC_ASSERT(m_psock != nullptr);
     nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
     if (psock->id != 0) {
-        LOG_TRACE("close sock[%d]", psock->id);
+        // LOG_TRACE("close sock[%d]", psock->id);
         nng_close(*psock);
     }
 
@@ -70,7 +70,7 @@ bool CMsgCommReqClient::Send(void *buf, size_t len, int flags) {
     nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
     if (psock->id != 0) {
         int rv;
-        LOG_TRACE("into send msg %d %s", psock->id, buf);
+        // LOG_TRACE("into send msg %d %s", psock->id, buf);
         if ((rv = nng_send(*psock, buf, len, flags)) != 0) {
             LOG_ERROR("send msg error %d %s", rv, nng_strerror(rv));
             return false;

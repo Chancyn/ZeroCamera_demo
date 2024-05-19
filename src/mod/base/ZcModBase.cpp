@@ -196,7 +196,7 @@ int CModBase::_sendKeepaliveMsg() {
         return -1;
     }
     static ZC_U32 s_seqno = 0;
-    LOG_TRACE("send keepalive msg into[%s] into", m_name);
+    // LOG_TRACE("send keepalive msg into[%s] into", m_name);
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_t)] = {0};
     zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
     zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(pmsg->data);
@@ -205,7 +205,7 @@ int CModBase::_sendKeepaliveMsg() {
     pkeepalive->mid = m_modid;
     BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_KEEPALIVE_E, 0, sizeof(zc_mod_keepalive_t));
     MsgSendTo(pmsg, ZC_SYS_URL_IPC);
-    LOG_TRACE("send keepalive msg into id[%d] sid[%d] into", pmsg->id, pmsg->sid);
+    // LOG_TRACE("send keepalive msg into id[%d] sid[%d] into", pmsg->id, pmsg->sid);
     // MsgSendTo(pmsg);
 
     return 0;
@@ -217,7 +217,7 @@ int CModBase::_process_sys() {
     LOG_WARN("process into[%s] into", m_name);
     while (State() == Running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        LOG_INFO("process sleep[%s]", m_name);
+        // LOG_INFO("process sleep[%s]", m_name);
     }
     LOG_WARN("process into[%s] exit", m_name);
     return -1;
@@ -230,7 +230,7 @@ int CModBase::_process_mod() {
     _sendRegisterMsg();
     while (State() == Running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        LOG_INFO("process sleep[%s]", m_name);
+        // LOG_INFO("process sleep[%s]", m_name);
         _sendKeepaliveMsg();
     }
     LOG_WARN("process into[%s] exit", m_name);

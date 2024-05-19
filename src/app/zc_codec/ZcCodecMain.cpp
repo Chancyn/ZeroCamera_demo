@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 
     while (!bExitFlag) {
         sleep(1);
-        LOG_DEBUG("sleep exit");
+        // LOG_DEBUG("sleep exit");
     }
     LOG_ERROR("app loop exit");
     zc_log_uninit();

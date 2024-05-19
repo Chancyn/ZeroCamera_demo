@@ -30,6 +30,7 @@ ${MEDIASDK_LIBPATH}
 )
 
 target_link_libraries(zc_rtsp PUBLIC
+${MEDIARTSPAIO}
 ${MEDIARTSP}
 ${MEDIAHTTP}
 ${MEDIAAIO}
@@ -43,6 +44,8 @@ plat_basic
 bsw_basic
 zc_log
 )
+
+add_subdirectory(aio)
 
 #install(TARGETS zc_rtsp RUNTIME DESTINATION ${ZC_BIN_INSTALL})
 install(TARGETS zc_rtsp DESTINATION ${ZC_BIN_INSTALL})

@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     sys.Start();
     while (!bExitFlag) {
         sleep(1);
-        LOG_DEBUG("sleep ");
+        // LOG_TRACE("sleep ");
     }
 
     LOG_ERROR("app loop exit");

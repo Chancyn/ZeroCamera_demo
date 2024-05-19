@@ -22,13 +22,13 @@ INCLUDES = . \
 					../../avcodec/avbsf/include \
 					../../avcodec/avcodec/include
 # zhoucc
-INCLUDES += $(ROOT)/libaio/include
+#INCLUDES += $(ROOT)/libaio/include
 #-------------------------------Source-------------------------------
 #
 #--------------------------------------------------------------------
-#SOURCE_PATHS = source source/client source/server source/utils source/sdp
+SOURCE_PATHS = source source/client source/server source/utils source/sdp
 ##zhoucc build aio
-SOURCE_PATHS = source source/client source/server source/server/aio source/utils source/sdp
+#SOURCE_PATHS = source source/client source/server source/server/aio source/utils source/sdp
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
 
