@@ -2,8 +2,8 @@
 
 basepath=$(cd `dirname $01`; pwd)
 
-srcpkg=nng-1.7.3.tar.gz
-srcpkgbasename=nng-1.7.3
+srcpkg=nng-1.8.0.tar.gz
+srcpkgbasename=nng-1.8.0
 srcname=nng
 srcdir=$basepath/${srcname}
 installabsdir=$basepath/../../install/hi3519dv500/${srcname}
@@ -14,6 +14,8 @@ COMPILER_PREFIX=aarch64-v01c01-linux-gnu-
 export CC=${COMPILER_PREFIX}gcc
 export CXX=${COMPILER_PREFIX}g++
 
+export CXXFLAGS=-g
+export CFLAGS=-g
 #export CXXFLAGS='-mcpu=cortex-a53 -mfloat-abi=softfp -mfpu=neon-vfpv4 -mno-unaligned-access -fno-aggressive-loop-optimizations -fPIC -ffunction-sections'
 export CFLAGS='-mcpu=cortex-a55'
 export CXXFLAGS='-mcpu=cortex-a55'

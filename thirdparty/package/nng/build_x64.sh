@@ -2,8 +2,8 @@
 
 basepath=$(cd `dirname $01`; pwd)
 
-srcpkg=nng-1.7.3.tar.gz
-srcpkgbasename=nng-1.7.3
+srcpkg=nng-1.8.0.tar.gz
+srcpkgbasename=nng-1.8.0
 srcname=nng
 srcdir=$basepath/${srcname}
 
@@ -16,6 +16,9 @@ COMPILER_PREFIX=
 export CC=${COMPILER_PREFIX}gcc
 export CXX=${COMPILER_PREFIX}g++
 
+#debug
+#export CXXFLAGS=-g
+#export CFLAGS=-g
 #export CXXFLAGS='-mcpu=cortex-a53 -mfloat-abi=softfp -mfpu=neon-vfpv4 -mno-unaligned-access -fno-aggressive-loop-optimizations -fPIC -ffunction-sections'
 
 ################################################################################
@@ -59,6 +62,7 @@ function build_cmake_shared()
     [ -d ${srcdir}/build ] && rm ${srcdir}/build -rf
     mkdir ${srcdir}/build && cd ${srcdir}/build
     cmake ..  -DCMAKE_INSTALL_PREFIX=$installdir -DBUILD_SHARED_LIBS=true
+    #cmake .. -DCMAKE_C_FLAGS= -DCMAKE_INSTALL_PREFIX=$installdir -DBUILD_SHARED_LIBS=true
     make clean
     make -j 16
     rm -rf $installdir
