@@ -70,6 +70,22 @@ set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 
+#set(MEDIARTSP_INC ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server/media-server/librtsp/include)
+set(MEDIARTSP rtsp)
+set(MEDIARTSP_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/debug.ubuntu22.04-linux64)
+set(MEDIARTSP_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/include)
+set(MEDIARTSP_INC2 ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/media-server/librtsp/source/server)
+set(MEDIASDK sdk)
+set(MEDIASDK_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libsdk/debug.ubuntu22.04-linux64)
+set(MEDIASDK_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/include)
+set(MEDIACODEC_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/codec/include)
+set(MEDIAHTTP http)
+set(MEDIAHTTP_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libhttp/debug.ubuntu22.04-linux64)
+set(MEDIAHTTP_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libhttp/include)
+set(MEDIAAIO aio)
+set(MEDIAAIO_LIBPATH ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libaio/debug.ubuntu22.04-linux64)
+set(MEDIAAIO_INC ${CMAKE_SOURCE_DIR}/thirdparty/package/media_server/sdk/libaio/include)
+
 include_directories(include
 include/zc_log
 include/fifo

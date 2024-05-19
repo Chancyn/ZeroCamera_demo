@@ -32,17 +32,17 @@ int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-    zc::CRtspManager rtspsvr;
-    rtspsvr.Init();
-    rtspsvr.Start();
+    zc::CRtspManager rtsp;
+    rtsp.Init();
+    rtsp.Start();
     while (!bExitFlag) {
         sleep(1);
         LOG_DEBUG("sleep ");
     }
 
     LOG_ERROR("app loop exit");
-    rtspsvr.Stop();
-    rtspsvr.UnInit();
+    rtsp.Stop();
+    rtsp.UnInit();
     zc_log_uninit();
     printf("main exit\n");
     return 0;

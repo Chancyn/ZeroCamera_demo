@@ -13,15 +13,27 @@ endforeach()
 add_executable(zc_rtsp ${DIR_SOURCE_SRCS})
 
 target_include_directories(zc_rtsp PRIVATE
+${MEDIAAIO_INC}
+${MEDIAHTTP_INC}
+${MEDIARTSP_INC2}
+${MEDIARTSP_INC}
+${MEDIASDK_INC}
 ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 )
 
-# target_link_directories(zc_rtsp PRIVATE
-# ${SPDLOG_LIBPATH}
-# )
+target_link_directories(zc_rtsp PRIVATE
+${MEDIARTSP_LIBPATH}
+${MEDIAHTTP_LIBPATH}
+${MEDIAAIO_LIBPATH}
+${MEDIASDK_LIBPATH}
+)
 
 target_link_libraries(zc_rtsp PUBLIC
+${MEDIARTSP}
+${MEDIAHTTP}
+${MEDIAAIO}
+${MEDIASDK}
 mod_rtsp
 mod_base
 msgcomm
