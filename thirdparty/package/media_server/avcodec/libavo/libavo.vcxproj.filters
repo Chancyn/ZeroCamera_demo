@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{5e3d890e-6b2e-45d3-b7ed-e416c1c64d44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render">
+      <UniqueIdentifier>{8441fb4c-dffd-4671-aac2-3cc9a1769edd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render\direct3d9">
+      <UniqueIdentifier>{95af4d77-6d59-4fa7-8518-6bb7af603837}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render\direct3d11">
+      <UniqueIdentifier>{eb599241-306e-467f-9576-f905e17cbfe4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render\opengl2">
+      <UniqueIdentifier>{1b4efc46-3319-4a08-b8dc-aaea4812f0d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render\opengles2">
+      <UniqueIdentifier>{8a62c8ed-a4cd-4bda-8031-5f5dfe371f33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-output">
+      <UniqueIdentifier>{4a55ec98-f9fc-4b1d-b643-92fd5367e28f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-output\directsound8">
+      <UniqueIdentifier>{72d10412-035a-46b9-abed-4edae43f43b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-output\opensles">
+      <UniqueIdentifier>{769bc07d-2e8d-41ef-a10f-9ffab810a9df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-output\alsa">
+      <UniqueIdentifier>{7be36973-025b-4951-bcc6-66a19e9b87cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-input">
+      <UniqueIdentifier>{fcf7bd62-24ac-4c1c-90d5-af0df46b841e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-input\directsound8">
+      <UniqueIdentifier>{29d93044-088d-49dc-a2ee-ccd48a07f596}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-input\alsa">
+      <UniqueIdentifier>{a04d3de2-b910-4d5e-aca6-c1acba63c8e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio-input\opensles">
+      <UniqueIdentifier>{42a56ba5-e663-45c0-a002-b190b32a274b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\render\video_read.c">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\video_write.c">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\direct3d9\d3d9_render.cpp">
+      <Filter>Source Files\render\direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\direct3d11\d3d11_render.cpp">
+      <Filter>Source Files\render\direct3d11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio_output\directsound8\direct_sound_8.cpp">
+      <Filter>Source Files\audio-output\directsound8</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av_register.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio_input\audio_input.c">
+      <Filter>Source Files\audio-input</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\video_output.c">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio_output\audio_output.c">
+      <Filter>Source Files\audio-output</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av_register_all.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\audio_input\directsound8\direct_capture_8.cpp">
+      <Filter>Source Files\audio-input\directsound8</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\video_output.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\video_write.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\video_read.h">
+      <Filter>Source Files\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d9\d3d9_render.h">
+      <Filter>Source Files\render\direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d9\d3d9_surface.h">
+      <Filter>Source Files\render\direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d11\d3d11_render.h">
+      <Filter>Source Files\render\direct3d11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d11\d3d11_shader.h">
+      <Filter>Source Files\render\direct3d11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d11\d3d11_buffer.h">
+      <Filter>Source Files\render\direct3d11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d11\d3d11_compile.h">
+      <Filter>Source Files\render\direct3d11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d11\d3d11_texture.h">
+      <Filter>Source Files\render\direct3d11</Filter>
+    </ClInclude>
+    <ClInclude Include="include\audio_input.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\audio_output.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d9\d3d9_device.h">
+      <Filter>Source Files\render\direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d9\d3d9_overlay.h">
+      <Filter>Source Files\render\direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\direct3d9\d3d9_read.h">
+      <Filter>Source Files\render\direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\audio_output\directsound8\direct_sound_8.h">
+      <Filter>Source Files\audio-output\directsound8</Filter>
+    </ClInclude>
+    <ClInclude Include="include\av_register.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\audio_input\directsound8\direct_capture_8.h">
+      <Filter>Source Files\audio-input\directsound8</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="libavo.def" />
+  </ItemGroup>
+</Project>

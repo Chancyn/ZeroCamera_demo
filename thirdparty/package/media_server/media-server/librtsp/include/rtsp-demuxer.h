@@ -2,7 +2,7 @@
 #define _rtsp_demuxer_h_
 
 #include <stdint.h>
-// #include "avpacket.h" // https://github.com/ireader/avcodec #avcodec/include
+#include "avpacket.h" // https://github.com/ireader/avcodec #avcodec/include
 
 #if defined(__cplusplus)
 extern "C" {

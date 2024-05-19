@@ -1,0 +1,400 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		461F0C8B231F7EE700A995BD /* ice-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0C71231F7EE600A995BD /* ice-internal.h */; };
+		461F0C8C231F7EE700A995BD /* stun-transid.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C72231F7EE600A995BD /* stun-transid.c */; };
+		461F0C8D231F7EE700A995BD /* stun-agent.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C73231F7EE600A995BD /* stun-agent.c */; };
+		461F0C8E231F7EE700A995BD /* stun-client.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C74231F7EE600A995BD /* stun-client.c */; };
+		461F0C8F231F7EE700A995BD /* ice-checklist.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C75231F7EE600A995BD /* ice-checklist.c */; };
+		461F0C90231F7EE700A995BD /* ice-candidates.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0C76231F7EE600A995BD /* ice-candidates.h */; };
+		461F0C91231F7EE700A995BD /* stun-attr.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C77231F7EE600A995BD /* stun-attr.c */; };
+		461F0C92231F7EE700A995BD /* stun-auth.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C78231F7EE600A995BD /* stun-auth.c */; };
+		461F0C93231F7EE700A995BD /* ice-internal.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C79231F7EE600A995BD /* ice-internal.c */; };
+		461F0C94231F7EE700A995BD /* turn-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0C7A231F7EE600A995BD /* turn-internal.h */; };
+		461F0C95231F7EE700A995BD /* turn-agent.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C7B231F7EE600A995BD /* turn-agent.c */; };
+		461F0C96231F7EE700A995BD /* stun-server.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C7C231F7EE600A995BD /* stun-server.c */; };
+		461F0C97231F7EE700A995BD /* stun-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0C7D231F7EE600A995BD /* stun-internal.h */; };
+		461F0C98231F7EE700A995BD /* ice-candidate.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C7E231F7EE600A995BD /* ice-candidate.c */; };
+		461F0C99231F7EE700A995BD /* turn-server.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C7F231F7EE600A995BD /* turn-server.c */; };
+		461F0C9A231F7EE700A995BD /* ice-stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C80231F7EE600A995BD /* ice-stream.c */; };
+		461F0C9B231F7EE700A995BD /* stun-message.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C81231F7EE600A995BD /* stun-message.c */; };
+		461F0C9C231F7EE700A995BD /* stun-request.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C82231F7EE600A995BD /* stun-request.c */; };
+		461F0C9D231F7EE700A995BD /* ice-gather.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C83231F7EE600A995BD /* ice-gather.c */; };
+		461F0C9E231F7EE700A995BD /* ice-agent.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C84231F7EE700A995BD /* ice-agent.c */; };
+		461F0C9F231F7EE700A995BD /* stun-message.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0C85231F7EE700A995BD /* stun-message.h */; };
+		461F0CA0231F7EE700A995BD /* stun-attr.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0C86231F7EE700A995BD /* stun-attr.h */; };
+		461F0CA1231F7EE700A995BD /* ice-checklist.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0C87231F7EE700A995BD /* ice-checklist.h */; };
+		461F0CA2231F7EE700A995BD /* stun-response.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C88231F7EE700A995BD /* stun-response.c */; };
+		461F0CA3231F7EE700A995BD /* turn-client.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C89231F7EE700A995BD /* turn-client.c */; };
+		461F0CA4231F7EE700A995BD /* turn-allocate.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C8A231F7EE700A995BD /* turn-allocate.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		461F0C71231F7EE600A995BD /* ice-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ice-internal.h"; sourceTree = "<group>"; };
+		461F0C72231F7EE600A995BD /* stun-transid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-transid.c"; sourceTree = "<group>"; };
+		461F0C73231F7EE600A995BD /* stun-agent.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-agent.c"; sourceTree = "<group>"; };
+		461F0C74231F7EE600A995BD /* stun-client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-client.c"; sourceTree = "<group>"; };
+		461F0C75231F7EE600A995BD /* ice-checklist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "ice-checklist.c"; sourceTree = "<group>"; };
+		461F0C76231F7EE600A995BD /* ice-candidates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ice-candidates.h"; sourceTree = "<group>"; };
+		461F0C77231F7EE600A995BD /* stun-attr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-attr.c"; sourceTree = "<group>"; };
+		461F0C78231F7EE600A995BD /* stun-auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-auth.c"; sourceTree = "<group>"; };
+		461F0C79231F7EE600A995BD /* ice-internal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "ice-internal.c"; sourceTree = "<group>"; };
+		461F0C7A231F7EE600A995BD /* turn-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "turn-internal.h"; sourceTree = "<group>"; };
+		461F0C7B231F7EE600A995BD /* turn-agent.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "turn-agent.c"; sourceTree = "<group>"; };
+		461F0C7C231F7EE600A995BD /* stun-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-server.c"; sourceTree = "<group>"; };
+		461F0C7D231F7EE600A995BD /* stun-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "stun-internal.h"; sourceTree = "<group>"; };
+		461F0C7E231F7EE600A995BD /* ice-candidate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "ice-candidate.c"; sourceTree = "<group>"; };
+		461F0C7F231F7EE600A995BD /* turn-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "turn-server.c"; sourceTree = "<group>"; };
+		461F0C80231F7EE600A995BD /* ice-stream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "ice-stream.c"; sourceTree = "<group>"; };
+		461F0C81231F7EE600A995BD /* stun-message.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-message.c"; sourceTree = "<group>"; };
+		461F0C82231F7EE600A995BD /* stun-request.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-request.c"; sourceTree = "<group>"; };
+		461F0C83231F7EE600A995BD /* ice-gather.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "ice-gather.c"; sourceTree = "<group>"; };
+		461F0C84231F7EE700A995BD /* ice-agent.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "ice-agent.c"; sourceTree = "<group>"; };
+		461F0C85231F7EE700A995BD /* stun-message.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "stun-message.h"; sourceTree = "<group>"; };
+		461F0C86231F7EE700A995BD /* stun-attr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "stun-attr.h"; sourceTree = "<group>"; };
+		461F0C87231F7EE700A995BD /* ice-checklist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ice-checklist.h"; sourceTree = "<group>"; };
+		461F0C88231F7EE700A995BD /* stun-response.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "stun-response.c"; sourceTree = "<group>"; };
+		461F0C89231F7EE700A995BD /* turn-client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "turn-client.c"; sourceTree = "<group>"; };
+		461F0C8A231F7EE700A995BD /* turn-allocate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "turn-allocate.c"; sourceTree = "<group>"; };
+		46AC03212212FB3B003CF43D /* libice.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libice.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		46AC033A2212FD3B003CF43D /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46AC031F2212FB3B003CF43D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		46AC03182212FB3B003CF43D = {
+			isa = PBXGroup;
+			children = (
+				46AC033A2212FD3B003CF43D /* include */,
+				46AC03222212FB3B003CF43D /* Products */,
+				46AC033B2212FD4D003CF43D /* src */,
+			);
+			sourceTree = "<group>";
+		};
+		46AC03222212FB3B003CF43D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				46AC03212212FB3B003CF43D /* libice.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		46AC033B2212FD4D003CF43D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				461F0C84231F7EE700A995BD /* ice-agent.c */,
+				461F0C7E231F7EE600A995BD /* ice-candidate.c */,
+				461F0C76231F7EE600A995BD /* ice-candidates.h */,
+				461F0C75231F7EE600A995BD /* ice-checklist.c */,
+				461F0C87231F7EE700A995BD /* ice-checklist.h */,
+				461F0C83231F7EE600A995BD /* ice-gather.c */,
+				461F0C79231F7EE600A995BD /* ice-internal.c */,
+				461F0C71231F7EE600A995BD /* ice-internal.h */,
+				461F0C80231F7EE600A995BD /* ice-stream.c */,
+				461F0C73231F7EE600A995BD /* stun-agent.c */,
+				461F0C77231F7EE600A995BD /* stun-attr.c */,
+				461F0C86231F7EE700A995BD /* stun-attr.h */,
+				461F0C78231F7EE600A995BD /* stun-auth.c */,
+				461F0C74231F7EE600A995BD /* stun-client.c */,
+				461F0C7D231F7EE600A995BD /* stun-internal.h */,
+				461F0C81231F7EE600A995BD /* stun-message.c */,
+				461F0C85231F7EE700A995BD /* stun-message.h */,
+				461F0C82231F7EE600A995BD /* stun-request.c */,
+				461F0C88231F7EE700A995BD /* stun-response.c */,
+				461F0C7C231F7EE600A995BD /* stun-server.c */,
+				461F0C72231F7EE600A995BD /* stun-transid.c */,
+				461F0C7B231F7EE600A995BD /* turn-agent.c */,
+				461F0C8A231F7EE700A995BD /* turn-allocate.c */,
+				461F0C89231F7EE700A995BD /* turn-client.c */,
+				461F0C7A231F7EE600A995BD /* turn-internal.h */,
+				461F0C7F231F7EE600A995BD /* turn-server.c */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		46AC031D2212FB3B003CF43D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				461F0C90231F7EE700A995BD /* ice-candidates.h in Headers */,
+				461F0CA0231F7EE700A995BD /* stun-attr.h in Headers */,
+				461F0C9F231F7EE700A995BD /* stun-message.h in Headers */,
+				461F0C97231F7EE700A995BD /* stun-internal.h in Headers */,
+				461F0C94231F7EE700A995BD /* turn-internal.h in Headers */,
+				461F0C8B231F7EE700A995BD /* ice-internal.h in Headers */,
+				461F0CA1231F7EE700A995BD /* ice-checklist.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		46AC03202212FB3B003CF43D /* libice */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46AC03252212FB3B003CF43D /* Build configuration list for PBXNativeTarget "libice" */;
+			buildPhases = (
+				46AC031D2212FB3B003CF43D /* Headers */,
+				46AC031E2212FB3B003CF43D /* Sources */,
+				46AC031F2212FB3B003CF43D /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libice;
+			productName = libice;
+			productReference = 46AC03212212FB3B003CF43D /* libice.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46AC03192212FB3B003CF43D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1240;
+				ORGANIZATIONNAME = ireader;
+				TargetAttributes = {
+					46AC03202212FB3B003CF43D = {
+						CreatedOnToolsVersion = 10.1;
+					};
+				};
+			};
+			buildConfigurationList = 46AC031C2212FB3B003CF43D /* Build configuration list for PBXProject "libice" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 46AC03182212FB3B003CF43D;
+			productRefGroup = 46AC03222212FB3B003CF43D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				46AC03202212FB3B003CF43D /* libice */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46AC031E2212FB3B003CF43D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				461F0C8F231F7EE700A995BD /* ice-checklist.c in Sources */,
+				461F0CA4231F7EE700A995BD /* turn-allocate.c in Sources */,
+				461F0C92231F7EE700A995BD /* stun-auth.c in Sources */,
+				461F0C95231F7EE700A995BD /* turn-agent.c in Sources */,
+				461F0C9C231F7EE700A995BD /* stun-request.c in Sources */,
+				461F0C8C231F7EE700A995BD /* stun-transid.c in Sources */,
+				461F0C8E231F7EE700A995BD /* stun-client.c in Sources */,
+				461F0C96231F7EE700A995BD /* stun-server.c in Sources */,
+				461F0C91231F7EE700A995BD /* stun-attr.c in Sources */,
+				461F0C9B231F7EE700A995BD /* stun-message.c in Sources */,
+				461F0CA2231F7EE700A995BD /* stun-response.c in Sources */,
+				461F0C9E231F7EE700A995BD /* ice-agent.c in Sources */,
+				461F0CA3231F7EE700A995BD /* turn-client.c in Sources */,
+				461F0C99231F7EE700A995BD /* turn-server.c in Sources */,
+				461F0C8D231F7EE700A995BD /* stun-agent.c in Sources */,
+				461F0C93231F7EE700A995BD /* ice-internal.c in Sources */,
+				461F0C98231F7EE700A995BD /* ice-candidate.c in Sources */,
+				461F0C9D231F7EE700A995BD /* ice-gather.c in Sources */,
+				461F0C9A231F7EE700A995BD /* ice-stream.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		46AC03232212FB3B003CF43D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+					OS_MAC,
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../include",
+				);
+			};
+			name = Debug;
+		};
+		46AC03242212FB3B003CF43D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = OS_MAC;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../include",
+				);
+			};
+			name = Release;
+		};
+		46AC03262212FB3B003CF43D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N5G2SBT8X4;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		46AC03272212FB3B003CF43D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N5G2SBT8X4;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46AC031C2212FB3B003CF43D /* Build configuration list for PBXProject "libice" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46AC03232212FB3B003CF43D /* Debug */,
+				46AC03242212FB3B003CF43D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46AC03252212FB3B003CF43D /* Build configuration list for PBXNativeTarget "libice" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46AC03262212FB3B003CF43D /* Debug */,
+				46AC03272212FB3B003CF43D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46AC03192212FB3B003CF43D /* Project object */;
+}

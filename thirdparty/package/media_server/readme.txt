@@ -1,0 +1,1 @@
+make PLATFORM=arm-hisiv100nptl-linux

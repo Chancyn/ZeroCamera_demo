@@ -29,7 +29,7 @@ int rtsp_server_handle(struct rtsp_server_t *rtsp)
 	session = http_get_header_by_name(rtsp->parser, "Session");
 	if (session)
 		rtsp_header_session(session, &rtsp->session);
-
+	
 	uri = http_get_request_uri(rtsp->parser);
 	method = http_get_request_method(rtsp->parser);
 
