@@ -17,20 +17,20 @@ extern "C" {
 #define ZC_FIFO_LOCK_MUTEX 2
 
 #if (ZC_FIFO_LOCK_MUTEX == 0)
-#warning "fifo no lock"
+// #warning "fifo no lock"
 typedef int zcfifo_safe_lock_t;
 #define ZCFIFO_LOCK(x)
 #define ZCFIFO_UNLOCK(x)
 #define ZCFIFO_LOCK_INIT(x)
 #elif (ZC_FIFO_LOCK_MUTEX == 1)
-#warning "fifo spin lock"
+// #warning "fifo spin lock"
 // typedef pthread_spinlock_t zcfifo_safe_lock_t;
 #define zcfifo_safe_lock_t pthread_spinlock_t
 #define ZCFIFO_LOCK(x) pthread_spin_lock(x)
 #define ZCFIFO_UNLOCK(x) pthread_spin_unlock(x)
 #define ZCFIFO_LOCK_INIT(x) pthread_spin_init(x, PTHREAD_PROCESS_PRIVATE)
 #else
-#warning "fifo mutex lock"
+// #warning "fifo mutex lock"
 // 互斥锁测试性能 1000000 次，每次写入1024个字节耗时105ms速度 1024000000/610ms=1600M/
 // ThreadPutLock cnt[1000000]errcnt[1311692],ret[1024000000],cos[610]ms
 // ThreadGetLock cnt[1000000]errcnt[555166],ret[1024000000],cos[610]ms

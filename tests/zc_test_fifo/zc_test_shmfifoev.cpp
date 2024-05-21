@@ -110,7 +110,7 @@ class ThreadGetLockev : public zc::Thread {
                     if (ep[i].data.fd == g_cxxfifor->GetEvFd()) {
                         // LOG_TRACE("epoll wait ok ret[%d], fd[%d]", ret, ep[i].data.fd);
                         if (read(g_cxxfifor->GetEvFd(), buf, sizeof(buf)) <= 0) {
-                            // LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, ep[i].data.fd);
+                            LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, ep[i].data.fd);
                             g_cxxfifor->CloseEvFd();
                             return -1;
                         }

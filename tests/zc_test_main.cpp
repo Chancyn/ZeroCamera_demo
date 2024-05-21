@@ -10,10 +10,10 @@
 
 #include "zc_test_fifo_lock.hpp"
 #include "zc_test_fifo_nolock.hpp"
-#include "zc_test_shmfifo.hpp"
-#include "zc_test_shmfifoev.hpp"
 #include "zc_test_mod.hpp"
 #include "zc_test_msgcomm.hpp"
+#include "zc_test_shmfifo.hpp"
+#include "zc_test_shmfifoev.hpp"
 #include "zc_test_utilsxx.hpp"
 
 #define ZC_LOG_PATH "./log"
@@ -47,8 +47,11 @@ int main(int argc, char **argv) {
 
     int nodetype = 0;
     int fifotype = 0;
-    if (argc > 2) {
+    if (argc > 1) {
         fifotype = atoi(argv[1]);
+    }
+
+    if (argc > 2) {
         nodetype = atoi(argv[2]);
     }
 
@@ -68,7 +71,7 @@ int main(int argc, char **argv) {
 
     // zc_test_utilsxx_epoll_start();
     // shm fifo test
-     zc_test_shmfifoev_start(fifotype, nodetype);
+    zc_test_shmfifoev_start(fifotype, nodetype);
 
     // zc_test_utilsxx_semaphore();
     // zc_test_utilsxx_unsemaphore();
@@ -78,7 +81,7 @@ int main(int argc, char **argv) {
     }
     LOG_ERROR("app loop exit");
     // zc_test_utilsxx_epoll_stop();
-     zc_test_shmfifoev_stop(nodetype);
+    zc_test_shmfifoev_stop(nodetype);
     // if (fifotype == 0) {
     //     zc_test_fifo_nolock_stop(nodetype);
     // } else {
@@ -93,6 +96,7 @@ int main(int argc, char **argv) {
 }
 /*spinlock版本fifo
 ### 无锁队列测试性能 1000000 次，每次写入1024个字节耗时105ms速度 1024000000/105ms=2459M/s
-[2024-05-05 19:53:06.888][info][tid 226967] [zc_test_fifo_lock.cpp 52][process]ThreadPutLock cnt[1000000]errcnt[5234015],ret[1024000000],cos[397]ms
-[2024-05-05 19:53:06.888][info][tid 226968] [zc_test_fifo_lock.cpp 96][process]ThreadGetLock cnt[1000000]errcnt[166652],ret[1024000000],cos[397]ms
+[2024-05-05 19:53:06.888][info][tid 226967] [zc_test_fifo_lock.cpp 52][process]ThreadPutLock
+cnt[1000000]errcnt[5234015],ret[1024000000],cos[397]ms [2024-05-05 19:53:06.888][info][tid 226968]
+[zc_test_fifo_lock.cpp 96][process]ThreadGetLock cnt[1000000]errcnt[166652],ret[1024000000],cos[397]ms
 */

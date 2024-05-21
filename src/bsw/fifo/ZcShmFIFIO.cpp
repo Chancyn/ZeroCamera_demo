@@ -100,7 +100,7 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
     m_bwrite = bwrite;
 
     // ev mkfifo
-    snprintf(m_szevname, sizeof(m_szevname) - 1, "/tmp/evfifo_%.8s", name);
+    snprintf(m_szevname, sizeof(m_szevname) - 1, "/tmp/evfifo_%.8s%d", name, chn);
 }
 
 int CShmFIFO::_getkey(const char *name, unsigned char chn) {
@@ -154,8 +154,8 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
 
     if (m_bwrite) {
         // open nonblcok
-        // evfd = open(m_szevname, O_WRONLY | O_NONBLOCK, 0);
-        evfd = open(m_szevname, O_WRONLY | O_NONBLOCK, 0);
+        // evfd = open(m_szevname, O_RDWR | O_NONBLOCK, 0);
+        evfd = open(m_szevname, O_RDWR | O_NONBLOCK, 0);
     } else {
         // evfd = open(m_szevname, O_RDONLY | O_NONBLOCK, 0);
         evfd = open(m_szevname, O_RDONLY | O_NONBLOCK, 0);

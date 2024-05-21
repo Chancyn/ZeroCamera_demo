@@ -2,18 +2,19 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 // copy from linux kernel(2.6.32) zcfifo_safe.move to userspace, lockfree fifo
 
-
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
-#include "zcfifo_safe.h"
+
 #include "zc_macros.h"
+#include "zcfifo_safe.h"
+
 
 // userspace modify................
 
 #ifndef smp_wmb
-#warning "zhoucc nodefine smp_wmb"
+// #warning "zhoucc nodefine smp_wmb"
 #ifdef __GNUC__
 #define ZC_MBARRIER_FULL __sync_synchronize
 #define smp_wmb ZC_MBARRIER_FULL
@@ -22,12 +23,11 @@
 #endif
 #endif
 
-
 #ifndef BUG_ON
 #define BUG_ON(cond) ZC_ASSERT(!(cond))
 #endif
 
-#define min(x,y) ((x)<(y)?(x):(y))
+#define min(x, y) ((x) < (y) ? (x) : (y))
 
 // 一个数向上取整到最接近的2的幂
 static inline unsigned int roundup_pow_of_two(unsigned int n) {
@@ -46,6 +46,7 @@ static inline unsigned int roundup_pow_of_two(unsigned int n) {
     return n + 1;
 }
 
+#if 0
 static inline unsigned int rounddown_pow_of_two(unsigned int n) {
     // 找到n中最高位的1，并把它以下的所有位都置为0
     // 这可以通过对n进行位与操作，操作数是n的二进制表示中最高位的1左移一位后减1得到的
@@ -57,10 +58,10 @@ static inline unsigned int rounddown_pow_of_two(unsigned int n) {
     // 由于上面的位或操作，n现在是一个所有低于最高位1的位都被置为1的数
     return (n >> 1) + 1;
 }
+#endif
 
-static inline bool is_power_of_2(unsigned int n)
-{
-        return (n != 0 && ((n & (n - 1)) == 0));
+static inline bool is_power_of_2(unsigned int n) {
+    return (n != 0 && ((n & (n - 1)) == 0));
 }
 // userspace modify................
 
@@ -73,25 +74,23 @@ static inline bool is_power_of_2(unsigned int n)
  * Do NOT pass the zcfifo_safe to zcfifo_safe_free() after use! Simply free the
  * &zcfifo_safe_t with kfree().
  */
-zcfifo_safe_t *zcfifo_safe_init(unsigned char *buffer, unsigned int size, zcfifo_safe_lock_t *lock)
-{
-	zcfifo_safe_t *fifo;
+zcfifo_safe_t *zcfifo_safe_init(unsigned char *buffer, unsigned int size, zcfifo_safe_lock_t *lock) {
+    zcfifo_safe_t *fifo;
 
-	/* size must be a power of 2 */
-	BUG_ON(!is_power_of_2(size));
+    /* size must be a power of 2 */
+    BUG_ON(!is_power_of_2(size));
 
     fifo = malloc(sizeof(zcfifo_safe_t));
-	if (!fifo)
-		return NULL;
+    if (!fifo)
+        return NULL;
 
-	fifo->buffer = buffer;
-	fifo->size = size;
-	fifo->in = fifo->out = 0;
-	fifo->lock = lock;
+    fifo->buffer = buffer;
+    fifo->size = size;
+    fifo->in = fifo->out = 0;
+    fifo->lock = lock;
 
-	return fifo;
+    return fifo;
 }
-
 
 /**
  * zcfifo_safe_alloc - allocates a new FIFO and its internal buffer
@@ -100,40 +99,38 @@ zcfifo_safe_t *zcfifo_safe_init(unsigned char *buffer, unsigned int size, zcfifo
  *
  * The size will be rounded-up to a power of 2.
  */
-zcfifo_safe_t *zcfifo_safe_alloc(unsigned int size, zcfifo_safe_lock_t *lock)
-{
-	unsigned char *buffer;
-	zcfifo_safe_t *ret;
+zcfifo_safe_t *zcfifo_safe_alloc(unsigned int size, zcfifo_safe_lock_t *lock) {
+    unsigned char *buffer;
+    zcfifo_safe_t *ret;
 
-	/*
-	 * round up to the next power of 2, since our 'let the indices
-	 * wrap' technique works only in this case.
-	 */
-	if (!is_power_of_2(size)) {
-		BUG_ON(size > 0x80000000);
-		size = roundup_pow_of_two(size);
-	}
+    /*
+     * round up to the next power of 2, since our 'let the indices
+     * wrap' technique works only in this case.
+     */
+    if (!is_power_of_2(size)) {
+        BUG_ON(size > 0x80000000);
+        size = roundup_pow_of_two(size);
+    }
 
-	buffer = malloc(size);
-	if (!buffer)
-		return NULL;
+    buffer = malloc(size);
+    if (!buffer)
+        return NULL;
 
-	ret = zcfifo_safe_init(buffer, size, lock);
+    ret = zcfifo_safe_init(buffer, size, lock);
 
-	if (!ret)
-		free(buffer);
+    if (!ret)
+        free(buffer);
 
-	return ret;
+    return ret;
 }
 
 /**
  * zcfifo_safe_free - frees the FIFO
  * @fifo: the fifo to be freed.
  */
-void zcfifo_safe_free(zcfifo_safe_t *fifo)
-{
-	free(fifo->buffer);
-	free(fifo);
+void zcfifo_safe_free(zcfifo_safe_t *fifo) {
+    free(fifo->buffer);
+    free(fifo);
 }
 
 /**
@@ -149,39 +146,38 @@ void zcfifo_safe_free(zcfifo_safe_t *fifo)
  * Note that with only one concurrent reader and one concurrent
  * writer, you don't need extra locking to use these functions.
  */
-unsigned int __zcfifo_safe_put(zcfifo_safe_t *fifo,
-			const unsigned char *buffer, unsigned int len)
-{
-	unsigned int l;
+unsigned int __zcfifo_safe_put(zcfifo_safe_t *fifo, const unsigned char *buffer, unsigned int len) {
+    unsigned int l;
 
-	len = min(len, fifo->size - fifo->in + fifo->out);
+    len = min(len, fifo->size - fifo->in + fifo->out);
 
-	/*
-	 * Ensure that we sample the fifo->out index -before- we
-	 * start putting bytes into the zcfifo_safe.
-	 */
+    /*
+     * Ensure that we sample the fifo->out index -before- we
+     * start putting bytes into the zcfifo_safe.
+     */
     // 加内存屏障，保证在开始放入数据之前，fifo->out取到正确的值（另一个CPU可能正在改写out值）
-	smp_mb();
+    smp_mb();
 
-	/* first put the data starting from fifo->in to buffer end */
-	l = min(len, fifo->size - (fifo->in & (fifo->size - 1)));
-	memcpy(fifo->buffer + (fifo->in & (fifo->size - 1)), buffer, l);
+    /* first put the data starting from fifo->in to buffer end */
+    l = min(len, fifo->size - (fifo->in & (fifo->size - 1)));
+    memcpy(fifo->buffer + (fifo->in & (fifo->size - 1)), buffer, l);
 
-	/* then put the rest (if any) at the beginning of the buffer */
-	memcpy(fifo->buffer, buffer + l, len - l);
+    /* then put the rest (if any) at the beginning of the buffer */
+    memcpy(fifo->buffer, buffer + l, len - l);
 
-	/*
-	 * Ensure that we add the bytes to the zcfifo_safe -before-
-	 * we update the fifo->in index.
-	 */
+    /*
+     * Ensure that we add the bytes to the zcfifo_safe -before-
+     * we update the fifo->in index.
+     */
 
     // 加写内存屏障，保证in 加之前，memcpy的字节已经全部写入buffer，
-    // 如果不加内存屏障，可能数据还没写完，另一个CPU就来读数据，读到的缓冲区内的数据不完全，因为读数据是通过 in – out 来判断的。
-	smp_wmb();
+    // 如果不加内存屏障，可能数据还没写完，另一个CPU就来读数据，读到的缓冲区内的数据不完全，因为读数据是通过 in – out
+    // 来判断的。
+    smp_wmb();
 
-	fifo->in += len;
+    fifo->in += len;
 
-	return len;
+    return len;
 }
 
 /**
@@ -196,43 +192,41 @@ unsigned int __zcfifo_safe_put(zcfifo_safe_t *fifo,
  * Note that with only one concurrent reader and one concurrent
  * writer, you don't need extra locking to use these functions.
  */
-unsigned int __zcfifo_safe_get(zcfifo_safe_t *fifo,
-			 unsigned char *buffer, unsigned int len)
-{
-	unsigned int l;
+unsigned int __zcfifo_safe_get(zcfifo_safe_t *fifo, unsigned char *buffer, unsigned int len) {
+    unsigned int l;
 
-	len = min(len, fifo->in - fifo->out);
+    len = min(len, fifo->in - fifo->out);
 
-	/*
-	 * Ensure that we sample the fifo->in index -before- we
-	 * start removing bytes from the zcfifo_safe.
-	 */
+    /*
+     * Ensure that we sample the fifo->in index -before- we
+     * start removing bytes from the zcfifo_safe.
+     */
 
     // 加读内存屏障，保证在开始取数据之前，fifo->in取到正确的值（另一个CPU可能正在改写in值）
-	smp_rmb();
+    smp_rmb();
 
-	/* first get the data from fifo->out until the end of the buffer */
-	l = min(len, fifo->size - (fifo->out & (fifo->size - 1)));
-	memcpy(buffer, fifo->buffer + (fifo->out & (fifo->size - 1)), l);
+    /* first get the data from fifo->out until the end of the buffer */
+    l = min(len, fifo->size - (fifo->out & (fifo->size - 1)));
+    memcpy(buffer, fifo->buffer + (fifo->out & (fifo->size - 1)), l);
 
-	/* then get the rest (if any) from the beginning of the buffer */
-	memcpy(buffer + l, fifo->buffer, len - l);
+    /* then get the rest (if any) from the beginning of the buffer */
+    memcpy(buffer + l, fifo->buffer, len - l);
 
-	/*
-	 * Ensure that we remove the bytes from the zcfifo_safe -before-
-	 * we update the fifo->out index.
-	 */
+    /*
+     * Ensure that we remove the bytes from the zcfifo_safe -before-
+     * we update the fifo->out index.
+     */
 
     // 加内存屏障，保证在修改out前，已经从buffer中取走了数据，
-    // 如果不加屏障，可能先执行了增加out的操作，数据还没取完，令一个CPU可能已经往buffer写数据，将数据破坏，因为写数据是通过fifo->size - (fifo->in & (fifo->size - 1))来判断的 。
+    // 如果不加屏障，可能先执行了增加out的操作，数据还没取完，令一个CPU可能已经往buffer写数据，将数据破坏，因为写数据是通过fifo->size
+    // - (fifo->in & (fifo->size - 1))来判断的 。
 
-	smp_mb();
+    smp_mb();
 
-	fifo->out += len;
+    fifo->out += len;
 
-	return len;
+    return len;
 }
-
 
 /**
  * __zcfifo_safe_reset - removes the entire FIFO contents, no locking version

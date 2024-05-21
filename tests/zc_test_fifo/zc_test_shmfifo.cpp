@@ -15,6 +15,7 @@
 #include "Thread.hpp"
 #include "ZcShmFIFO.hpp"
 #include "ZcType.hpp"
+#include "zc_test_shmfifo.hpp"
 
 #define TEST_FIFO_CXX 1  // cxx test
 
@@ -125,7 +126,10 @@ class ThreadGetLock : public zc::Thread {
 
 static ThreadGetLock *g_threadget = nullptr;
 static ThreadPutLock *g_threadput = nullptr;
+
+#if !TEST_FIFO_CXX
 static zcfifo_safe_lock_t g_lock;
+#endif
 
 static int _zc_test_shmfifo_start(int type) {
     for (unsigned int i = 0; i < sizeof(g_buffer); i++) {
