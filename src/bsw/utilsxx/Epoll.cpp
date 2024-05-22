@@ -25,10 +25,11 @@ void CEpoll::Destroy() {
     }
     ZC_SAFE_DELETEA(m_backEvents);
 }
-
-inline const epoll_event *CEpoll::Events() const {
+#if 0
+inline const struct epoll_event *CEpoll::Events() const {
     return m_backEvents;
 }
+#endif
 
 bool CEpoll::Create() {
     m_epfd = epoll_create(1);
@@ -37,38 +38,40 @@ bool CEpoll::Create() {
         return false;
     }
 
-    m_backEvents = new epoll_event[m_maxevents];
+    m_backEvents = new struct epoll_event[m_maxevents];
     LOG_TRACE("epoll_create ok m_epfd[%d]", m_epfd);
     return true;
 }
 
-bool CEpoll::Add(int fd, unsigned int event) {
+bool CEpoll::Add(int fd, unsigned int event, void *ptr) {
     if (m_epfd > 0) {
-        epoll_event ev;
-        ev.data.fd = fd;
+        struct epoll_event ev;
         ev.events = event;
+        ev.data.fd = fd;
+        ev.data.ptr = ptr;
         if (epoll_ctl(m_epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
-            LOG_ERROR("epoll_ctl ADD error m_epfd[%d], fd[%d] errno[%d]", m_epfd, fd, errno);
+            LOG_ERROR("epoll_ctl ADD error m_epfd[%d], fd[%d] ptr[%p], errno[%d]", m_epfd, fd, ev.data.ptr, errno);
             return false;
         }
 
-        LOG_TRACE("Add m_epfd[%d], fd[%d], event[0x%x]", m_epfd, fd, event);
+        LOG_TRACE("Add m_epfd[%d], fd[%d], ptr[%p], event[0x%x]", m_epfd, fd, ptr, event);
         return true;
     }
 
     return false;
 }
 
-bool CEpoll::Mod(int fd, unsigned int event) {
+bool CEpoll::Mod(int fd, unsigned int event, void *ptr) {
     if (m_epfd > 0) {
-        epoll_event ev;
-        ev.data.fd = fd;
+        struct epoll_event ev;
         ev.events = event;
+        ev.data.fd = fd;
+        ev.data.ptr = ptr;
         if (epoll_ctl(m_epfd, EPOLL_CTL_MOD, fd, &ev) != 0) {
-            LOG_ERROR("epoll_ctl MOD error m_epfd[%d], fd[%d] errno[%d]", m_epfd, fd, errno);
+            LOG_ERROR("epoll_ctl MOD error m_epfd[%d], fd[%d], ptr[%p], errno[%d]", m_epfd, fd, ev.data.ptr, errno);
             return false;
         }
-        LOG_TRACE("Mod m_epfd[%d], fd[%d], event[0x%x]", m_epfd, fd, event);
+        LOG_TRACE("Mod m_epfd[%d], fd[%d], ptr[%p], event[0x%x]", m_epfd, fd, ptr, event);
         return true;
     }
 

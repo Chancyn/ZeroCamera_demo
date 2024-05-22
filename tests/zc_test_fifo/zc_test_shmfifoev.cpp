@@ -1,6 +1,7 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
+#include <cstddef>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -52,6 +53,7 @@ class ThreadPutLockev : public zc::Thread {
 #if TEST_FIFO_CXX  // cxx test
             if (1 /*!g_cxxfifow->IsFull()*/) {
                 ret += g_cxxfifow->Put(buffer, sizeof(buffer));
+                usleep(500*1000);
 #else
             if (!zcfifo_safe_is_full(g_fifo)) {
                 ret += zcfifo_safe_put(g_fifo, buffer, sizeof(buffer));
@@ -73,7 +75,10 @@ class ThreadPutLockev : public zc::Thread {
     std::string m_name;
     unsigned int m_process_cnt;
 };
+static int test()
+{
 
+}
 class ThreadGetLockev : public zc::Thread {
  public:
     explicit ThreadGetLockev(std::string name) : Thread(name), m_name(name), m_process_cnt(0) {
@@ -93,29 +98,36 @@ class ThreadGetLockev : public zc::Thread {
         unsigned int loopcnt = g_loopcnt;
         unsigned int i = 0;
         char buf[2048];
+        const struct epoll_event * events = nullptr;
         zc::CEpoll ep;
 
         if (!ep.Create()) {
             LOG_ERROR("epoll create error");
             return -1;
         }
-        ep.Add(g_cxxfifor->GetEvFd(), EPOLLIN);
+        ep.Add(g_cxxfifor->GetEvFd(), EPOLLIN, (void *)g_cxxfifor);
         while (State() == Running /* && i < loopcnt*/) {
             ret = ep.Wait();
             if (ret == -1) {
                 LOG_ERROR("epoll wait error");
                 return -1;
             } else if (ret > 0) {
+                events = ep.Events();
                 for (int i = 0; i < ret; i++) {
-                    if (ep[i].data.fd == g_cxxfifor->GetEvFd()) {
-                        // LOG_TRACE("epoll wait ok ret[%d], fd[%d]", ret, ep[i].data.fd);
-                        if (read(g_cxxfifor->GetEvFd(), buf, sizeof(buf)) <= 0) {
+                    // LOG_WARN("epoll wait ret[%d] events[%d] [%d] [%p]", ret, events[i].events, ep[i].data.fd, ep[i].data.ptr);
+                    zc::CShmFIFOR *fifor = (zc::CShmFIFOR *)ep[i].data.ptr;
+                     if (events[i].events & EPOLLIN) {
+                        LOG_TRACE("epoll wait ok ret[%d], fd[%d] [%p], ptr[%p]", ret, ep[i].data.fd, g_cxxfifor,
+                                  fifor);
+                        if (read(fifor->GetEvFd(), buf, sizeof(buf)) <= 0) {
                             LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, ep[i].data.fd);
-                            g_cxxfifor->CloseEvFd();
+                            fifor->CloseEvFd();
                             return -1;
                         }
-                        if (!g_cxxfifor->IsEmpty()) {
-                            ret = g_cxxfifor->Get(buffer, sizeof(buffer));
+
+                        LOG_TRACE("epoll ok fifor[%p], fd[%d]", fifor,fifor->GetEvFd());
+                        if (!fifor->IsEmpty()) {
+                            ret = fifor->Get(buffer, sizeof(buffer));
                             retcnt += ret;
                             cmp = memcmp(g_buffer, buffer, sizeof(g_buffer));
                             if (cmp != 0) {

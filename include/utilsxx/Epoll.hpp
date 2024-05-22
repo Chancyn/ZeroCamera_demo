@@ -7,7 +7,7 @@
 #include "zc_type.h"
 
 #define ZC_EPOLL_EVENT_SIZE_DEF 20  // default epoll event size
-#define ZC_EPOLL_TIMEOUT_DEF 10     // default timeout 10ms
+#define ZC_EPOLL_TIMEOUT_DEF -1 //10     // default timeout 10ms
 namespace zc {
 class CEpoll {
  public:
@@ -15,18 +15,18 @@ class CEpoll {
     ~CEpoll();
     bool Create();
     void Destroy();
-    bool Add(int fd, unsigned int event);
-    bool Mod(int fd, unsigned int event);
+    bool Add(int fd, unsigned int event, void *ptr = nullptr);
+    bool Mod(int fd, unsigned int event, void *ptr = nullptr);
     bool Del(int fd);
     int Wait();
-    const epoll_event *Events() const;
+    const struct epoll_event *Events() const { return m_backEvents; }
     // overload [] operator
-    const epoll_event &operator[](int index) { return m_backEvents[index]; }
+    const struct epoll_event &operator[](int index) { return m_backEvents[index]; }
 
  private:
     int m_epfd;
     int m_timeout;
-    int m_maxevents;
-    epoll_event *m_backEvents;
+    const int m_maxevents;
+    struct epoll_event *m_backEvents;
 };
 }  // namespace zc

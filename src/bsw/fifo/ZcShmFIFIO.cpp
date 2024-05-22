@@ -317,7 +317,7 @@ unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
     // write evfd
     if (ret && m_pfifo.evfd > 0 && write(m_pfifo.evfd, "w", 1) < 0) {
         // char buf[ZC_EVFIFO_SIZE];
-        // LOG_ERROR("warn write evfifo error, read clear");
+        LOG_ERROR("warn write evfifo error, read clear");
         // read(m_pfifo.evfd, buf, sizeof(buf));
     }
     return ret;

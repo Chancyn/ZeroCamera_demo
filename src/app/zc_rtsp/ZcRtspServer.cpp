@@ -2,14 +2,16 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 // start media-server
-#include <cstddef>
-#include <cstdlib>
+#include <stddef.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <map>
 #include <memory>
 #include <mutex>
+#include <utility>
 
+#include "media/ZcMediaTrack.hpp"
 #include "zc_log.h"
 #include "zc_macros.h"
 
@@ -29,14 +31,15 @@
 #include "sys/system.h"  // system_clock
 #include "uri-parse.h"
 #include "urlcodec.h"
+#include "zc_type.h"
 
 #include "ZcRtspServer.hpp"
 #include "ZcType.hpp"
-#include "zc_type.h"
+#include "media/ZcLiveSource.hpp"
 
 #define ZC_N_AIO_THREAD (4)  // aio thread num
 #define ZC_TEST_SESSION 1    // test示例代码
-#define ZC_SUPPORT_VOD 0     // video on Demand 点播
+#define ZC_SUPPORT_VOD 1     // video on Demand 点播
 
 #if defined(_HAVE_FFMPEG_)
 #include "media/ffmpeg-file-source.h"
@@ -50,10 +53,12 @@
 // Windows --> d:\video\abc.mp4
 // Linux   --> ./video/abc.mp4
 
+#if ZC_SUPPORT_VOD
 #if defined(OS_WINDOWS)
 static const char *s_workdir = "d:\\";
 #else
 static const char *s_workdir = "./";
+#endif
 #endif
 
 namespace zc {
@@ -125,6 +130,11 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
 #if defined(_HAVE_FFMPEG_)
                 source.reset(new FFLiveSource("video=Integrated Webcam"));
 #endif
+                int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
+                assert(offset > 0 && offset + 1 < sizeof(buffer));
+            } else if (0 == strcmp(filename.c_str(), "live.h264")) {
+                LOG_TRACE("test live");
+                source.reset(new CLiveSource());
                 int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
                 assert(offset > 0 && offset + 1 < sizeof(buffer));
             } else {
@@ -218,6 +228,9 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
 #if defined(_HAVE_FFMPEG_)
             item.media.reset(new FFLiveSource("video=Integrated Webcam"));
 #endif
+        } else if (0 == strcmp(filename.c_str(), "live.h264")) {
+            LOG_TRACE("test live setup");
+            item.media.reset(new CLiveSource());
         } else {
             if (strendswith(filename.c_str(), ".ps"))
                 item.media.reset(new PSFileSource(filename.c_str()));
@@ -475,8 +488,8 @@ int CRtspServer::rtsp_onrecord(void *ptr, rtsp_server_t *rtsp, const char *uri, 
     return psvr->_onrecord(ptr, rtsp, uri, session, npt, scale);
 }
 
-int CRtspServer::_onrecord(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
-                           const int64_t *npt, const double *scale) {
+int CRtspServer::_onrecord(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session, const int64_t *npt,
+                           const double *scale) {
     return rtsp_server_reply_record(rtsp, 200, NULL, NULL);
 }
 
@@ -566,11 +579,11 @@ int CRtspServer::rtsp_send(void *ptr, const void *data, size_t bytes) {
 int CRtspServer::_send(void *ptr, const void *data, size_t bytes) {
     socket_t socket = (socket_t)(intptr_t)ptr;
 
-    // TODO: send multiple rtp packet once time
+    // TODO(zhoucc): send multiple rtp packet once time;unuse
     return bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
 }
 
-CRtspServer::CRtspServer() : Thread("RtspServer"), m_init(false) {}
+CRtspServer::CRtspServer() : Thread("RtspServer"), m_init(false), m_running(0), m_phandle(nullptr), m_psvr(nullptr) {}
 
 CRtspServer::~CRtspServer() {
     UnInit();
@@ -663,6 +676,7 @@ bool CRtspServer::_aio_work() {
 
     return true;
 }
+
 int CRtspServer::process() {
     LOG_WARN("process into\n");
     while (State() == Running /*&&  i < loopcnt*/) {

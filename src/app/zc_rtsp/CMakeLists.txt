@@ -63,6 +63,7 @@ mod_base
 msgcomm
 utilsxx
 utils
+zcfifo
 plat_basic
 bsw_basic
 zc_log
