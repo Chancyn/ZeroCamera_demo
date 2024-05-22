@@ -1,6 +1,7 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 #include <asm-generic/errno.h>
+#include <mutex>
 #include <stdio.h>
 
 #include <memory>
@@ -28,33 +29,13 @@ extern "C" uint32_t rtp_ssrc(void);
 
 namespace zc {
 // CLiveSource::CLiveSource() :m_count(MEDIA_TRACK_BUTT){}
-#if ZC_LIVE_TEST
-CLiveSource::CLiveSource()
-    : Thread("LiveSource"), m_status(0), m_count(MEDIA_TRACK_AUDIO), m_reader(ZC_LIVE_TEST_FILE),
-      m_fifowriter(new CShmFIFOW(ZC_MEDIA_MAIN_VIDEO_SIZE, ZC_MEDIA_VIDEO_SHM_PATH, 0)) {
-    if (!m_fifowriter->ShmAlloc()) {
-        LOG_ERROR("ShmAlloc error");
-        ZC_ASSERT(0);
-        return;
-    }
-
-    for (int i = 0; i < MEDIA_TRACK_BUTT; i++) {
-        m_tracks[i] = nullptr;
-    }
-
-    m_rtp_clock = 0;
-    m_rtcp_clock = 0;
-    m_timestamp = 0;
-
-    Init();
-}
-#else
 CLiveSource::CLiveSource() : m_status(0), m_count(MEDIA_TRACK_META) {
     for (int i = 0; i < MEDIA_TRACK_BUTT; i++) {
         m_tracks[i] = nullptr;
     }
+    Init();
 }
-#endif
+
 CLiveSource::~CLiveSource() {
     UnInit();
 }
@@ -72,25 +53,7 @@ int CLiveSource::SetTransport(const char *track, std::shared_ptr<IRTPTransport> 
 
 int CLiveSource::Play() {
     m_status = 1;
-#if ZC_LIVE_TEST
-    // uint32_t timestamp = 0;
-    time64_t clock = time64_now();
-    if (0 == m_rtp_clock)
-        m_rtp_clock = clock;
 
-    if (m_rtp_clock + 40 < clock) {
-        size_t bytes;
-        const uint8_t *ptr;
-        if (0 == m_reader.GetNextFrame(m_pos, ptr, bytes)) {
-            // rtp_payload_encode_input(m_rtppacker, ptr, (int)bytes, m_timestamp * 90 /*kHz*/);
-            LOG_WARN("Put bytes[%d]", bytes);
-            m_fifowriter->Put(ptr, bytes);
-            m_rtp_clock += 40;
-            m_timestamp += 40;
-            return 1;
-        }
-    }
-#endif
     return 0;
 }
 
@@ -100,13 +63,8 @@ int CLiveSource::Pause() {
 }
 
 int CLiveSource::Seek(int64_t pos) {
-#if ZC_LIVE_TEST
-    m_pos = pos;
-    m_rtp_clock = 0;
-    return m_reader.Seek(m_pos);
-#else
+
     return 0;
-#endif
 }
 
 int CLiveSource::SetSpeed(double speed) {
@@ -123,9 +81,7 @@ int CLiveSource::UnInit() {
         ZC_SAFE_DELETE(m_tracks[i]);
     }
 
-#if ZC_LIVE_TEST
-    ZC_SAFE_DELETE(m_fifowriter);
-#endif
+    return 0;
 }
 
 int CLiveSource::Init() {
@@ -216,7 +172,7 @@ int CLiveSource::_sendProcess() {
         int evfd = -1;
         if (m_tracks[i] && (evfd = m_tracks[i]->GetEvFd()) > 0) {
             LOG_WARN("epoll add i[%d], fd[%d] ptr[%p]", i, evfd, m_tracks[i]);
-            ep.Add(evfd, EPOLLIN, m_tracks[i]);
+            ep.Add(evfd, EPOLLIN | EPOLLET, m_tracks[i]);
         }
     }
 

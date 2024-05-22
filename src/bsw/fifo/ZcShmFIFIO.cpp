@@ -166,11 +166,19 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
         ZC_ASSERT(0);
         goto _err_open;
     }
-    m_pfifo.out = 0;
+
     m_pfifo.shmid = shmid;
     m_pfifo.fifo = reinterpret_cast<zcshmbuf_t *>(p);
-    m_pfifo.fifo->size = m_size;
-    m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
+    if (m_bwrite) {
+        // owner init in/out pos
+        m_pfifo.fifo->size = m_size;
+        m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
+        m_pfifo.out = 0;
+    } else {
+        // reader out pos = in pos
+        m_pfifo.out = m_pfifo.fifo->in;
+    }
+
     m_pfifo.evfd = evfd;
     LOG_ERROR("shmalloc ok shmid[%d],shmkey[%d]", shmid, shmkey);
     return true;
@@ -278,7 +286,7 @@ unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     unsigned int l;
 
-    len = min(len, m_pfifo.fifo->in - m_pfifo.fifo->out);
+    len = min(len, m_pfifo.fifo->in - m_pfifo.out);
 
     /*
      * Ensure that we sample the m_pfifo.fifo->in index -before- we
@@ -288,16 +296,16 @@ unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
     // 加读内存屏障，保证在开始取数据之前，m_fifo.in取到正确的值（另一个CPU可能正在改写in值）
     smp_rmb();
 
-    /* first get the data from m_pfifo.fifo->out until the end of the buffer */
-    l = min(len, m_pfifo.fifo->size - (m_pfifo.fifo->out & (m_pfifo.fifo->size - 1)));
-    memcpy(buffer, m_pfifo.fifo->buffer + (m_pfifo.fifo->out & (m_pfifo.fifo->size - 1)), l);
+    /* first get the data from m_pfifo.out until the end of the buffer */
+    l = min(len, m_pfifo.fifo->size - (m_pfifo.out & (m_pfifo.fifo->size - 1)));
+    memcpy(buffer, m_pfifo.fifo->buffer + (m_pfifo.out & (m_pfifo.fifo->size - 1)), l);
 
     /* then get the rest (if any) from the beginning of the buffer */
     memcpy(buffer + l, m_pfifo.fifo->buffer, len - l);
 
     /*
      * Ensure that we remove the bytes from the zcfifo -before-
-     * we update the m_pfifo.fifo->out index.
+     * we update the m_pfifo.out index.
      */
 
     // 加内存屏障，保证在修改out前，已经从buffer中取走了数据，
@@ -306,19 +314,20 @@ unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
 
     smp_mb();
 
-    m_pfifo.fifo->out += len;
+    m_pfifo.out += len;
 
     return len;
 }
+
 unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
     unsigned int ret = 0;
     ret = _put(buffer, len);
 
     // write evfd
     if (ret && m_pfifo.evfd > 0 && write(m_pfifo.evfd, "w", 1) < 0) {
-        // char buf[ZC_EVFIFO_SIZE];
+        char buf[ZC_EVFIFO_SIZE];
         LOG_ERROR("warn write evfifo error, read clear");
-        // read(m_pfifo.evfd, buf, sizeof(buf));
+        read(m_pfifo.evfd, buf, sizeof(buf));
     }
     return ret;
 }
@@ -331,17 +340,18 @@ unsigned int CShmFIFO::get(unsigned char *buffer, unsigned int len) {
 void CShmFIFO::Reset() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
+    m_pfifo.fifo->out = 0;
     return;
 }
 
 unsigned int CShmFIFO::Len() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
-    return m_pfifo.fifo->in - m_pfifo.fifo->out;
+    return m_pfifo.fifo->in - m_pfifo.out;
 }
 
 bool CShmFIFO::IsEmpty() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
-    return (m_pfifo.fifo->in == m_pfifo.fifo->out);
+    return (m_pfifo.fifo->in == m_pfifo.out);
 }
 
 bool CShmFIFO::IsFull() {

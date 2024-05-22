@@ -261,16 +261,16 @@ int CMediaTrack::GetData2Send()
 {
     int ret = 0;
     static int retcnt = 0;
-    int buf[1024];
-    if (read(m_fiforeader->GetEvFd(), buf, sizeof(buf)) <= 0) {
-        LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, m_fiforeader->GetEvFd());
-        m_fiforeader->CloseEvFd();
-        return -1;
-    }
+    // int buf[1024];
+    // if (read(m_fiforeader->GetEvFd(), buf, sizeof(buf)) <= 0) {
+    //     LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, m_fiforeader->GetEvFd());
+    //     m_fiforeader->CloseEvFd();
+    //     return -1;
+    // }
 
     if (!m_fiforeader->IsEmpty()) {
         ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf));
-        LOG_ERROR("get fifodata ret[%d]", ret);
+        // LOG_TRACE("get fifodata ret[%d]", ret);
         retcnt += ret;
         rtp_payload_encode_input(m_rtppacker, m_framebuf, (int)ret, m_timestamp * 90 /*kHz*/);
         m_rtp_clock += 40;
