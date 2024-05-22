@@ -58,7 +58,10 @@ void Thread::Resume() {
 
 void Thread::_run() {
     LOG_INFO("enter thread:,%s %d", m_name.c_str(), std::this_thread::get_id());
-    pthread_setname_np(_thread->native_handle(), m_name.substr(0, 15).c_str());
+    // 线程外设置
+    // pthread_setname_np(_thread->native_handle(), m_name.substr(0, 15).c_str());
+    // 线程内设置
+    pthread_setname_np(pthread_self(), m_name.substr(0, 15).c_str());
     while (!_stopFlag) {
         if (process() < 0) {
             LOG_ERROR("process error, pause thread:,%s %d", m_name.c_str(), std::this_thread::get_id());
