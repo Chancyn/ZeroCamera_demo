@@ -1,4 +1,3 @@
-#define DEBUG
 #if defined(_DEBUG) || defined(DEBUG)
 #include "cstringext.h"
 #include "sys/sock.h"
@@ -141,7 +140,7 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 				else if (strendswith(filename.c_str(), ".h264"))
 					source.reset(new H264FileSource(filename.c_str()));
 				else if (strendswith(filename.c_str(), ".h265"))
-					source.reset(new H265FileSource(filename.c_str()));
+					source.reset(new H265FileSource(filename.c_str()));					
 				else
 				{
 #if defined(_HAVE_FFMPEG_)
@@ -162,7 +161,7 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 			it = s_describes.insert(std::make_pair(filename, describe)).first;
 		}
 	}
-
+    
 	std::string sdp = buffer;
 	sdp += it->second.sdpmedia;
     return rtsp_server_reply_describe(rtsp, 200, sdp.c_str());
@@ -235,7 +234,7 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 			else if (strendswith(filename.c_str(), ".h264"))
 				item.media.reset(new H264FileSource(filename.c_str()));
 			else if (strendswith(filename.c_str(), ".h265"))
-				item.media.reset(new H265FileSource(filename.c_str()));
+				item.media.reset(new H265FileSource(filename.c_str()));				
 			else
 			{
 #if defined(_HAVE_FFMPEG_)
@@ -294,14 +293,14 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		item.media->SetTransport(path_basename(uri), item.transport);
 
 		// RTP/AVP/TCP;interleaved=0-1
-		snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=%d-%d", interleaved[0], interleaved[1]);
+		snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=%d-%d", interleaved[0], interleaved[1]);		
 	}
 	else if(transport->multicast)
 	{
         unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
         char multicast[SOCKET_ADDRLEN];
 		// RFC 2326 1.6 Overall Operation p12
-
+		
 		if(transport->destination[0])
         {
             // Multicast, client chooses address
@@ -316,7 +315,7 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
             port[0] = UDP_MULTICAST_PORT;
             port[1] = UDP_MULTICAST_PORT + 1;
         }
-
+        
         item.transport = std::make_shared<RTPUdpTransport>();
         if(0 != ((RTPUdpTransport*)item.transport.get())->Init(multicast, port))
         {
@@ -331,7 +330,7 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
         snprintf(rtsp_transport, sizeof(rtsp_transport),
             "RTP/AVP;multicast;destination=%s;port=%hu-%hu;ttl=%d",
             multicast, port[0], port[1], 16);
-
+        
         // 461 Unsupported Transport
         //return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
 	}
@@ -353,8 +352,8 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		item.media->SetTransport(path_basename(uri), item.transport);
 
 		// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257;destination=xxxx
-		snprintf(rtsp_transport, sizeof(rtsp_transport),
-			"RTP/AVP;unicast;client_port=%hu-%hu;server_port=%hu-%hu%s%s",
+		snprintf(rtsp_transport, sizeof(rtsp_transport), 
+			"RTP/AVP;unicast;client_port=%hu-%hu;server_port=%hu-%hu%s%s", 
 			transport->rtp.u.client_port1, transport->rtp.u.client_port2,
 			port[0], port[1],
 			transport->destination[0] ? ";destination=" : "",
@@ -601,7 +600,7 @@ extern "C" void rtsp_example()
 					session.media->Play();
 			}
 		}
-
+		
 		rtsp_server_destroy(rtsp);
 		socket_close(tcp);
 	}
@@ -630,7 +629,7 @@ extern "C" void rtsp_example()
 	handler.base.onsetparameter = rtsp_onsetparameter;
 //	handler.base.send; // ignore
 	handler.onerror = rtsp_onerror;
-
+    
 	// 1. check s_workdir, MUST be end with '/' or '\\'
 	// 2. url: rtsp://127.0.0.1:8554/vod/<filename>
 	void* tcp = rtsp_server_listen("0.0.0.0", 8554, &handler, NULL); assert(tcp);
