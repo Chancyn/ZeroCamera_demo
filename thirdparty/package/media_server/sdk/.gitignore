@@ -1,8 +1,0 @@
-*.o
-*.obj
-debug.linux
-release.linux
-Debug
-Release
-.vs
-*.user

@@ -1,9 +1,0 @@
-*.ipch
-*.obj
-Debug
-.vs
-x64
-Release
-*.user
-*.d
-*.o
