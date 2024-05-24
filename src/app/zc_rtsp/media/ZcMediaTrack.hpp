@@ -13,6 +13,8 @@
 #include "ZcShmFIFO.hpp"
 #include "ZcType.hpp"
 
+#define ZC_DEBUG_MEDIATRACK 1
+
 namespace zc {
 typedef enum {
     MEDIA_TRACK_VIDEO = 0,  // a=control:video
@@ -92,5 +94,10 @@ class CMediaTrack {
     uint64_t m_rtcp_clock;
     unsigned char m_packet[MAX_UDP_PACKET + 14];
     unsigned char m_framebuf[ZC_MEDIA_MAXFRAME_SIZE];
+#if ZC_DEBUG_MEDIATRACK
+    uint64_t m_debug_cnt_lasttime;
+    uint32_t m_debug_framecnt_last;
+    uint32_t m_debug_framecnt;
+#endif
 };
 }  // namespace zc

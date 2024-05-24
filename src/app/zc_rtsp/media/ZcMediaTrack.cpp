@@ -29,6 +29,11 @@ CMediaTrack::CMediaTrack(MEDIA_TRACK_ID track, int code)
     : m_create(false), m_track(track), m_code(code), m_fiforeader(nullptr), m_rtppacker(nullptr), m_rtp(nullptr),
       m_evfd(0), m_sendcnt(0), m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
     memset(m_packet, 0, sizeof(m_packet));
+#if ZC_DEBUG_MEDIATRACK
+    m_debug_framecnt = 0;
+    m_debug_framecnt_last = 0;
+    m_debug_cnt_lasttime = 0;
+#endif
 }
 
 CMediaTrack::~CMediaTrack() {
@@ -246,7 +251,10 @@ int CMediaTrack::_RTPPacket(const void *packet, int bytes, uint32_t timestamp, i
     SendRTCP(system_clock());
 
     int r = m_transport->Send(false, packet, bytes);
-    ZC_ASSERT(r == (int)bytes);
+    // ZC_ASSERT(r == (int)bytes);
+    if (r != bytes) {
+        return -1;
+    }
 
     return 0;
 }
@@ -257,8 +265,7 @@ int CMediaTrack::RTPPacket(void *param, const void *packet, int bytes, uint32_t 
     return self->_RTPPacket(packet, bytes, timestamp, msg_flags);
 }
 
-int CMediaTrack::GetData2Send()
-{
+int CMediaTrack::GetData2Send() {
     int ret = 0;
     static int retcnt = 0;
     // int buf[1024];
@@ -273,10 +280,26 @@ int CMediaTrack::GetData2Send()
         // LOG_TRACE("get fifodata ret[%d]", ret);
         retcnt += ret;
         rtp_payload_encode_input(m_rtppacker, m_framebuf, (int)ret, m_timestamp * 90 /*kHz*/);
+
+        // m_rtp_clock += 1000/14;
+        // m_timestamp += 1000/14;
         m_rtp_clock += 40;
         m_timestamp += 40;
+#if ZC_DEBUG_MEDIATRACK
+        uint64_t now = system_clock();
+        m_debug_framecnt++;
+        if (now > (m_debug_cnt_lasttime + 1000 * 10)) {
+            LOG_WARN("fps[%.2f],cnt[%u]cos[%llu]",
+            (double)(m_debug_framecnt - m_debug_framecnt_last) * 1000 / (now - m_debug_cnt_lasttime),
+                     m_debug_framecnt - m_debug_framecnt_last, (now - m_debug_cnt_lasttime)/1000);
+            m_debug_cnt_lasttime = now;
+            m_debug_framecnt_last = m_debug_framecnt = 0;
+        }
 
+        SendRTCP(now);
+#else
         SendRTCP(system_clock());
+#endif
     }
 
     return 0;

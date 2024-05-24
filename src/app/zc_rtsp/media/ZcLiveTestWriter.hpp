@@ -2,7 +2,7 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#define ZC_LIVE_TEST 1  // test read h264file
+#define ZC_LIVE_TEST 0  // test read h264file
 
 #if ZC_LIVE_TEST
 #include <stdint.h>
@@ -48,5 +48,6 @@ class CLiveTestWriter : public Thread, public Singleton<CLiveTestWriter> {
     std::mutex m_mutex;
 };
 #define g_ZCLiveTestWriterInstance (CLiveTestWriter::GetInstance())
-#endif
+
 }  // namespace zc
+#endif

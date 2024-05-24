@@ -29,8 +29,9 @@ ${UTILS_INC}
 ${MSGCOMM_INC}
 )
 
-# target_link_directories(zc_tests PRIVATE
-# )
+target_link_directories(zc_tests PRIVATE
+${NNG_LIBPATH}
+)
 
 #连接库
 target_link_libraries(zc_tests PRIVATE
@@ -48,7 +49,8 @@ zc_log
 # bsw_basic
 # utilsxx
 # utils
-# pthread
+pthread
+nng
 )
 
 enable_testing()

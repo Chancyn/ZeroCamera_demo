@@ -13,7 +13,7 @@ extern "C" {
 #define ZC_MEDIA_SUB_VIDEO_SIZE (4*1024*1024)
 #define ZC_MEDIA_AUDIO_SIZE (1*1024*1024)
 #define ZC_MEDIA_MAXFRAME_SIZE (1*1024*1024)
-
+#define ZC_MEDIA_TEST_CHN (1)   // test chn
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

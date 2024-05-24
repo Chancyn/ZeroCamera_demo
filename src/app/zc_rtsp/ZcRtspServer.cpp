@@ -688,6 +688,7 @@ int CRtspServer::process() {
     LOG_WARN("process into\n");
     while (State() == Running /*&&  i < loopcnt*/) {
         _aio_work();
+        system_sleep(100);
     }
     LOG_WARN("process exit\n");
     return -1;

@@ -2,11 +2,12 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #include <asm-generic/errno.h>
-#include <mutex>
 #include <stdio.h>
+#include <sys/stat.h>
+
+#include <mutex>
 
 #include <memory>
-#include <sys/stat.h>
 
 #include "rtp-payload.h"
 #include "rtp-profile.h"
@@ -14,13 +15,13 @@
 #include "sys/path.h"
 #include "sys/system.h"
 
-#include "ZcType.hpp"
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_type.h"
 
 #include "Epoll.hpp"
 #include "ZcLiveTestWriter.hpp"
+#include "ZcType.hpp"
 
 extern "C" uint32_t rtp_ssrc(void);
 

@@ -41,6 +41,7 @@ ${MEDIARTP_LIBPATH}
 ${MEDIAHTTP_LIBPATH}
 ${MEDIAAIO_LIBPATH}
 ${MEDIASDK_LIBPATH}
+${NNG_LIBPATH}
 )
 
 target_link_libraries(zc_rtsp PUBLIC
@@ -66,6 +67,7 @@ utils
 zcfifo
 plat_basic
 bsw_basic
+nng
 zc_log
 )
 
