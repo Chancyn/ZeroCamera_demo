@@ -39,6 +39,11 @@ class CShmFIFO : public NonCopyable {
     void ShmFree();
 
  protected:
+    // no put event
+    unsigned int _put(const unsigned char *buffer, unsigned int len);
+    unsigned int _get(unsigned char *buffer, unsigned int len);
+
+    //
     unsigned int put(const unsigned char *buffer, unsigned int len);
     unsigned int get(unsigned char *buffer, unsigned int len);
 
@@ -70,8 +75,7 @@ class CShmFIFO : public NonCopyable {
     bool _shmalloc(unsigned int size, int shmkey, bool bwrite);
     void _shmfree();
     int _getkey(const char *name, unsigned char chn);
-    unsigned int _put(const unsigned char *buffer, unsigned int len);
-    unsigned int _get(unsigned char *buffer, unsigned int len);
+
 
  private:
     zcshmfifo_t m_pfifo;

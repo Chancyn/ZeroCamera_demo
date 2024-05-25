@@ -28,7 +28,7 @@ H264FileReader::H264FileReader(const char* file)
 }
 
 H264FileReader::~H264FileReader()
-{    
+{
 	if (m_ptr)
 	{
 		assert(m_capacity > 0);
@@ -41,7 +41,7 @@ bool H264FileReader::IsOpened() const
 	return !m_videos.empty();
 }
 
-int H264FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes)
+int H264FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes, bool *idr)
 {
 	if(m_vit == m_videos.end())
 		return -1; // file end
@@ -49,6 +49,8 @@ int H264FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &byte
 	ptr = m_vit->nalu;
 	dts = m_vit->time;
 	bytes = m_vit->bytes;
+	if (idr)
+		*idr =  m_vit->idr;
 
 	++m_vit;
 	return 0;

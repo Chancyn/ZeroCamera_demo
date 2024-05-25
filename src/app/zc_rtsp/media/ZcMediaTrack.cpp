@@ -25,7 +25,7 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
-CMediaTrack::CMediaTrack(MEDIA_TRACK_ID track, int code)
+CMediaTrack::CMediaTrack(media_track_e track, int code)
     : m_create(false), m_track(track), m_code(code), m_fiforeader(nullptr), m_rtppacker(nullptr), m_rtp(nullptr),
       m_evfd(0), m_sendcnt(0), m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
     memset(m_packet, 0, sizeof(m_packet));
@@ -268,6 +268,7 @@ int CMediaTrack::RTPPacket(void *param, const void *packet, int bytes, uint32_t 
 int CMediaTrack::GetData2Send() {
     int ret = 0;
     static int retcnt = 0;
+    zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
     // int buf[1024];
     // if (read(m_fiforeader->GetEvFd(), buf, sizeof(buf)) <= 0) {
     //     LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, m_fiforeader->GetEvFd());
@@ -276,11 +277,24 @@ int CMediaTrack::GetData2Send() {
     // }
 
     if (!m_fiforeader->IsEmpty()) {
+#if 0
         ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf));
         // LOG_TRACE("get fifodata ret[%d]", ret);
         retcnt += ret;
         rtp_payload_encode_input(m_rtppacker, m_framebuf, (int)ret, m_timestamp * 90 /*kHz*/);
-
+#else
+        ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf));
+        ZC_ASSERT(ret > sizeof(zc_frame_t));
+        ZC_ASSERT(pframe->size > 0);
+        if (pframe->keyflag) {
+            struct timespec _ts;
+            clock_gettime(CLOCK_MONOTONIC, &_ts);
+            unsigned int now = _ts.tv_sec*1000 + _ts.tv_nsec/1000000;
+            LOG_TRACE("get fifodata len[%d],key[%d], pts[%u] utc[%u], cos[%d]",  pframe->keyflag, pframe->size, pframe->size, pframe->utc, now-pframe->utc);
+        }
+        retcnt += ret;
+        rtp_payload_encode_input(m_rtppacker, pframe->data, (int)pframe->size, m_timestamp * 90 /*kHz*/);
+#endif
         // m_rtp_clock += 1000/14;
         // m_timestamp += 1000/14;
         m_rtp_clock += 40;
@@ -290,8 +304,8 @@ int CMediaTrack::GetData2Send() {
         m_debug_framecnt++;
         if (now > (m_debug_cnt_lasttime + 1000 * 10)) {
             LOG_WARN("fps[%.2f],cnt[%u]cos[%llu]",
-            (double)(m_debug_framecnt - m_debug_framecnt_last) * 1000 / (now - m_debug_cnt_lasttime),
-                     m_debug_framecnt - m_debug_framecnt_last, (now - m_debug_cnt_lasttime)/1000);
+                     (double)(m_debug_framecnt - m_debug_framecnt_last) * 1000 / (now - m_debug_cnt_lasttime),
+                     m_debug_framecnt - m_debug_framecnt_last, (now - m_debug_cnt_lasttime) / 1000);
             m_debug_cnt_lasttime = now;
             m_debug_framecnt_last = m_debug_framecnt = 0;
         }

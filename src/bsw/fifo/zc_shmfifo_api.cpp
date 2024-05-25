@@ -3,11 +3,12 @@
 
 #include <stdio.h>
 
-#include "zc_macros.h"
 #include "zc_log.h"
+#include "zc_macros.h"
 #include "zc_shmfifo_capi.h"
 
 #include "ZcShmFIFO.hpp"
+#include "ZcShmStream.hpp"
 #include "ZcType.hpp"
 
 void *zc_shmfifow_create(unsigned int size, const char *name, unsigned char chn) {
@@ -57,6 +58,42 @@ int zc_shmfifor_get(void *p, unsigned char *buffer, unsigned int len) {
     if (p) {
         zc::CShmFIFOR *fifow = (zc::CShmFIFOR *)p;
         return fifow->Get(buffer, len);
+    }
+
+    return 0;
+}
+
+void *zc_shmstreamw_create(unsigned int size, const char *name, unsigned char chn, stream_puting_cb puting_cb,
+                           void *u) {
+    zc::CShmStreamW *fifow = new zc::CShmStreamW(size, name, chn, puting_cb, u);
+    if (!fifow->ShmAlloc()) {
+        LOG_ERROR("ShmAllocWrite error");
+        ZC_ASSERT(0);
+        return NULL;
+    }
+
+    return fifow;
+}
+
+void zc_shmstreamw_destroy(void *p) {
+    zc::CShmStreamW *fifow = (zc::CShmStreamW *)p;
+    ZC_SAFE_DELETE(fifow);
+    return;
+}
+
+int zc_shmstreamw_put(void *p, const unsigned char *buffer, unsigned int len, bool end, void *stream) {
+    if (p) {
+        zc::CShmStreamW *fifow = (zc::CShmStreamW *)p;
+        return fifow->Put(buffer, len, end, stream);
+    }
+
+    return 0;
+}
+
+int zc_shmstreamw_put_appending(void *p, const unsigned char *buffer, unsigned int len, bool end) {
+    if (p) {
+        zc::CShmStreamW *fifow = (zc::CShmStreamW *)p;
+        return fifow->PutAppending(buffer, len, end);
     }
 
     return 0;

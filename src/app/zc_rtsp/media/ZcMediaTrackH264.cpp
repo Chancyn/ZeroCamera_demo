@@ -13,7 +13,7 @@
 
 #include "zc_log.h"
 #include "zc_macros.h"
-#include "zc_media_fifo_def.h"
+#include "zc_frame.h"
 #include "zc_type.h"
 
 #include "ZcMediaTrackH264.hpp"
@@ -52,7 +52,8 @@ bool CMediaTrackH264::Init(void *pinfo) {
     const char *test_sps = "Z00AKpY1QPAET8s3AQEBAgAAAAE=,aO4xsgAAAAEG5QHpgAAAAAFluAAADJ1wAAE/6Q==";
     // profile-level-id=4D002A;
     char profileid[3] = {0x4D, 0x00, 0x2A};
-    m_fiforeader = new CShmFIFOR(ZC_MEDIA_MAIN_VIDEO_SIZE, ZC_MEDIA_VIDEO_SHM_PATH, 0);
+    //m_fiforeader = new CShmFIFOR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
+    m_fiforeader = new CShmStreamR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader error");
         goto _err;

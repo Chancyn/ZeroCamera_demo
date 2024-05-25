@@ -13,7 +13,7 @@
 
 #include "zc_log.h"
 #include "zc_macros.h"
-#include "zc_media_fifo_def.h"
+#include "zc_frame.h"
 #include "zc_type.h"
 
 #include "ZcMediaTrackH265.hpp"
@@ -47,7 +47,8 @@ bool CMediaTrackH265::Init(void *pinfo) {
         "a=rtpmap:%d H265/90000\n"
         "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=";
 
-    m_fiforeader = new CShmFIFOR(ZC_MEDIA_MAIN_VIDEO_SIZE, ZC_MEDIA_VIDEO_SHM_PATH, 0);
+    // m_fiforeader = new CShmFIFOR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
+    m_fiforeader = new CShmStreamR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader");
         goto _err;

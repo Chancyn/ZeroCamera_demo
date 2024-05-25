@@ -2,23 +2,24 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#define ZC_LIVE_TEST 0  // test read h264file
+#define ZC_LIVE_TEST 1  // test read h264file
 
 #if ZC_LIVE_TEST
 #include <stdint.h>
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "media-source.h"
 
 #include "h264-file-reader.h"
 #include "time64.h"
-#include "zc_media_fifo_def.h"
+#include "zc_frame.h"
 
-#include "Thread.hpp"
 #include "Singleton.hpp"
+#include "Thread.hpp"
 #include "ZcShmFIFO.hpp"
+#include "ZcShmStream.hpp"
 
 #define ZC_LIVE_TEST_FILE "test.h264"
 
@@ -28,19 +29,24 @@ class CLiveTestWriter : public Thread, public Singleton<CLiveTestWriter> {
  public:
     CLiveTestWriter();
     virtual ~CLiveTestWriter();
+
  public:
     virtual int Play();
     int Init();
     int UnInit();
+
  private:
     int _putData2FIFO();
     virtual int process();
+    static int putingCb(void *u, void *stream);
+    int _putingCb(void *stream);
 
  private:
     H264FileReader *m_reader;
     int m_status;
     int m_alloc;
-    CShmFIFOW *m_fifowriter;
+    // CShmFIFOW *m_fifowriter;
+    CShmStreamW *m_fifowriter;
     uint32_t m_timestamp;
     uint64_t m_rtp_clock;
     uint64_t m_rtcp_clock;

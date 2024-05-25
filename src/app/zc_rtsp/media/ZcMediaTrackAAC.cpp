@@ -12,7 +12,7 @@
 
 #include "zc_log.h"
 #include "zc_macros.h"
-#include "zc_media_fifo_def.h"
+#include "zc_frame.h"
 #include "zc_type.h"
 
 #include "ZcMediaTrackAAC.hpp"
@@ -59,7 +59,8 @@ bool CMediaTrackAAC::Init(void *pinfo) {
 
     event.on_rtcp = CMediaTrack::OnRTCPEvent;
 
-    m_fiforeader = new CShmFIFOR(ZC_MEDIA_AUDIO_SIZE, ZC_MEDIA_AUDIO_SHM_PATH, 0);
+    // m_fiforeader = new CShmFIFOR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, 0);
+    m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, 0);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader");
         goto _err;

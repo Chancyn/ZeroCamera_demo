@@ -8,6 +8,8 @@
 extern "C" {
 #endif /*__cplusplus*/
 
+#include "zc_frame.h"
+
 // shmfifowrite
 void *zc_shmfifow_create(unsigned int size, const char *name, unsigned char chn);
 void zc_shmfifow_destroy(void *p);
@@ -18,6 +20,11 @@ void *zc_shmfifor_create(unsigned int size, const char *name, unsigned char chn)
 void zc_shmfifor_destroy(void *p);
 int zc_shmfifor_get(void *p, unsigned char *buffer, unsigned int len);
 
+// shmstreamwrite
+void *zc_shmstreamw_create(unsigned int size, const char *name, unsigned char chn, stream_puting_cb puting_cb, void *u);
+void zc_shmstreamw_destroy(void *p);
+int zc_shmstreamw_put(void *p, const unsigned char *buffer, unsigned int len, bool end, void *stream);
+int zc_shmstreamw_put_appending(void *p, const unsigned char *buffer, unsigned int len, bool end);
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/

@@ -27,6 +27,10 @@ extern "C" uint32_t rtp_ssrc(void);
 
 #if ZC_LIVE_TEST
 namespace zc {
+typedef struct {
+    const uint8_t *ptr;
+    unsigned int len;
+} test_raw_frame_t;
 
 CLiveTestWriter::CLiveTestWriter() : Thread("LiveTestWriter"), m_status(0), m_reader(nullptr) {
     m_rtp_clock = 0;
@@ -40,6 +44,16 @@ CLiveTestWriter::~CLiveTestWriter() {
     UnInit();
 }
 
+int CLiveTestWriter::_putingCb(void *stream) {
+    test_raw_frame_t *frame = reinterpret_cast<test_raw_frame_t *>(stream);
+    return m_fifowriter->PutAppending(frame->ptr, frame->len, true);
+}
+
+int CLiveTestWriter::putingCb(void *u, void *stream) {
+    CLiveTestWriter *self = reinterpret_cast<CLiveTestWriter *>(u);
+    return self->_putingCb(stream);
+}
+
 int CLiveTestWriter::Init() {
     LOG_TRACE("Init into");
     {
@@ -48,7 +62,8 @@ int CLiveTestWriter::Init() {
             LOG_ERROR("already ShmAllocWrite");
             return -1;
         }
-        m_fifowriter = new CShmFIFOW(ZC_MEDIA_MAIN_VIDEO_SIZE, ZC_MEDIA_VIDEO_SHM_PATH, 0);
+        // m_fifowriter = new CShmFIFOW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
+        m_fifowriter = new CShmStreamW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0, putingCb, this);
         if (!m_fifowriter->ShmAlloc()) {
             LOG_ERROR("ShmAllocWrite error");
             ZC_ASSERT(0);
@@ -77,9 +92,24 @@ int CLiveTestWriter::_putData2FIFO() {
     if (m_rtp_clock + 40 < clock) {
         size_t bytes;
         const uint8_t *ptr;
-        if ((ret = m_reader->GetNextFrame(m_pos, ptr, bytes)) == 0) {
+        bool idr = false;
+
+        if ((ret = m_reader->GetNextFrame(m_pos, ptr, bytes, &idr)) == 0) {
             // LOG_TRACE("Put bytes[%d]", bytes);
-            m_fifowriter->Put(ptr, bytes);
+            // m_fifowriter->Put(ptr, bytes);
+            struct timespec _ts;
+            clock_gettime(CLOCK_MONOTONIC, &_ts);
+            zc_frame_t frame;
+            frame.type = ZC_STREAM_VIDEO;
+            frame.keyflag = idr;
+            frame.size = bytes;
+            frame.pts = m_pos;
+            frame.utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+
+            test_raw_frame_t raw;
+            raw.ptr = ptr;
+            raw.len = bytes;
+            m_fifowriter->Put((const unsigned char *)&frame, sizeof(frame), false, &raw);
             m_rtp_clock += 40;
             m_timestamp += 40;
             return 1;
@@ -111,6 +141,7 @@ int CLiveTestWriter::process() {
                 ret = 0;
                 goto _err;
             }
+            usleep(10 *1000);
         }
     }
 _err:

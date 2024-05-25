@@ -8,9 +8,10 @@
 #include <string>
 
 #include "media-source.h"
-#include "zc_media_fifo_def.h"
+#include "zc_frame.h"
 
 #include "ZcShmFIFO.hpp"
+#include "ZcShmStream.hpp"
 #include "ZcType.hpp"
 
 #define ZC_DEBUG_MEDIATRACK 1
@@ -22,7 +23,7 @@ typedef enum {
     MEDIA_TRACK_META = 2,   // a=control:meta
 
     MEDIA_TRACK_BUTT,
-} MEDIA_TRACK_ID;
+} media_track_e;
 
 // video
 typedef enum {
@@ -37,12 +38,12 @@ typedef enum {
     MEDIA_CODE_METADATA = 20,
 
     MEDIA_CODE_BUTT,
-} MEDIA_CODE_TYPE;
+} media_code_e;
 
 class CLiveSource;
 class CMediaTrack {
  public:
-    explicit CMediaTrack(MEDIA_TRACK_ID track, int code);
+    explicit CMediaTrack(media_track_e track, int code);
     virtual ~CMediaTrack();
     virtual bool Init(void *info = nullptr) = 0;
     virtual void UnInit();
@@ -53,7 +54,8 @@ class CMediaTrack {
     int GetSDPMedia(std::string &sdp) const;
     int GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const;
 
-    CShmFIFOR *GetShmFIFOR() { return m_fiforeader; }
+    // CShmFIFOR *GetShmFIFOR() { return m_fiforeader; }
+    // CShmStreamR *GetShmStreamR() { return m_fiforeader; }
     int GetEvFd() {
         if (!m_fiforeader) {
             return -1;
@@ -78,7 +80,8 @@ class CMediaTrack {
     bool m_create;  // create ok
     int m_track;    // trackid
     int m_code;     // codectype
-    CShmFIFOR *m_fiforeader;
+    //CShmFIFOR *m_fiforeader;
+    CShmStreamR *m_fiforeader;
     void *m_rtppacker;  // rtp encoder
     void *m_rtp;        // rtp status
     std::string m_sdp;
@@ -93,7 +96,7 @@ class CMediaTrack {
     uint64_t m_rtp_clock;
     uint64_t m_rtcp_clock;
     unsigned char m_packet[MAX_UDP_PACKET + 14];
-    unsigned char m_framebuf[ZC_MEDIA_MAXFRAME_SIZE];
+    unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];
 #if ZC_DEBUG_MEDIATRACK
     uint64_t m_debug_cnt_lasttime;
     uint32_t m_debug_framecnt_last;
