@@ -49,8 +49,9 @@ zc_log
 # bsw_basic
 # utilsxx
 # utils
-pthread
 nng
+pthread
+asan.a
 )
 
 enable_testing()

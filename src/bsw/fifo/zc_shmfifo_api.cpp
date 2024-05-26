@@ -81,19 +81,19 @@ void zc_shmstreamw_destroy(void *p) {
     return;
 }
 
-int zc_shmstreamw_put(void *p, const unsigned char *buffer, unsigned int len, bool end, void *stream) {
+unsigned int zc_shmstreamw_put(void *p, const unsigned char *buffer, unsigned int len, void *stream) {
     if (p) {
         zc::CShmStreamW *fifow = (zc::CShmStreamW *)p;
-        return fifow->Put(buffer, len, end, stream);
+        return fifow->Put(buffer, len, stream);
     }
 
     return 0;
 }
 
-int zc_shmstreamw_put_appending(void *p, const unsigned char *buffer, unsigned int len, bool end) {
+unsigned int zc_shmstreamw_put_appending(void *p, const unsigned char *buffer, unsigned int len) {
     if (p) {
         zc::CShmStreamW *fifow = (zc::CShmStreamW *)p;
-        return fifow->PutAppending(buffer, len, end);
+        return fifow->PutAppending(buffer, len);
     }
 
     return 0;

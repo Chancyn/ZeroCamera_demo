@@ -42,7 +42,7 @@ class CShmFIFO : public NonCopyable {
     // no put event
     unsigned int _put(const unsigned char *buffer, unsigned int len);
     unsigned int _get(unsigned char *buffer, unsigned int len);
-
+    void _putev();
     //
     unsigned int put(const unsigned char *buffer, unsigned int len);
     unsigned int get(unsigned char *buffer, unsigned int len);
@@ -83,7 +83,7 @@ class CShmFIFO : public NonCopyable {
     // std::mutex m_mutex;
     unsigned int m_size;
     int m_shmkey;
-    bool m_bwrite;  // read/write flag
+    const bool m_bwrite;  // read/write flag
     char m_szfifoname[128];
     char m_szevname[128];
 };

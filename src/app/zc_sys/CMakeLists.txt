@@ -34,6 +34,7 @@ bsw_basic
 zc_log
 nng
 pthread
+asan.a
 )
 
 install(TARGETS zc_sys RUNTIME DESTINATION ${ZC_BIN_INSTALL})

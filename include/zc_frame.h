@@ -91,8 +91,8 @@ typedef struct _zc_frame_ {
     ZC_U8 data[0];  // frame raw data
 } zc_frame_t;
 
-typedef int (*stream_puting_cb)(void *u, void *stream);
-typedef int (*stream_geting_cb)(void *u, void *stream);
+typedef unsigned int (*stream_puting_cb)(void *u, void *stream);
+typedef unsigned int (*stream_geting_cb)(void *u, void *stream);
 
 #ifdef __cplusplus
 }

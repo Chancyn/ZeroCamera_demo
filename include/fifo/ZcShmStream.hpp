@@ -24,9 +24,9 @@ class CShmStreamW : public CShmFIFO{
 
  public:
     // put for hi_venc_stream, 1.first put hdr, 2.stream data PutAppending by m_puting_cb
-    unsigned int Put(const unsigned char *buffer, unsigned int len, bool end, void *stream);
+    unsigned int Put(const unsigned char *buffer, unsigned int len, void *stream);
     // donot lock, puting_cb,callback function need call PutAppending to put framedata append
-    unsigned int PutAppending(const unsigned char *buffer, unsigned int len, bool end);
+    unsigned int PutAppending(const unsigned char *buffer, unsigned int len);
 
  private:
     zc_frame_t *m_latest_idr;    // latest idr

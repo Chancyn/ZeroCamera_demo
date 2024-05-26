@@ -32,7 +32,7 @@ typedef struct {
     unsigned int len;
 } test_raw_frame_t;
 
-CLiveTestWriter::CLiveTestWriter() : Thread("LiveTestWriter"), m_status(0), m_reader(nullptr) {
+CLiveTestWriter::CLiveTestWriter() : Thread("LiveTestWriter"), m_status(0), m_alloc(0), m_reader(nullptr), m_fifowriter(nullptr) {
     m_rtp_clock = 0;
     m_rtcp_clock = 0;
     m_timestamp = 0;
@@ -44,12 +44,12 @@ CLiveTestWriter::~CLiveTestWriter() {
     UnInit();
 }
 
-int CLiveTestWriter::_putingCb(void *stream) {
+unsigned int CLiveTestWriter::_putingCb(void *stream) {
     test_raw_frame_t *frame = reinterpret_cast<test_raw_frame_t *>(stream);
-    return m_fifowriter->PutAppending(frame->ptr, frame->len, true);
+    return m_fifowriter->PutAppending(frame->ptr, frame->len);
 }
 
-int CLiveTestWriter::putingCb(void *u, void *stream) {
+unsigned int CLiveTestWriter::putingCb(void *u, void *stream) {
     CLiveTestWriter *self = reinterpret_cast<CLiveTestWriter *>(u);
     return self->_putingCb(stream);
 }
@@ -74,6 +74,12 @@ int CLiveTestWriter::Init() {
     }
     LOG_TRACE("Init OK");
     return 0;
+}
+
+int CLiveTestWriter::UnInit() {
+    Stop();
+
+    ZC_SAFE_DELETE(m_fifowriter);
 }
 
 int CLiveTestWriter::Play() {
@@ -109,7 +115,7 @@ int CLiveTestWriter::_putData2FIFO() {
             test_raw_frame_t raw;
             raw.ptr = ptr;
             raw.len = bytes;
-            m_fifowriter->Put((const unsigned char *)&frame, sizeof(frame), false, &raw);
+            m_fifowriter->Put((const unsigned char *)&frame, sizeof(frame), &raw);
             m_rtp_clock += 40;
             m_timestamp += 40;
             return 1;
@@ -119,12 +125,6 @@ int CLiveTestWriter::_putData2FIFO() {
     }
 #endif
     return ret;
-}
-
-int CLiveTestWriter::UnInit() {
-    Stop();
-
-    ZC_SAFE_DELETE(m_fifowriter);
 }
 
 int CLiveTestWriter::process() {
@@ -141,7 +141,7 @@ int CLiveTestWriter::process() {
                 ret = 0;
                 goto _err;
             }
-            usleep(10 *1000);
+            usleep(10 * 1000);
         }
     }
 _err:

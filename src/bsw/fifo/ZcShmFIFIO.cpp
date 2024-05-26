@@ -79,7 +79,7 @@ static inline bool is_power_of_2(unsigned int n) {
 
 // userspace modify................
 namespace zc {
-CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool bwrite) {
+CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool bwrite):m_bwrite(bwrite) {
     if (!is_power_of_2(size)) {
         BUG_ON(size > 0x80000000);
         size = roundup_pow_of_two(size);
@@ -97,7 +97,6 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
         system(cmd);
     }
     m_shmkey = _getkey(m_szfifoname, chn);
-    m_bwrite = bwrite;
 
     // ev mkfifo
     snprintf(m_szevname, sizeof(m_szevname) - 1, "/tmp/evfifo_%.8s%d", name, chn);
@@ -319,16 +318,25 @@ unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
     return len;
 }
 
+void CShmFIFO::_putev() {
+    // write evfd
+    if (m_pfifo.evfd > 0 && write(m_pfifo.evfd, "w", 1) < 0) {
+        char buf[ZC_EVFIFO_SIZE];
+        LOG_ERROR("warn write evfifo error, read clear");
+        read(m_pfifo.evfd, buf, sizeof(buf));
+    }
+    return;
+}
+
 unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
     unsigned int ret = 0;
     ret = _put(buffer, len);
 
     // write evfd
-    if (ret && m_pfifo.evfd > 0 && write(m_pfifo.evfd, "w", 1) < 0) {
-        char buf[ZC_EVFIFO_SIZE];
-        LOG_ERROR("warn write evfifo error, read clear");
-        read(m_pfifo.evfd, buf, sizeof(buf));
+    if (ret) {
+       _putev();
     }
+
     return ret;
 }
 

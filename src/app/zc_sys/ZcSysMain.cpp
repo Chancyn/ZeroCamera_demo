@@ -1,9 +1,9 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
-#include <stdio.h>
-#include <stdbool.h>
 #include <signal.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "zc_log.h"
@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
+    LOG_DEBUG("sizeof(void*)=%zu", sizeof(void *));
     zc::CSysManager sys;
     sys.Init();
     sys.Start();

@@ -23,8 +23,8 @@ int zc_shmfifor_get(void *p, unsigned char *buffer, unsigned int len);
 // shmstreamwrite
 void *zc_shmstreamw_create(unsigned int size, const char *name, unsigned char chn, stream_puting_cb puting_cb, void *u);
 void zc_shmstreamw_destroy(void *p);
-int zc_shmstreamw_put(void *p, const unsigned char *buffer, unsigned int len, bool end, void *stream);
-int zc_shmstreamw_put_appending(void *p, const unsigned char *buffer, unsigned int len, bool end);
+unsigned int zc_shmstreamw_put(void *p, const unsigned char *buffer, unsigned int len, void *stream);
+unsigned int zc_shmstreamw_put_appending(void *p, const unsigned char *buffer, unsigned int len);
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/

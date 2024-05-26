@@ -69,6 +69,7 @@ plat_basic
 bsw_basic
 nng
 zc_log
+asan.a
 )
 
 add_subdirectory(aio)

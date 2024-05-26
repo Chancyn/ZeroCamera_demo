@@ -33,6 +33,7 @@ zc_log
 utilsxx
 utils
 pthread
+asan.a
 )
 
 #执行文件的安装位置

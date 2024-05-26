@@ -38,13 +38,13 @@ class CLiveTestWriter : public Thread, public Singleton<CLiveTestWriter> {
  private:
     int _putData2FIFO();
     virtual int process();
-    static int putingCb(void *u, void *stream);
-    int _putingCb(void *stream);
+    static unsigned int putingCb(void *u, void *stream);
+    unsigned int _putingCb(void *stream);
 
  private:
-    H264FileReader *m_reader;
     int m_status;
     int m_alloc;
+    H264FileReader *m_reader;
     // CShmFIFOW *m_fifowriter;
     CShmStreamW *m_fifowriter;
     uint32_t m_timestamp;
