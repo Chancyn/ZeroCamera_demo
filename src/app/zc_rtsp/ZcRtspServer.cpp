@@ -3,8 +3,8 @@
 
 // start media-server
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <map>
 #include <memory>
@@ -594,9 +594,13 @@ CRtspServer::~CRtspServer() {
 
 bool CRtspServer::_init() {
     aio_worker_init(ZC_N_AIO_THREAD);
-
+    void *tcp = nullptr;
     struct aio_rtsp_handler_t *phandler = (struct aio_rtsp_handler_t *)malloc(sizeof(struct aio_rtsp_handler_t));
-
+    ZC_ASSERT(phandler);
+    if (phandler == NULL) {
+        LOG_ERROR("malloc error");
+        goto _err;
+    }
     memset(phandler, 0, sizeof(*phandler));
 
     phandler->base.ondescribe = rtsp_ondescribe;
@@ -616,16 +620,27 @@ bool CRtspServer::_init() {
     // 1. check s_workdir, MUST be end with '/' or '\\'
     // 2. url: rtsp://127.0.0.1:8554/vod/<filename>
     // void *tcp = rtsp_server_listen("0.0.0.0", 8554, phandler, NULL);
-    void *tcp = rtsp_server_listen("0.0.0.0", 8554, phandler, this);
+    tcp = rtsp_server_listen("0.0.0.0", 8554, phandler, this);
     ZC_ASSERT(tcp);
+    if (tcp == NULL) {
+        LOG_ERROR("rtsp_server_listen error");
+        goto _err;
+    }
     LOG_WARN("listen init this[%p] tcplisten[%p]", this, tcp);
     // void* udp = rtsp_transport_udp_create(NULL, 554, phandler, NULL);
     // ZC_ASSERT(udp);
 
     m_phandle = phandler;
     m_psvr = tcp;
-
+    LOG_TRACE("rtspserver _init ok");
     return true;
+_err:
+    if (tcp)
+        rtsp_server_unlisten(tcp);
+    ZC_SAFE_FREE(phandler);
+    aio_worker_clean(ZC_N_AIO_THREAD);
+    LOG_ERROR("rtspserver _init error");
+    return false;
 }
 
 bool CRtspServer::Init() {
@@ -633,9 +648,9 @@ bool CRtspServer::Init() {
         LOG_ERROR("already init");
         return false;
     }
-    #if ZC_LIVE_TEST
+#if ZC_LIVE_TEST
     g_ZCLiveTestWriterInstance.Init();
-    #endif
+#endif
     if (!_init()) {
         goto _err;
     }
@@ -652,10 +667,10 @@ _err:
 
 bool CRtspServer::_unInit() {
     Stop();
-    aio_worker_clean(ZC_N_AIO_THREAD);
     rtsp_server_unlisten(m_psvr);
     m_psvr = nullptr;
     ZC_SAFE_FREE(m_phandle);
+    aio_worker_clean(ZC_N_AIO_THREAD);
     return false;
 }
 
@@ -665,9 +680,9 @@ bool CRtspServer::UnInit() {
     }
 
     _unInit();
-    #if ZC_LIVE_TEST
+#if ZC_LIVE_TEST
     g_ZCLiveTestWriterInstance.UnInit();
-    #endif
+#endif
     m_init = false;
     return false;
 }
