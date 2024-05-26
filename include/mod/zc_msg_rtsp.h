@@ -36,7 +36,7 @@ typedef enum {
 // module system, msg sub id
 typedef enum {
     ZC_MSID_RTSP_CFG_GET_E = 0,
-    ZC_MSID_RTSP_CFG_SET_E = 0,
+    ZC_MSID_RTSP_CFG_SET_E,
 
     ZC_MSID_RTSP_CFG_BUTT,  // end
 } zc_msid_rtsp_cfg_e;
