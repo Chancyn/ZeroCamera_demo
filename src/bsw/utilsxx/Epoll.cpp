@@ -11,7 +11,7 @@
 
 namespace zc {
 
-CEpoll::CEpoll(int maxevents, int timeout)
+CEpoll::CEpoll(int timeout, int maxevents)
     : m_epfd(-1), m_timeout(timeout), m_maxevents(maxevents), m_backEvents(nullptr) {}
 
 CEpoll::~CEpoll() {

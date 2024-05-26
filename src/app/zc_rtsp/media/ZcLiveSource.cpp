@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "Thread.hpp"
 #include "rtp-payload.h"
 #include "rtp-profile.h"
 #include "rtp.h"
@@ -29,7 +30,7 @@ extern "C" uint32_t rtp_ssrc(void);
 
 namespace zc {
 // CLiveSource::CLiveSource() :m_count(MEDIA_TRACK_BUTT){}
-CLiveSource::CLiveSource() : m_status(0), m_count(MEDIA_TRACK_META) {
+CLiveSource::CLiveSource() : Thread("LiveSource"), m_status(0), m_count(MEDIA_TRACK_META) {
     for (int i = 0; i < MEDIA_TRACK_BUTT; i++) {
         m_tracks[i] = nullptr;
     }
@@ -63,7 +64,6 @@ int CLiveSource::Pause() {
 }
 
 int CLiveSource::Seek(int64_t pos) {
-
     return 0;
 }
 
@@ -160,7 +160,7 @@ int CLiveSource::GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const 
 
 int CLiveSource::_sendProcess() {
     LOG_WARN("process into\n");
-    CEpoll ep;
+    CEpoll ep{100};     // set timeout 100ms,for rtspsource thread exit
     int ret = 0;
 #if 1
     if (!ep.Create()) {

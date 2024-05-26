@@ -7,11 +7,11 @@
 #include "zc_type.h"
 
 #define ZC_EPOLL_EVENT_SIZE_DEF 20  // default epoll event size
-#define ZC_EPOLL_TIMEOUT_DEF -1 //10     // default timeout 10ms
+#define ZC_EPOLL_TIMEOUT_DEF -1     // 10     // default timeout 10ms
 namespace zc {
 class CEpoll {
  public:
-    explicit CEpoll(int maxevents = ZC_EPOLL_EVENT_SIZE_DEF, int timeout = ZC_EPOLL_TIMEOUT_DEF);
+    explicit CEpoll(int timeout = ZC_EPOLL_TIMEOUT_DEF, int maxevents = ZC_EPOLL_EVENT_SIZE_DEF);
     ~CEpoll();
     bool Create();
     void Destroy();

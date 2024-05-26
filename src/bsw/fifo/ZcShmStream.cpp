@@ -41,7 +41,7 @@ unsigned int CShmStreamW::Put(const unsigned char *buffer, unsigned int len, voi
         ret += m_puting_cb(m_u, stream);
     }
     // put last data, write evfifo
-    ret = put(buffer, len);
+    ret = _put(buffer, len);
     _putev();
 
     return ret;
