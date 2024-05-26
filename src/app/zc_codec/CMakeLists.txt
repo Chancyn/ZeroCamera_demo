@@ -33,8 +33,14 @@ zc_log
 utilsxx
 utils
 pthread
+)
+
+#asan
+if(WITH_ASAN)
+target_link_libraries(zc_codec PRIVATE
 asan.a
 )
+endif()
 
 #执行文件的安装位置
 install(TARGETS zc_codec RUNTIME DESTINATION ${ZC_BIN_INSTALL})

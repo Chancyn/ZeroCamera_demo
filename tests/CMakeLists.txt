@@ -51,8 +51,14 @@ zc_log
 # utils
 nng
 pthread
+)
+
+#asan
+if(WITH_ASAN)
+target_link_libraries(zc_tests PRIVATE
 asan.a
 )
+endif()
 
 enable_testing()
 add_test(NAME zc_tests COMMAND Test)

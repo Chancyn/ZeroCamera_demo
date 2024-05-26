@@ -69,8 +69,14 @@ plat_basic
 bsw_basic
 nng
 zc_log
+)
+
+#asan
+if(WITH_ASAN)
+target_link_libraries(zc_rtsp PRIVATE
 asan.a
 )
+endif()
 
 add_subdirectory(aio)
 add_subdirectory(media)

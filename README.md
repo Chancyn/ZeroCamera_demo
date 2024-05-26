@@ -60,6 +60,8 @@ TODO:nng客户端加锁
 ```
 ./build.sh soc=hi3519dv500
 ```
+### 编译option
+WITH_ASAN 内存泄漏检测ASAN工具
 
 ##
 参考引用:
