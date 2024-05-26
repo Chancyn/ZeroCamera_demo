@@ -100,6 +100,8 @@ typedef int BOOL;
     } while (0)
 
 
+#define ZC_MAX_PATH 256
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

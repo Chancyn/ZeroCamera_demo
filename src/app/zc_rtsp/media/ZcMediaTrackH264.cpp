@@ -25,7 +25,9 @@ extern "C" uint32_t rtp_ssrc(void);
 #define VIDEO_FREQUENCE (90000)  // frequence
 
 namespace zc {
-CMediaTrackH264::CMediaTrackH264() : CMediaTrack(MEDIA_TRACK_VIDEO, MEDIA_CODE_H264) {}
+CMediaTrackH264::CMediaTrackH264() : CMediaTrack(MEDIA_TRACK_VIDEO, MEDIA_CODE_H264) {
+    LOG_TRACE("Constructor");
+}
 
 CMediaTrackH264::~CMediaTrackH264() {}
 
@@ -53,7 +55,7 @@ bool CMediaTrackH264::Init(void *pinfo) {
     // profile-level-id=4D002A;
     char profileid[3] = {0x4D, 0x00, 0x2A};
     //m_fiforeader = new CShmFIFOR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
-    m_fiforeader = new CShmStreamR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
+    m_fiforeader = new CShmStreamR(ZC_STREAM_SUB_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 1);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader error");
         goto _err;
@@ -77,8 +79,8 @@ bool CMediaTrackH264::Init(void *pinfo) {
     }
 
     rtp_set_info(m_rtp, "RTSPServer", "live.h264");
-    // sps
 
+    // sps
     snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H264, RTP_PAYLOAD_H264, VIDEO_FREQUENCE,
              RTP_PAYLOAD_H264, profileid[0], profileid[1], profileid[2], test_sps);
     LOG_TRACE("ok H264 sdp sdpbuf[%s]", sdpbuf);

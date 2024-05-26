@@ -18,7 +18,7 @@ public:
 public:
     const std::list<std::pair<const uint8_t*, size_t> > GetParameterSets() const { return m_sps; }
 	int GetDuration(int64_t& duration) const { duration = m_duration; return 0; }
-    int GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes);
+    int GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes, bool *idr = nullptr);
 	int Seek(int64_t &dts);
 
 private:

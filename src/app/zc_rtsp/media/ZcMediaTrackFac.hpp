@@ -12,6 +12,7 @@
 #include "ZcMediaTrackH264.hpp"
 #include "ZcMediaTrackH265.hpp"
 #include "ZcType.hpp"
+#include "zc_log.h"
 
 namespace zc {
 class CMediaTrackFac {
@@ -20,6 +21,7 @@ class CMediaTrackFac {
     ~CMediaTrackFac() {}
     CMediaTrack *CreateMediaTrack(ZC_U8 code) {
         CMediaTrack *track = nullptr;
+        LOG_ERROR("CreateMediaTrack into, code[%d]", code);
         switch (code) {
         case MEDIA_CODE_H264:
             track = new CMediaTrackH264();

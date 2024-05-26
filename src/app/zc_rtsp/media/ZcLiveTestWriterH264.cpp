@@ -20,74 +20,63 @@
 #include "zc_type.h"
 
 #include "Epoll.hpp"
-#include "ZcLiveTestWriter.hpp"
+#include "ZcLiveTestWriterH264.hpp"
 #include "ZcType.hpp"
 
 extern "C" uint32_t rtp_ssrc(void);
 
 #if ZC_LIVE_TEST
 namespace zc {
-typedef struct {
-    const uint8_t *ptr;
-    unsigned int len;
-} test_raw_frame_t;
-
-CLiveTestWriter::CLiveTestWriter() : Thread("LiveTestWriter"), m_status(0), m_alloc(0), m_reader(nullptr), m_fifowriter(nullptr) {
+CLiveTestWriterH264::CLiveTestWriterH264(const live_test_info_t &info)
+    : Thread(info.threadname), m_status(0), m_reader(nullptr), m_fifowriter(nullptr) {
     m_rtp_clock = 0;
     m_rtcp_clock = 0;
     m_timestamp = 0;
+    memcpy(&m_info, &info, sizeof(m_info));
     Init();
     Start();
 }
 
-CLiveTestWriter::~CLiveTestWriter() {
+CLiveTestWriterH264::~CLiveTestWriterH264() {
     UnInit();
 }
 
-unsigned int CLiveTestWriter::_putingCb(void *stream) {
+unsigned int CLiveTestWriterH264::_putingCb(void *stream) {
     test_raw_frame_t *frame = reinterpret_cast<test_raw_frame_t *>(stream);
     return m_fifowriter->PutAppending(frame->ptr, frame->len);
 }
 
-unsigned int CLiveTestWriter::putingCb(void *u, void *stream) {
-    CLiveTestWriter *self = reinterpret_cast<CLiveTestWriter *>(u);
+unsigned int CLiveTestWriterH264::putingCb(void *u, void *stream) {
+    CLiveTestWriterH264 *self = reinterpret_cast<CLiveTestWriterH264 *>(u);
     return self->_putingCb(stream);
 }
 
-int CLiveTestWriter::Init() {
+int CLiveTestWriterH264::Init() {
     LOG_TRACE("Init into");
-    {
-        std::lock_guard<std::mutex> locker(m_mutex);
-        if (m_alloc != 0) {
-            LOG_ERROR("already ShmAllocWrite");
-            return -1;
-        }
-        // m_fifowriter = new CShmFIFOW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
-        m_fifowriter = new CShmStreamW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0, putingCb, this);
-        if (!m_fifowriter->ShmAlloc()) {
-            LOG_ERROR("ShmAllocWrite error");
-            ZC_ASSERT(0);
-            m_alloc = -1;
-            return -1;
-        }
-        m_alloc = 1;
+
+    // m_fifowriter = new CShmFIFOW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
+    m_fifowriter = new CShmStreamW(m_info.size, m_info.fifopath, m_info.chn, putingCb, this);
+    if (!m_fifowriter->ShmAlloc()) {
+        LOG_ERROR("ShmAllocWrite error");
+        ZC_ASSERT(0);
+        return -1;
     }
     LOG_TRACE("Init OK");
     return 0;
 }
 
-int CLiveTestWriter::UnInit() {
+int CLiveTestWriterH264::UnInit() {
     Stop();
 
     ZC_SAFE_DELETE(m_fifowriter);
 }
 
-int CLiveTestWriter::Play() {
+int CLiveTestWriterH264::Play() {
     m_status = 1;
     return 0;
 }
 
-int CLiveTestWriter::_putData2FIFO() {
+int CLiveTestWriterH264::_putData2FIFO() {
 #if ZC_LIVE_TEST
     int ret = 0;
     // uint32_t timestamp = 0;
@@ -107,6 +96,7 @@ int CLiveTestWriter::_putData2FIFO() {
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             zc_frame_t frame;
             frame.type = ZC_STREAM_VIDEO;
+            frame.video.encode = m_info.encode;
             frame.keyflag = idr;
             frame.size = bytes;
             frame.pts = m_pos;
@@ -127,12 +117,12 @@ int CLiveTestWriter::_putData2FIFO() {
     return ret;
 }
 
-int CLiveTestWriter::process() {
+int CLiveTestWriterH264::process() {
     LOG_WARN("process into\n");
     int ret = 0;
     int64_t dts = 0;
     ZC_SAFE_DELETE(m_reader);
-    m_reader = new H264FileReader(ZC_LIVE_TEST_FILE);
+    m_reader = new H264FileReader(m_info.filepath);
     while (State() == Running) {
         if (1 /*m_status == 1*/) {
             ret = _putData2FIFO();

@@ -28,7 +28,7 @@ H265FileReader::H265FileReader(const char* file)
 }
 
 H265FileReader::~H265FileReader()
-{    
+{
 	if (m_ptr)
 	{
 		assert(m_capacity > 0);
@@ -41,7 +41,7 @@ bool H265FileReader::IsOpened() const
 	return !m_videos.empty();
 }
 
-int H265FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes)
+int H265FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes, bool *idr)
 {
 	if(m_vit == m_videos.end())
 		return -1; // file end
@@ -49,6 +49,8 @@ int H265FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &byte
 	ptr = m_vit->nalu;
 	dts = m_vit->time;
 	bytes = m_vit->bytes;
+	if (idr)
+		*idr =  m_vit->idr;
 
 	++m_vit;
 	return 0;
@@ -125,7 +127,7 @@ int H265FileReader::Init()
 				m_sps.push_back(pr);
             }
         }
-		
+
         {
             if(m_sps.size() > 0) vpsspspps = false; // don't need more vps/sps/pps
 

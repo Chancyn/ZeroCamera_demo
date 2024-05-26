@@ -1,10 +1,12 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
+
 #include <asm-generic/errno.h>
-#include <mutex>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <memory>
+#include <mutex>
 
 #include "Thread.hpp"
 #include "rtp-payload.h"
@@ -30,11 +32,12 @@ extern "C" uint32_t rtp_ssrc(void);
 
 namespace zc {
 // CLiveSource::CLiveSource() :m_count(MEDIA_TRACK_BUTT){}
-CLiveSource::CLiveSource() : Thread("LiveSource"), m_status(0), m_count(MEDIA_TRACK_META) {
+CLiveSource::CLiveSource(int chn) : Thread("LiveSource"), m_status(0), m_chn(chn), m_count(MEDIA_TRACK_META) {
     for (int i = 0; i < MEDIA_TRACK_BUTT; i++) {
         m_tracks[i] = nullptr;
     }
     Init();
+    LOG_TRACE("Constructor m_chn[%d]", m_chn);
 }
 
 CLiveSource::~CLiveSource() {
@@ -90,7 +93,14 @@ int CLiveSource::Init() {
     for (int i = 0; i < m_count; i++) {
         CMediaTrack *mtrack = nullptr;
         if (i == MEDIA_TRACK_VIDEO) {
-            mtrack = fac.CreateMediaTrack(MEDIA_CODE_H264);
+            LOG_TRACE("Init m_chn[%d]", m_chn);
+            if (m_chn == 0) {
+                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H265);
+            } else {
+                LOG_TRACE("Init H264[%d]", m_chn);
+                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H264);
+            }
+
         } else if (i == MEDIA_TRACK_AUDIO) {
             mtrack = fac.CreateMediaTrack(MEDIA_CODE_AAC);
         } else if (i == MEDIA_TRACK_META) {
@@ -160,7 +170,7 @@ int CLiveSource::GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const 
 
 int CLiveSource::_sendProcess() {
     LOG_WARN("process into\n");
-    CEpoll ep{100};     // set timeout 100ms,for rtspsource thread exit
+    CEpoll ep{100};  // set timeout 100ms,for rtspsource thread exit
     int ret = 0;
 #if 1
     if (!ep.Create()) {

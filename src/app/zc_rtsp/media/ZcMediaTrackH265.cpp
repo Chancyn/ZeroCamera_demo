@@ -25,11 +25,15 @@ extern "C" uint32_t rtp_ssrc(void);
 #define VIDEO_FREQUENCE (90000)  // frequence
 
 namespace zc {
-CMediaTrackH265::CMediaTrackH265() : CMediaTrack(MEDIA_TRACK_VIDEO, MEDIA_CODE_H265) {}
+CMediaTrackH265::CMediaTrackH265() : CMediaTrack(MEDIA_TRACK_VIDEO, MEDIA_CODE_H265) {
+    LOG_TRACE("Constructor");
+}
 
 CMediaTrackH265::~CMediaTrackH265() {}
 
 bool CMediaTrackH265::Init(void *pinfo) {
+    LOG_TRACE("Create H265 into");
+    char sdpbuf[1024];
     uint32_t ssrc = rtp_ssrc();
     static struct rtp_payload_t s_rtpfunc = {
         CMediaTrack::RTPAlloc,
@@ -47,10 +51,18 @@ bool CMediaTrackH265::Init(void *pinfo) {
         "a=rtpmap:%d H265/90000\n"
         "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=";
 
+    const char *test_sps = "QAEMAf//AWAAAAMAsAAAAwAAAwBdqgJAAAAAAQ==";
+    // profile-level-id=010C01;
+    char profileid[3] = {0x01, 0x0C, 0x01};
     // m_fiforeader = new CShmFIFOR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
     m_fiforeader = new CShmStreamR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader");
+        goto _err;
+    }
+
+    if (!m_fiforeader->ShmAlloc()) {
+        LOG_ERROR("ShmAlloc error");
         goto _err;
     }
 
@@ -67,6 +79,12 @@ bool CMediaTrackH265::Init(void *pinfo) {
     }
 
     rtp_set_info(m_rtp, "RTSPServer", "live.h265");
+
+    // sps
+    snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H265, RTP_PAYLOAD_H265, VIDEO_FREQUENCE,
+             RTP_PAYLOAD_H265, profileid[0], profileid[1], profileid[2], test_sps);
+    LOG_TRACE("ok H265 sdp sdpbuf[%s]", sdpbuf);
+    m_sdp = sdpbuf;
     // set create flag
     m_create = true;
     LOG_TRACE("Create ok H265");

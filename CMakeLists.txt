@@ -25,6 +25,8 @@ set (CFLAGS_SOC -mcpu=cortex-a55)
 set (CXXFLAGS_SOC -mcpu=cortex-a55)
 else()
 message("build ${ZC_SOC}")
+#build memoryleak detect tool ON
+option(WITH_ASAN "asan option" OFF)
 endif()
 
 set (CMAKE_C_COMPILER ${COMPILER_PREFIX}gcc)
@@ -39,8 +41,6 @@ set(CMAKE_CXX_FLAGS
     "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC"
 )
 
-#build memoryleak detect tool
-option(WITH_ASAN "asan option" ON)
 if(WITH_ASAN)
     add_compile_options(-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer)
 endif()

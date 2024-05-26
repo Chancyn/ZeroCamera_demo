@@ -89,7 +89,7 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
     m_pfifo.shmid = 0;
     m_pfifo.fifo = nullptr;
     // /dev/shm/shmfifo
-    snprintf(m_szfifoname, sizeof(m_szfifoname) - 1, "/tmp/shmfifo_%.8s", name);
+    snprintf(m_szfifoname, sizeof(m_szfifoname) - 1, "/tmp/shmfifo_%.8s%d", name, chn);
     if (access(m_szfifoname, F_OK) != 0) {
         LOG_ERROR("[%s] filenotexist, touch", m_szfifoname);
         char cmd[256];

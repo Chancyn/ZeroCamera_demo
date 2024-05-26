@@ -5,6 +5,8 @@
 #include "rtp-payload.h"
 #include <assert.h>
 
+#include "zc_log.h"
+
 extern "C" uint32_t rtp_ssrc(void);
 
 H265FileSource::H265FileSource(const char *file)
@@ -118,8 +120,8 @@ int H265FileSource::GetSDPMedia(std::string& sdp) const
     {
         if(parameters.empty())
         {
-            snprintf(base64, sizeof(base64), pattern, 
-				RTP_PAYLOAD_H265, RTP_PAYLOAD_H265,RTP_PAYLOAD_H265, 
+            snprintf(base64, sizeof(base64), pattern,
+				RTP_PAYLOAD_H265, RTP_PAYLOAD_H265,RTP_PAYLOAD_H265,
 				(unsigned int)(it->first[1]), (unsigned int)(it->first[2]), (unsigned int)(it->first[3]));
             sdp = base64;
         }
@@ -138,6 +140,7 @@ int H265FileSource::GetSDPMedia(std::string& sdp) const
 
     sdp += parameters;
     sdp += '\n';
+	LOG_TRACE("GetSDPMedia sdp spslist.size[%d], [%s]", sps.size(), sdp.c_str());
     return sps.empty() ? -1 : 0;
 }
 
@@ -179,7 +182,7 @@ int H265FileSource::SendRTCP()
 
 		m_rtcp_clock = clock;
 	}
-	
+
 	return 0;
 }
 

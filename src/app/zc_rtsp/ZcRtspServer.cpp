@@ -11,7 +11,7 @@
 #include <mutex>
 #include <utility>
 
-#include "media/ZcLiveTestWriter.hpp"
+#include "media/ZcLiveTestWriterSys.hpp"
 #include "media/ZcMediaTrack.hpp"
 #include "zc_log.h"
 #include "zc_macros.h"
@@ -135,12 +135,17 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
 #endif
                 int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
                 assert(offset > 0 && offset + 1 < sizeof(buffer));
-            } else if (0 == strcmp(filename.c_str(), "live.h264")) {
-                LOG_TRACE("test live");
-                source.reset(new CLiveSource());
+            } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
+                int t = atoi(filename.c_str() + strlen(ZC_RTSP_URL_CHN_PREFIX));
+                if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
+                    t = 0;
+                }
+                LOG_TRACE("test live %s, %d", filename.c_str(), t);
+                source.reset(new CLiveSource(t));
                 int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
                 assert(offset > 0 && offset + 1 < sizeof(buffer));
             } else {
+                LOG_TRACE("test live %s", filename.c_str());
                 if (strendswith(filename.c_str(), ".ps"))
                     source.reset(new PSFileSource(filename.c_str()));
                 else if (strendswith(filename.c_str(), ".h264"))
@@ -231,9 +236,13 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
 #if defined(_HAVE_FFMPEG_)
             item.media.reset(new FFLiveSource("video=Integrated Webcam"));
 #endif
-        } else if (0 == strcmp(filename.c_str(), "live.h264")) {
-            LOG_TRACE("test live setup");
-            item.media.reset(new CLiveSource());
+        } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
+            int t = atoi(filename.c_str() + strlen(ZC_RTSP_URL_CHN_PREFIX));
+            if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
+                t = 0;
+            }
+            LOG_TRACE("test live %s, %d", filename.c_str(), t);
+            item.media.reset(new CLiveSource(t));
         } else {
             if (strendswith(filename.c_str(), ".ps"))
                 item.media.reset(new PSFileSource(filename.c_str()));

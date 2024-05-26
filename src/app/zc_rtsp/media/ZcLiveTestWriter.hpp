@@ -12,48 +12,34 @@
 
 #include "media-source.h"
 
-#include "h264-file-reader.h"
 #include "time64.h"
 #include "zc_frame.h"
 
-#include "Singleton.hpp"
-#include "Thread.hpp"
-#include "ZcShmFIFO.hpp"
-#include "ZcShmStream.hpp"
+typedef struct {
+    unsigned int chn;
+    unsigned int len;
+    const uint8_t *ptr;
+} test_raw_frame_t;
 
-#define ZC_LIVE_TEST_FILE "test.h264"
+typedef struct {
+    unsigned int chn;
+    unsigned int size;
+    unsigned int encode;  // ZC_FRAME_ENC_H265
+    char fifopath[128];
+    char filepath[128];
+    char threadname[32];
+} live_test_info_t;
 
-class CMediaTrack;
 namespace zc {
-class CLiveTestWriter : public Thread, public Singleton<CLiveTestWriter> {
+class ILiveTestWriter {
  public:
-    CLiveTestWriter();
-    virtual ~CLiveTestWriter();
+    ILiveTestWriter() {}
+    virtual ~ILiveTestWriter() {}
 
  public:
-    virtual int Play();
-    int Init();
-    int UnInit();
-
- private:
-    int _putData2FIFO();
-    virtual int process();
-    static unsigned int putingCb(void *u, void *stream);
-    unsigned int _putingCb(void *stream);
-
- private:
-    int m_status;
-    int m_alloc;
-    H264FileReader *m_reader;
-    // CShmFIFOW *m_fifowriter;
-    CShmStreamW *m_fifowriter;
-    uint32_t m_timestamp;
-    uint64_t m_rtp_clock;
-    uint64_t m_rtcp_clock;
-    int64_t m_pos;
-    std::mutex m_mutex;
+    virtual int Init() = 0;
+    virtual int UnInit() = 0;
 };
-#define g_ZCLiveTestWriterInstance (CLiveTestWriter::GetInstance())
 
 }  // namespace zc
 #endif
