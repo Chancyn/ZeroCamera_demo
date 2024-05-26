@@ -34,7 +34,13 @@ bsw_basic
 zc_log
 nng
 pthread
+)
+
+#asan
+if(WITH_ASAN)
+target_link_libraries(zc_sys PRIVATE
 asan.a
 )
+endif()
 
 install(TARGETS zc_sys RUNTIME DESTINATION ${ZC_BIN_INSTALL})

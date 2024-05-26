@@ -39,13 +39,18 @@ set(CMAKE_CXX_FLAGS
     "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC"
 )
 
+#build memoryleak detect tool
+option(WITH_ASAN "asan option" ON)
+if(WITH_ASAN)
+    add_compile_options(-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer)
+endif()
+
 #build cmd debug/release
 if(NOT CMAKE_BUILD_TYPE)
 message("build not define CMAKE_BUILD_TYPE")
 set(CMAKE_BUILD_TYPE "Debug")
 #set(CMAKE_BUILD_TYPE "Release")
 message("build default " ${CMAKE_BUILD_TYPE})
-add_compile_options(-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer)
 else()
 message("build with " ${CMAKE_BUILD_TYPE})
 endif()
@@ -134,6 +139,10 @@ add_subdirectory(tests)
 #add_subdirectory(tests)
 #option build if or not
 #option(WITH_BSW "bsw option"     ON)
+#if(WITH_BSW)
+#    TODO
+#    add_definitions(-DWITH_BSW)
+#endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
