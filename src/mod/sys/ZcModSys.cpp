@@ -23,6 +23,7 @@ CModSys::CModSys()
 
 CModSys::~CModSys() {
     UnInit();
+    ZC_SAFE_DELETE(m_pMsgProc);
 }
 
 bool CModSys::Init() {
