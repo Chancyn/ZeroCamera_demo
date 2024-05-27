@@ -16,9 +16,13 @@ extern "C" {
 #define ZC_STREAM_SUB_VIDEO_SIZE (8 * 1024 * 1024)
 #define ZC_STREAM_AUDIO_SIZE (1 * 1024 * 1024)
 #define ZC_STREAM_MAXFRAME_SIZE (1 * 1024 * 1024)
-#define ZC_STREAM_TEST_CHN (1)  // test chn
+#define ZC_STREAM_TEST_CHN (1)       // test chn
 #define ZC_STREAM_VIDEO_MAX_CHN (2)  // video stream max chn
-#define ZC_FRAME_NALU_MAX_SIZE (6)  // max nalu size
+#define ZC_FRAME_NALU_MAX_SIZE (6)   // max nalu size
+
+#define ZC_FRAME_VIDEO_MAGIC (0x5A435645)  // "ZCVE"
+#define ZC_FRAME_AUDIO_MAGIC (0x5A434155)  // "ZCAU"
+#define ZC_FRAME_META_MAGIC (0x5A434D54)   // "ZCME"
 
 // video
 typedef enum {
@@ -76,10 +80,11 @@ typedef struct {
 
 // stream
 typedef struct _zc_frame_ {
+    ZC_U32 magic;   // magic hdr; 0x5A,0x43,0x5A,0x43
+    ZC_U32 size;    // data size;
     ZC_U8 type;     // zc_stream_e
     ZC_U8 keyflag;  // idr flag;
     ZC_U16 seq;     // seqno;
-    ZC_U32 size;    // data size;
     ZC_U32 utc;     // localtime ms;
     ZC_U32 pts;     // timestamp ms;
     ZC_U32 res[4];  // rsv

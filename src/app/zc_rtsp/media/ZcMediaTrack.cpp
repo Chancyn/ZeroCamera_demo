@@ -269,36 +269,25 @@ int CMediaTrack::GetData2Send() {
     int ret = 0;
     static int retcnt = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
-    // int buf[1024];
-    // if (read(m_fiforeader->GetEvFd(), buf, sizeof(buf)) <= 0) {
-    //     LOG_ERROR("epoll wait ok but read error ret[%d], fd[%d]", ret, m_fiforeader->GetEvFd());
-    //     m_fiforeader->CloseEvFd();
-    //     return -1;
-    // }
-
-    if (!m_fiforeader->IsEmpty()) {
-#if 0
-        ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf));
-        // LOG_TRACE("get fifodata ret[%d]", ret);
-        retcnt += ret;
-        rtp_payload_encode_input(m_rtppacker, m_framebuf, (int)ret, m_timestamp * 90 /*kHz*/);
-#else
-        ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf));
+    // if (!m_fiforeader->IsEmpty()) {
+    while (m_fiforeader->Len() > sizeof(zc_frame_t)) {
+        ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
         ZC_ASSERT(ret > sizeof(zc_frame_t));
         ZC_ASSERT(pframe->size > 0);
         if (pframe->keyflag) {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
-            unsigned int now = _ts.tv_sec*1000 + _ts.tv_nsec/1000000;
-            LOG_TRACE("get fifodata len[%d],key[%d], pts[%u] utc[%u], cos[%d]",  pframe->keyflag, pframe->size, pframe->size, pframe->utc, now-pframe->utc);
+            unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+            LOG_TRACE("get fifodata len[%d],key[%d], pts[%u] utc[%u], cos[%d]", pframe->keyflag, pframe->size,
+                      pframe->size, pframe->utc, now - pframe->utc);
         }
         retcnt += ret;
         rtp_payload_encode_input(m_rtppacker, pframe->data, (int)pframe->size, m_timestamp * 90 /*kHz*/);
-#endif
+
         // m_rtp_clock += 1000/14;
         // m_timestamp += 1000/14;
-        m_rtp_clock += 40;
-        m_timestamp += 40;
+        m_rtp_clock += 16;
+        m_timestamp += 16;
 #if ZC_DEBUG_MEDIATRACK
         uint64_t now = system_clock();
         m_debug_framecnt++;

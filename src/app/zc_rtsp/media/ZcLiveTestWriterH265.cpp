@@ -96,10 +96,11 @@ int CLiveTestWriterH265::_putData2FIFO() {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             zc_frame_t frame;
+            frame.magic = ZC_FRAME_VIDEO_MAGIC;
+            frame.size = bytes;
             frame.type = ZC_STREAM_VIDEO;
             frame.keyflag = idr;
             frame.video.encode = m_info.encode;
-            frame.size = bytes;
             frame.pts = m_pos;
             frame.utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
 

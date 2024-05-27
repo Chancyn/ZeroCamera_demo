@@ -17,10 +17,12 @@
 namespace zc {
 // fifo buf
 typedef struct _zcshmbuf_ {
+    pthread_mutex_t mutex;   /* process shared mutex*/
+    pthread_mutexattr_t mutexattr;
     unsigned int size;       /* the size of the allocated buffer */
     unsigned int in;         /* data is added at offset (in % size) */
     unsigned int out;        /* data is extracted from off. (out % size) */
-    unsigned char buffer[0]; /* the buffer holding the data */
+    unsigned char buffer[0]; /* must be end the buffer holding the data */
 } zcshmbuf_t;
 
 //
@@ -37,7 +39,6 @@ class CShmFIFO : public NonCopyable {
     virtual ~CShmFIFO();
     bool ShmAlloc();
     void ShmFree();
-
  protected:
     // no put event
     unsigned int _put(const unsigned char *buffer, unsigned int len);
@@ -46,7 +47,13 @@ class CShmFIFO : public NonCopyable {
     //
     unsigned int put(const unsigned char *buffer, unsigned int len);
     unsigned int get(unsigned char *buffer, unsigned int len);
-
+    int ShareLock();
+    int ShareUnlock();
+ private:
+    int share_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *mutexattr);
+    int share_mutex_destroy(pthread_mutex_t *mutex, pthread_mutexattr_t *mutexattr);
+    inline int share_mutex_lock(pthread_mutex_t *mutex);
+    inline int share_mutex_unlock(pthread_mutex_t *mutex);
  public:
     // nolcok version unsafe be careful use, stop read/write and reset it
     void Reset();
@@ -76,10 +83,9 @@ class CShmFIFO : public NonCopyable {
     void _shmfree();
     int _getkey(const char *name, unsigned char chn);
 
-
  private:
     zcshmfifo_t m_pfifo;
-    pthread_mutex_t m_lock;
+    // pthread_mutex_t m_lock;
     // std::mutex m_mutex;
     unsigned int m_size;
     int m_shmkey;

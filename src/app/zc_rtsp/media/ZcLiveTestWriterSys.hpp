@@ -2,14 +2,13 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#include <vector>
-#define ZC_LIVE_TEST 1  // test read h264file
 
 #if ZC_LIVE_TEST
 #include <stdint.h>
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "media-source.h"
 

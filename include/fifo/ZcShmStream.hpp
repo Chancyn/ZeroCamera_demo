@@ -40,9 +40,8 @@ class CShmStreamR : public CShmFIFO{
     virtual ~CShmStreamR();
 
  public:
-    // put for hi_venc_stream, 1.first put hdr, 2.stream data PutAppending by m_puting_cb
-    unsigned int Get(unsigned char *buffer, unsigned int len);
-
+    // put for hi_venc_stream, 1.first put hdr, 2.stream data
+    unsigned int Get(unsigned char *buffer, unsigned int buflen, unsigned int hdrlen, unsigned int magic);
  private:
     zc_frame_t *m_latest_idr;    // latest idr
 };
