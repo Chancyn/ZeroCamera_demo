@@ -10,10 +10,9 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-add_executable(zc_rtsp ${DIR_SOURCE_SRCS})
+add_library(zc_rtsp_server STATIC ${DIR_SOURCE_SRCS})
 
-target_include_directories(zc_rtsp PRIVATE
-${RTSP_SERVER_INC}
+target_include_directories(zc_rtsp_server PRIVATE
 ${MEDIAAVCODEC_INC}
 ${MEDIAAVBSF_INC}
 ${MEDIAMPEG_INC}
@@ -30,7 +29,7 @@ ${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 )
 
-target_link_directories(zc_rtsp PRIVATE
+target_link_directories(zc_rtsp_server PRIVATE
 ${MEDIARTSP_LIBPATH}
 ${MEDIAAVBSF_LIBPATH}
 ${MEDIAAVCODEC_LIBPATH}
@@ -45,8 +44,7 @@ ${MEDIASDK_LIBPATH}
 ${NNG_LIBPATH}
 )
 
-target_link_libraries(zc_rtsp PUBLIC
-zc_rtsp_server
+target_link_libraries(zc_rtsp_server PUBLIC
 ${MEDIAAIO}
 ${MEDIARTSPAIO}
 ${MEDIARTSPMEDIA}
@@ -73,12 +71,9 @@ nng
 zc_log
 )
 
-#asan
-if(WITH_ASAN)
-target_link_libraries(zc_rtsp PRIVATE
-asan.a
-)
-endif()
 
-#install(TARGETS zc_rtsp RUNTIME DESTINATION ${ZC_BIN_INSTALL})
-install(TARGETS zc_rtsp DESTINATION ${ZC_BIN_INSTALL})
+add_subdirectory(aio)
+add_subdirectory(media)
+add_subdirectory(movfilebuf)
+
+install(TARGETS zc_rtsp_server DESTINATION ${ZC_LIB_INSTALL})

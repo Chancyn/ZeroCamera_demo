@@ -29,6 +29,7 @@ CMediaTrackAAC::CMediaTrackAAC() : CMediaTrack(MEDIA_TRACK_AUDIO, MEDIA_CODE_AAC
     m_meidainfo.channels = 2;
     m_meidainfo.sample_bits = 2;
     m_meidainfo.sample_rate = AUDIO_FREQUENCE;
+    m_frequency = AUDIO_FREQUENCE;
 }
 
 CMediaTrackAAC::~CMediaTrackAAC() {}
@@ -49,6 +50,7 @@ bool CMediaTrackAAC::Init(void *pinfo) {
         "streamType=5;profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=";
     #endif
     uint32_t ssrc = rtp_ssrc();
+    m_timestamp = ssrc;
     static struct rtp_payload_t s_rtpfunc = {
         CMediaTrack::RTPAlloc,
         CMediaTrack::RTPFree,

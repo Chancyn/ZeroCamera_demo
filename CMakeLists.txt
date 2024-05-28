@@ -67,7 +67,8 @@ else()
        #SET(CMAKE_ZC_DEBUG 0)
        message("build with Release")
 endif()
-
+#media server
+add_definitions(-D__ERROR__=00*10000000+__LINE__*1000)
 
 set(SPDLOG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/include)
 set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib)
@@ -78,6 +79,7 @@ set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
+set(RTSP_SERVER_INC ${CMAKE_SOURCE_DIR}/src/media/zc_rtsp_server)
 
 set(MEDIAINTALL ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server)
 set(MEDIARTSPAIO rtspaio)

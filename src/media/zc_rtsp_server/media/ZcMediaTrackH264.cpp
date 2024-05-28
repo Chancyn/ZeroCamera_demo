@@ -26,6 +26,7 @@ extern "C" uint32_t rtp_ssrc(void);
 
 namespace zc {
 CMediaTrackH264::CMediaTrackH264() : CMediaTrack(MEDIA_TRACK_VIDEO, MEDIA_CODE_H264) {
+    m_frequency = VIDEO_FREQUENCE;
     LOG_TRACE("Constructor");
 }
 
@@ -35,6 +36,7 @@ bool CMediaTrackH264::Init(void *pinfo) {
     LOG_TRACE("Create H264 into");
     char sdpbuf[1024];
     uint32_t ssrc = rtp_ssrc();
+    m_timestamp = ssrc;
     static struct rtp_payload_t s_rtpfunc = {
         CMediaTrack::RTPAlloc,
         CMediaTrack::RTPFree,
@@ -72,7 +74,7 @@ bool CMediaTrackH264::Init(void *pinfo) {
         goto _err;
     }
 
-    m_rtp = rtp_create(&event, this, ssrc, ssrc, VIDEO_FREQUENCE, VIDEO_BANDWIDTH, 1);
+    m_rtp = rtp_create(&event, this, ssrc, ssrc, m_frequency, VIDEO_BANDWIDTH, 1);
     if (!m_rtp) {
         LOG_ERROR("Create video track error H264");
         goto _err;
@@ -81,7 +83,7 @@ bool CMediaTrackH264::Init(void *pinfo) {
     rtp_set_info(m_rtp, "RTSPServer", "live.h264");
 
     // sps
-    snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H264, RTP_PAYLOAD_H264, VIDEO_FREQUENCE,
+    snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H264, RTP_PAYLOAD_H264, m_frequency,
              RTP_PAYLOAD_H264, profileid[0], profileid[1], profileid[2], test_sps);
     LOG_TRACE("ok H264 sdp sdpbuf[%s]", sdpbuf);
     m_sdp = sdpbuf;

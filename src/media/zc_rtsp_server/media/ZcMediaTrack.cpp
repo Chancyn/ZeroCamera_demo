@@ -29,6 +29,9 @@ CMediaTrack::CMediaTrack(media_track_e track, int code)
     : m_create(false), m_track(track), m_code(code), m_fiforeader(nullptr), m_rtppacker(nullptr), m_rtp(nullptr),
       m_evfd(0), m_sendcnt(0), m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
     memset(m_packet, 0, sizeof(m_packet));
+    m_timestamp = 0;
+    m_dts_first = -1;
+    m_dts_last = -1;
 #if ZC_DEBUG_MEDIATRACK
     m_debug_framecnt = 0;
     m_debug_framecnt_last = 0;
@@ -39,112 +42,6 @@ CMediaTrack::CMediaTrack(media_track_e track, int code)
 CMediaTrack::~CMediaTrack() {
     UnInit();
 }
-
-/*
-int CMediaTrack::Create(int codetype, media_info_t *pinfo) {
-    int payload = RTP_PAYLOAD_H264;
-    int bandwidth = VIDEO_BANDWIDTH;
-    int frequence = 90000;
-    char name[32];
-    char rtpname[32];
-    media_info_t info;
-    if (m_track == MEDIA_TRACK_AUDIO && pinfo) {
-        LOG_WARN("user audio_info chn[%d], bits[%d], rate[%d]", pinfo->audio_info.channels,
-                 pinfo->audio_info.sample_bits, pinfo->audio_info.sample_rate);
-        memcpy(&info, pinfo, sizeof(media_info_t));
-    } else {
-        memcpy(&info, &m_meidainfo, sizeof(media_info_t));
-    }
-
-    uint32_t ssrc = rtp_ssrc();
-    static struct rtp_payload_t s_rtpfunc = {
-        CMediaTrack::RTPAlloc,
-        CMediaTrack::RTPFree,
-        CMediaTrack::RTPPacket,
-    };
-
-    struct rtp_event_t event;
-
-    event.on_rtcp = CMediaTrack::OnRTCPEvent;
-
-    // TODO(zhoucc) this
-    if (m_track == MEDIA_TRACK_VIDEO) {
-        if (codetype == MEDIA_CODE_H264) {
-            payload = RTP_PAYLOAD_H264;
-            snprintf(name, sizeof(name) - 1, "h264");
-            snprintf(rtpname, sizeof(rtpname) - 1, "live.h264");
-            // video
-            static const char *video_pattern =
-                "m=video 0 RTP/AVP %d\n"
-                "a=rtpmap:%d H264/90000\n"
-                "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=";
-
-        } else if (codetype == MEDIA_CODE_H264) {
-            payload = RTP_PAYLOAD_H265;
-            snprintf(name, sizeof(name) - 1, "h265");
-            snprintf(rtpname, sizeof(rtpname) - 1, "live.h265");
-        } else {
-            LOG_ERROR("Create video track error codetype[%d]", codetype);
-            goto _err;
-        }
-    } else if (m_track == MEDIA_TRACK_AUDIO) {
-        bandwidth = AUDIO_BANDWIDTH;
-        frequence = m_meidainfo.audio_info.sample_rate;  // 4800
-        if (codetype == MEDIA_CODE_AAC) {
-            payload = RTP_PAYLOAD_MP4A;
-            frequence = m_meidainfo.audio_info.sample_rate;
-            bandwidth = AUDIO_BANDWIDTH;
-            snprintf(name, sizeof(name) - 1, "mpeg4-generic");
-            snprintf(rtpname, sizeof(rtpname) - 1, "live.aac");
-        } else {
-            LOG_ERROR("Create video track error codetype[%d]", codetype);
-            goto _err;
-        }
-    } else if (m_track == MEDIA_TRACK_META) {
-        if (codetype == MEDIA_CODE_METADATA) {
-            LOG_WARN("Create metadata track TODO codetype[%d]", codetype);
-            // TODO(zhoucc)
-        } else {
-            LOG_ERROR("Create video track error codetype[%d]", codetype);
-            goto _err;
-        }
-    } else {
-        LOG_ERROR("error m_track[%d]", m_track);
-        goto _err;
-    }
-
-    m_rtppacker = rtp_payload_encode_create(payload, name, (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
-    if (m_rtppacker) {
-        LOG_ERROR("Create playload encode error codetype[%d]", codetype);
-        goto _err;
-    }
-
-    m_rtp = rtp_create(&event, this, ssrc, ssrc, frequence, bandwidth, 1);
-    if (m_rtp) {
-        LOG_ERROR("Create video track error codetype[%d]", codetype);
-        goto _err;
-    }
-
-    rtp_set_info(m_rtp, "RTSPServer", rtpname);
-
-    LOG_TRACE("Create ok m_track[%d],codetype[%d]", m_track, codetype);
-    return 0;
-_err:
-    LOG_ERROR("Create error m_track[%d],codetype[%d]", m_track, codetype);
-        if (m_rtp) {
-            rtp_destroy(m_rtp);
-            m_rtp = nullptr;
-        }
-
-        if (m_rtppacker) {
-            rtp_payload_encode_destroy(m_rtppacker);
-            m_rtppacker = nullptr;
-        }
-
-    ZC_SAFE_DELETE(m_fiforeader);
-    return false;
-}
-*/
 
 void CMediaTrack::UnInit() {
     if (m_create) {
@@ -180,9 +77,9 @@ int CMediaTrack::GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const 
     uint32_t timestamp;
 
     rtp_payload_encode_getinfo(m_rtppacker, &seq, &timestamp);
-    snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_track, seq, timestamp);
-    // snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_track, seq,
-    //          (unsigned int)(m_timestamp * (m_frequency / 1000) /*kHz*/));
+    // snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_track, seq, timestamp);
+    snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_track, seq,
+             (unsigned int)(m_timestamp * (m_frequency / 1000) /*kHz*/));
 
     return 0;
 }
@@ -267,7 +164,6 @@ int CMediaTrack::RTPPacket(void *param, const void *packet, int bytes, uint32_t 
 
 int CMediaTrack::GetData2Send() {
     int ret = 0;
-    static int retcnt = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
     // if (!m_fiforeader->IsEmpty()) {
     while (m_fiforeader->Len() > sizeof(zc_frame_t)) {
@@ -281,8 +177,11 @@ int CMediaTrack::GetData2Send() {
             LOG_TRACE("get fifodata len[%d],key[%d], pts[%u] utc[%u], cos[%d]", pframe->keyflag, pframe->size,
                       pframe->size, pframe->utc, now - pframe->utc);
         }
-        retcnt += ret;
-        rtp_payload_encode_input(m_rtppacker, pframe->data, (int)pframe->size, m_timestamp * 90 /*kHz*/);
+        if (-1 == m_dts_first)
+            m_dts_first = pframe->pts;
+        m_dts_last = pframe->pts;
+        uint32_t timestamp = m_timestamp + (uint32_t)((m_dts_last - m_dts_first))* (m_frequency / 1000);
+        rtp_payload_encode_input(m_rtppacker, pframe->data, (int)pframe->size, timestamp /*kHz*/);
 
         // m_rtp_clock += 1000/14;
         // m_timestamp += 1000/14;

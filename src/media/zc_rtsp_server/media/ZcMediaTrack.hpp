@@ -85,6 +85,8 @@ class CMediaTrack {
     void *m_rtppacker;  // rtp encoder
     void *m_rtp;        // rtp status
     std::string m_sdp;
+    unsigned int m_frequency;
+    uint32_t m_timestamp;
 
  private:
     // CLiveSource *m_live;
@@ -92,9 +94,11 @@ class CMediaTrack {
     int m_evfd;
     int m_sendcnt;
     int m_pollcnt;
-    uint32_t m_timestamp;
     uint64_t m_rtp_clock;
     uint64_t m_rtcp_clock;
+    int64_t m_dts_first; // first frame timestamp
+	int64_t m_dts_last; // last frame timestamp
+
     unsigned char m_packet[MAX_UDP_PACKET + 14];
     unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];
 #if ZC_DEBUG_MEDIATRACK
