@@ -595,7 +595,7 @@ int CRtspServer::_send(void *ptr, const void *data, size_t bytes) {
     return bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
 }
 
-CRtspServer::CRtspServer() : Thread("RtspServer"), m_init(false), m_running(0), m_phandle(nullptr), m_psvr(nullptr) {}
+CRtspServer::CRtspServer() : Thread("RtspSer"), m_init(false), m_running(0), m_phandle(nullptr), m_psvr(nullptr) {}
 
 CRtspServer::~CRtspServer() {
     UnInit();

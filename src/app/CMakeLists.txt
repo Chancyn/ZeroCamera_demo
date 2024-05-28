@@ -15,4 +15,4 @@ endforeach()
 add_subdirectory(zc_sys)
 add_subdirectory(zc_codec)
 add_subdirectory(zc_rtsp)
-
+add_subdirectory(zc_rtspcli)

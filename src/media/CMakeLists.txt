@@ -10,5 +10,4 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-#add_subdirectory(zc_rtsp_client)
-add_subdirectory(zc_rtsp_server)
+add_subdirectory(zcrtsp)
