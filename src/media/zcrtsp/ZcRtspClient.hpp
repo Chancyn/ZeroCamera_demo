@@ -2,15 +2,19 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#include <mutex>
 #include <stdint.h>
 
-#include "rtsp-client.h"
+#include <mutex>
 
-#include "Thread.hpp"
+#include "rtsp-client.h"
 #include "sockutil.h"
 #include "zc_frame.h"
 #include "zc_type.h"
+
+#include "Thread.hpp"
+#include "ZcRtpReceiver.hpp"
+
+#define ZC_MEIDIA_NUM 8  // #define N_MEDIA 8 from rtsp-client-internal.h
 
 namespace zc {
 struct zc_rtsp_client_t {
@@ -26,7 +30,7 @@ typedef enum {
     ZC_RTSP_TRANSPORT_RTP_UDP = 1,
     ZC_RTSP_TRANSPORT_RTP_TCP,
     ZC_RTSP_TRANSPORT_RAW,
-}zc_rtsp_transport_e;
+} zc_rtsp_transport_e;
 
 class CRtspClient : protected Thread {
  public:
@@ -68,8 +72,8 @@ class CRtspClient : protected Thread {
     char *m_pbuf;  // buffer
     char m_url[ZC_MAX_PATH];
     void *m_phandle;  // handle
-
     zc_rtsp_client_t m_client;
+    CRtpReceiver *m_pRtp[ZC_MEIDIA_NUM];  // [rtp&rtcp] Receiver
     std::mutex m_mutex;
 };
 

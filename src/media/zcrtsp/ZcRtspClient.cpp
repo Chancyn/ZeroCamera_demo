@@ -3,17 +3,16 @@
 
 // client
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 // #include <sys/types.h>
 
+#include "ZcType.hpp"
 #include "rtp-tcp-transport.h"
 #include "rtp-udp-transport.h"
-#include "rtp-receiver-test.h"
 
-#include "Thread.hpp"
-#include "ZcRtspClient.hpp"
 #include "cpm/unuse.h"
 #include "cstringext.h"
 #include "rtsp-client.h"
@@ -25,15 +24,21 @@
 #include "urlcodec.h"
 #include "zc_log.h"
 #include "zc_macros.h"
-#include <stdint.h>
 
+#include "Thread.hpp"
+#include "ZcRtpReceiver.hpp"
+#include "ZcRtspClient.hpp"
+
+#define RTP_RECIEIVER_TEST 0  // 0 media-server demo for test; 1 CRtpReceiver
+#if RTP_RECIEIVER_TEST
+#include "rtp-receiver-test.h"
+void rtp_receiver_tcp_input(uint8_t channel, const void *data, uint16_t bytes);
+void rtp_receiver_test(socket_t rtp[2], const char *peer, int peerport[2], int payload, const char *encoding);
+void *rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payload, const char *encoding);
+#endif
 
 //#define UDP_MULTICAST_ADDR "239.0.0.2"
 #define ZC_RTSP_CLI_BUF_SIZE (2 * 1024 * 1024)
-
-// void rtp_receiver_tcp_input(uint8_t channel, const void *data, uint16_t bytes);
-// void rtp_receiver_test(socket_t rtp[2], const char *peer, int peerport[2], int payload, const char *encoding);
-// void *rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payload, const char *encoding);
 
 extern "C" int rtsp_addr_is_multicast(const char *ip);
 
@@ -48,7 +53,10 @@ CRtspClient::CRtspClient(const char *url, int transport)
 
 CRtspClient::~CRtspClient() {
     StopCli();
-    ZC_SAFE_FREE(m_pbuf);
+    for (unsigned int i = 0; i < ZC_MEIDIA_NUM; i++) {
+        ZC_SAFE_DELETE(m_pRtp[i]);
+    }
+    ZC_SAFE_DELETEA(m_pbuf);
 }
 
 int CRtspClient::send(void *param, const char *uri, const void *req, size_t bytes) {
@@ -117,7 +125,13 @@ void CRtspClient::onrtp(void *param, uint8_t channel, const void *data, uint16_t
 
 void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
     static int keepalive = 0;
+#if RTP_RECIEIVER_TEST
     rtp_receiver_tcp_input(channel, data, bytes);
+#else
+    ZC_ASSERT(channel <= ZC_MEIDIA_NUM);
+    ZC_ASSERT(m_pRtp[channel / 2] != nullptr);
+    m_pRtp[channel / 2]->RtpReceiverTcpInput(channel, data, bytes);
+#endif
     if (++keepalive % 1000 == 0) {
         rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL, NULL);
     }
@@ -138,7 +152,6 @@ int CRtspClient::onsetup(void *param, int timeout, int64_t duration) {
 }
 
 int CRtspClient::_onsetup(int timeout, int64_t duration) {
-    int i;
     uint64_t npt = 0;
     char ip[65];
     u_short rtspport;
@@ -149,14 +162,17 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
         LOG_ERROR("rtsp_client_play error ret[%d]", ret);
         return -1;
     }
+    rtsp_client_t *rtsp = reinterpret_cast<rtsp_client_t *>(m_client.rtsp);
+    int media_count = rtsp_client_media_count(rtsp);
+    media_count = media_count < ZC_MEIDIA_NUM ? media_count : ZC_MEIDIA_NUM;
 
-    for (i = 0; i < rtsp_client_media_count(reinterpret_cast<rtsp_client_t *>(m_client.rtsp)); i++) {
+    for (int i = 0; i < media_count; i++) {
         int payload, port[2];
         const char *encoding;
         const struct rtsp_header_transport_t *transport;
-        transport = rtsp_client_get_media_transport(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), i);
-        encoding = rtsp_client_get_media_encoding(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), i);
-        payload = rtsp_client_get_media_payload(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), i);
+        transport = rtsp_client_get_media_transport(rtsp, i);
+        encoding = rtsp_client_get_media_encoding(rtsp, i);
+        payload = rtsp_client_get_media_payload(rtsp, i);
         if (RTSP_TRANSPORT_RTP_UDP == transport->transport) {
             // assert(RTSP_TRANSPORT_RTP_UDP == transport->transport); // udp only
             assert(0 == transport->multicast);  // unicast only
@@ -166,15 +182,42 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
             port[0] = transport->rtp.u.server_port1;
             port[1] = transport->rtp.u.server_port2;
             if (*transport->source) {
+#if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], transport->source, port, payload, encoding);
+#else
+                m_pRtp[i] = new CRtpReceiver();
+                if (!m_pRtp[i]) {
+                    LOG_ERROR("udp new CRtpReceiver error");
+                    continue;
+                }
+                m_pRtp[i]->RtpReceiverUdpStart(m_client.rtp[i], transport->source, port, payload, encoding);
+#endif
             } else {
                 socket_getpeername(m_client.socket, ip, &rtspport);
+#if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], ip, port, payload, encoding);
+#else
+                m_pRtp[i] = new CRtpReceiver();
+                if (!m_pRtp[i]) {
+                    LOG_ERROR("udp new CRtpReceiver error");
+                    continue;
+                }
+                m_pRtp[i]->RtpReceiverUdpStart(m_client.rtp[i], ip, port, payload, encoding);
+#endif
             }
         } else if (RTSP_TRANSPORT_RTP_TCP == transport->transport) {
-            // assert(transport->rtp.u.client_port1 == transport->interleaved1);
-            // assert(transport->rtp.u.client_port2 == transport->interleaved2);
+// assert(transport->rtp.u.client_port1 == transport->interleaved1);
+// assert(transport->rtp.u.client_port2 == transport->interleaved2);
+#if RTP_RECIEIVER_TEST
             rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
+#else
+            m_pRtp[i] = new CRtpReceiver();
+            if (!m_pRtp[i]) {
+                LOG_ERROR("udp new CRtpReceiver error");
+                continue;
+            }
+            m_pRtp[i]->RtpReceiverTcpStart(transport->interleaved1, transport->interleaved2, payload, encoding);
+#endif
         } else {
             ZC_ASSERT(0);  // TODO(zhoucc)
         }
@@ -190,6 +233,10 @@ int CRtspClient::onteardown(void *param) {
 
 int CRtspClient::_onteardown() {
     LOG_WARN("onteardown %p", this);
+    for (unsigned int i = 0; i < ZC_MEIDIA_NUM; i++) {
+        ZC_SAFE_DELETE(m_pRtp[i]);
+    }
+
     return 0;
 }
 
@@ -225,6 +272,7 @@ bool CRtspClient::_startconn() {
     char *pswptr = nullptr;
     strncpy(tmp, m_url, sizeof(tmp) - 1);
     struct rtsp_client_handler_t *phandle = nullptr;
+    rtsp_client_t *rtsp = nullptr;
     // prase url
     struct uri_t *url = uri_parse(tmp, strlen(tmp));
     if (!url)
@@ -242,7 +290,7 @@ bool CRtspClient::_startconn() {
     phandle = (struct rtsp_client_handler_t *)malloc(sizeof(struct rtsp_client_handler_t));
     ZC_ASSERT(phandle);
     if (!phandle) {
-        LOG_ERROR("rtspcli connect error");
+        LOG_ERROR("rtspcli malloc error url[%s] this[%p]", m_url, this);
         goto _err;
     }
     m_phandle = phandle;
@@ -270,18 +318,20 @@ bool CRtspClient::_startconn() {
     m_client.socket = socket_connect_host(host, url->port, 2000);
     ZC_ASSERT(socket_invalid != m_client.socket);
     if (m_client.socket < 0) {
-        LOG_ERROR("rtspcli connect error");
+        LOG_ERROR("rtspcli connect error url[%s] this[%p]", m_url, this);
         goto _err;
     }
 
-    // m_client.rtsp = rtsp_client_create(NULL, NULL, &handler, &ctx);
-    m_client.rtsp = rtsp_client_create(m_url, userptr, pswptr, phandle, this);
+    // rtsp = rtsp_client_create(NULL, NULL, &handler, &ctx);
+    rtsp = rtsp_client_create(m_url, userptr, pswptr, phandle, this);
+    m_client.rtsp = rtsp;
     ZC_ASSERT(m_client.rtsp);
     if (!m_client.rtsp) {
+        LOG_ERROR("rtspcli describe error url[%s] this[%p]", m_url, this);
         goto _err;
     }
 
-    if (rtsp_client_describe(reinterpret_cast<rtsp_client_t *>(m_client.rtsp)) != 0) {
+    if (rtsp_client_describe(rtsp) != 0) {
         LOG_ERROR("rtspcli describe error url[%s] this[%p]", m_url, this);
         goto _err;
     }
@@ -310,8 +360,15 @@ bool CRtspClient::StartCli() {
 }
 
 bool CRtspClient::StopCli() {
-    Thread::Stop();
-    m_running = false;
+    LOG_TRACE("Stop into");
+    if (m_running) {
+        // first shutdown socket wakeup block recv thead
+        if (m_client.socket > 0)
+            socket_shutdown(m_client.socket, SHUT_RDWR);
+        LOG_TRACE("socket_shutdown socket", m_client.socket);
+        Thread::Stop();
+        m_running = false;
+    }
     LOG_TRACE("Stop ok");
     return true;
 }
