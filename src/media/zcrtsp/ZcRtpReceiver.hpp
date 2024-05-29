@@ -46,7 +46,8 @@ class CRtpReceiver {
     enum {
         RTP_STATUS_ERR = -1,
         RTP_STATUS_INIT = 0,
-        RTP_STATUS_RUNNING = 1,
+        RTP_STATUS_RUNNING,
+        RTP_STATUS_STOP,
     };
 
  public:

@@ -265,6 +265,8 @@ _err:
 }
 
 bool CRtpReceiver::RtpReceiverStop() {
+    LOG_ERROR("RtpReceiverStop into");
+    m_running = RTP_STATUS_STOP;
     ZC_SAFE_DELETE(m_udpthread);
 
     if (m_rtpctx->demuxer) {
@@ -282,6 +284,7 @@ bool CRtpReceiver::RtpReceiverStop() {
         m_rtpctx->fp = nullptr;
     }
 
+    LOG_ERROR("RtpReceiverStop exit");
     return true;
 }
 
