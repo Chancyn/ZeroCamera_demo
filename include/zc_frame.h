@@ -12,11 +12,17 @@ extern "C" {
 
 #define ZC_STREAM_VIDEO_SHM_PATH "video"
 #define ZC_STREAM_AUDIO_SHM_PATH "audio"
+
+// stream fifo max size
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)
 #define ZC_STREAM_SUB_VIDEO_SIZE (8 * 1024 * 1024)
 #define ZC_STREAM_AUDIO_SIZE (1 * 1024 * 1024)
-#define ZC_STREAM_MAXFRAME_SIZE (1 * 1024 * 1024)
-#define ZC_STREAM_TEST_CHN (1)       // test chn
+
+// frame max size
+#define ZC_STREAM_MAXFRAME_SIZE (1 * 1024 * 1024)  // video frame
+#define ZC_STREAM_MAXFRAME_SIZE_A (2 * 1024)       // audio frame
+
+#define ZC_STREAM_TEST_CHN (1)       // test chns
 #define ZC_STREAM_VIDEO_MAX_CHN (2)  // video stream max chn
 #define ZC_FRAME_NALU_MAX_SIZE (6)   // max nalu size
 

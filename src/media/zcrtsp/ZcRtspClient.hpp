@@ -19,6 +19,7 @@
 namespace zc {
 struct zc_rtsp_client_t {
     void *rtsp;
+    rtponframe onframe;
     socket_t socket;
 
     int transport;
@@ -41,11 +42,21 @@ class CRtspClient : protected Thread {
     bool StartCli();
     bool StopCli();
 
+
  private:
     bool _startconn();
     bool _stopconn();
     virtual int process();
     int _cliwork();
+
+    inline int _frameH264(const void *packet, int bytes, uint32_t time, int flags);
+    inline int _frameH265(const void *packet, int bytes, uint32_t time, int flags);
+    inline int _frameAAC(const void *packet, int bytes, uint32_t time, int flags);
+
+    // rtp on frame
+    static int onframe(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags);
+    int _onframe(int encode, const void *packet, int bytes, uint32_t time, int flags);
+
     static int send(void *param, const char *uri, const void *req, size_t bytes);
     int _send(const char *uri, const void *req, size_t bytes);
     static int rtpport(void *param, int media, const char *source, unsigned short rtp[2], char *ip, int len);
@@ -73,7 +84,14 @@ class CRtspClient : protected Thread {
     char m_url[ZC_MAX_PATH];
     void *m_phandle;  // handle
     zc_rtsp_client_t m_client;
+    unsigned int m_videobufsize;
+    unsigned int m_audiobufsize;
+    zc_frame_t *m_videoframe;  //  sizeof(zc_frme_t) + ZC_STREAM_MAXFRAME_SIZE;
+    zc_frame_t *m_audioframe;  //  sizeof(zc_frme_t) + ZC_STREAM_MAXFRAME_SIZE_A;
+
     CRtpReceiver *m_pRtp[ZC_MEIDIA_NUM];  // [rtp&rtcp] Receiver
+    unsigned int m_videopkgcnt;
+    unsigned int m_lasttime;
     std::mutex m_mutex;
 };
 

@@ -101,8 +101,8 @@ int CLiveTestWriterH265::_putData2FIFO() {
             frame.type = ZC_STREAM_VIDEO;
             frame.keyflag = idr;
             frame.video.encode = m_info.encode;
-            frame.pts = m_pos;
             frame.utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+            frame.pts = frame.utc;  // m_pos;
 
             test_raw_frame_t raw;
             raw.ptr = ptr;

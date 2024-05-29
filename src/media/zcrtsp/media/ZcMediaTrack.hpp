@@ -100,7 +100,7 @@ class CMediaTrack {
 	int64_t m_dts_last; // last frame timestamp
 
     unsigned char m_packet[MAX_UDP_PACKET + 14];
-    unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];
+    unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];     // framebuf TODO(zhoucc): different size new
 #if ZC_DEBUG_MEDIATRACK
     uint64_t m_debug_cnt_lasttime;
     uint32_t m_debug_framecnt_last;

@@ -174,13 +174,12 @@ int CMediaTrack::GetData2Send() {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-            LOG_TRACE("get fifodata len[%d],key[%d], pts[%u] utc[%u], cos[%d]", pframe->keyflag, pframe->size,
-                      pframe->size, pframe->utc, now - pframe->utc);
+            LOG_TRACE("rtsp:pts:%u,utc:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, pframe->size, now - pframe->utc);
         }
         if (-1 == m_dts_first)
             m_dts_first = pframe->pts;
         m_dts_last = pframe->pts;
-        uint32_t timestamp = m_timestamp + (uint32_t)((m_dts_last - m_dts_first))* (m_frequency / 1000);
+        uint32_t timestamp = m_timestamp + (uint32_t)((m_dts_last - m_dts_first)) * (m_frequency / 1000);
         rtp_payload_encode_input(m_rtppacker, pframe->data, (int)pframe->size, timestamp /*kHz*/);
 
         // m_rtp_clock += 1000/14;

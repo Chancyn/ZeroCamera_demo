@@ -12,4 +12,4 @@ endforeach()
 
 add_library(zch26x STATIC ${DIR_SOURCE_SRCS})
 
-install(TARGETS zcrtsp DESTINATION ${ZC_LIB_INSTALL})
+install(TARGETS zch26x DESTINATION ${ZC_LIB_INSTALL})

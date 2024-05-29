@@ -47,6 +47,7 @@ ${NNG_LIBPATH}
 
 target_link_libraries(zc_rtspcli PUBLIC
 zcrtsp
+zch26x
 ${MEDIAAIO}
 ${MEDIARTSPAIO}
 ${MEDIARTSPMEDIA}

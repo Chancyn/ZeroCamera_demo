@@ -2,6 +2,7 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 // client
+#include <netdb.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -22,12 +23,14 @@
 #include "sys/system.h"
 #include "uri-parse.h"
 #include "urlcodec.h"
+#include "zc_frame.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 
 #include "Thread.hpp"
 #include "ZcRtpReceiver.hpp"
 #include "ZcRtspClient.hpp"
+#include "zc_h26x_sps_parse.h"
 
 #define RTP_RECIEIVER_TEST 0  // 0 media-server demo for test; 1 CRtpReceiver
 #if RTP_RECIEIVER_TEST
@@ -49,6 +52,19 @@ CRtspClient::CRtspClient(const char *url, int transport)
     memset(&m_client, 0, sizeof(m_client));
     if (url)
         strncpy(m_url, url, sizeof(m_url));
+    m_videobufsize = ZC_STREAM_MAXFRAME_SIZE;
+    m_audiobufsize = ZC_STREAM_MAXFRAME_SIZE_A;
+    m_videoframe = (zc_frame_t *)calloc(1, m_videobufsize + sizeof(zc_frame_t));
+    m_audioframe = (zc_frame_t *)calloc(1, m_audiobufsize + sizeof(zc_frame_t));
+    ZC_ASSERT(m_videoframe != nullptr);
+    ZC_ASSERT(m_audioframe != nullptr);
+
+    m_videoframe->magic = ZC_FRAME_VIDEO_MAGIC;
+    m_videoframe->type = ZC_STREAM_VIDEO;
+    m_videoframe->magic = ZC_FRAME_AUDIO_MAGIC;
+    m_videoframe->type = ZC_STREAM_AUDIO;
+    m_videopkgcnt = 0;
+    m_lasttime = 0;
 }
 
 CRtspClient::~CRtspClient() {
@@ -57,6 +73,200 @@ CRtspClient::~CRtspClient() {
         ZC_SAFE_DELETE(m_pRtp[i]);
     }
     ZC_SAFE_DELETEA(m_pbuf);
+    ZC_SAFE_FREE(m_audioframe);
+    ZC_SAFE_FREE(m_videoframe);
+}
+
+inline int CRtspClient::_frameH264(const void *packet, int bytes, uint32_t time, int flags) {
+    uint8_t type = *(uint8_t *)packet & 0x1f;
+    struct timespec _ts;
+    clock_gettime(CLOCK_MONOTONIC, &_ts);
+    m_lasttime = _ts.tv_sec;
+
+    ZC_ASSERT(m_videoframe != nullptr);
+
+    // sps;
+    if (type == H264_NAL_UNIT_TYPE_SPS) {
+        zc_h26x_sps_info_t spsinfo = {0};
+        if (zc_h264_sps_parse((const uint8_t *)packet, bytes, &spsinfo) == 0) {
+            m_videoframe->video.width = spsinfo.width;
+            m_videoframe->video.height = spsinfo.height;
+        } else {
+            LOG_ERROR("h264 prase sps error");
+        }
+    }
+
+    if (m_videoframe->size + 4 + bytes <= m_videobufsize) {
+        m_videoframe->data[m_videoframe->size + 0] = 00;
+        m_videoframe->data[m_videoframe->size + 1] = 00;
+        m_videoframe->data[m_videoframe->size + 2] = 00;
+        m_videoframe->data[m_videoframe->size + 3] = 01;
+
+        memcpy(m_videoframe->data + m_videoframe->size + 4, packet, bytes);
+        m_videoframe->video.nalu[m_videopkgcnt] = bytes + 4;
+        m_videoframe->size += bytes + 4;
+        m_videopkgcnt++;
+    } else {
+        LOG_ERROR("pack error, reset time:%08u, bytes[%u], size[%u], pkgcnt[%u]", time, bytes, m_videoframe->size,
+                  m_videopkgcnt);
+        m_videoframe->size = 0;
+        m_videopkgcnt = 0;
+        return 0;
+    }
+
+    // I frame, P Frame
+    if (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR || type == H264_NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) {
+        m_videoframe->keyflag = (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR) ? ZC_FRAME_IDR : 0;
+        m_videoframe->seq = m_videoframe->seq + 1;
+        m_videoframe->utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+        m_videoframe->pts = m_videoframe->utc;
+        m_videoframe->video.encode = ZC_FRAME_ENC_H264;
+
+        if (m_videoframe->keyflag)
+            LOG_TRACE("H264,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu,pkgcnt:%d", time, m_videoframe->utc,
+                      m_videoframe->size, type, flags, m_videoframe->video.width, m_videoframe->video.height,
+                      m_videopkgcnt);
+        // putto fifo
+        m_videoframe->size = 0;
+        m_videopkgcnt = 0;
+    }
+
+    return 0;
+}
+
+inline int CRtspClient::_frameH265(const void *packet, int bytes, uint32_t time, int flags) {
+    uint8_t type = (*(uint8_t *)packet >> 1) & 0x3f;
+    struct timespec _ts;
+    clock_gettime(CLOCK_MONOTONIC, &_ts);
+    m_lasttime = _ts.tv_sec;
+    if (type >= H265_NAL_UNIT_CODED_SLICE_TRAIL_N && type <= H265_NAL_UNIT_CODED_SLICE_RASL_R) {
+        // TODO(zhoucc): B frame
+    } else if (type >= H265_NAL_UNIT_CODED_SLICE_BLA_W_LP && type <= H265_NAL_UNIT_CODED_SLICE_CRA) {
+        // I Frame 16-21,
+        // TODO(zhoucc): I frame
+    } else if (type >= H265_NAL_UNIT_VPS) {
+        // !vcl;
+        // LOG_WARN("%p => encoding:H265, time:%08u, flags:%d, bytes:%d", this, time, flags, bytes);
+    }
+
+    if (type == H265_NAL_UNIT_SPS) {
+        zc_h26x_sps_info_t spsinfo = {0};
+        if (zc_h265_sps_parse((const uint8_t *)packet, bytes, &spsinfo) == 0) {
+            m_videoframe->video.width = spsinfo.width;
+            m_videoframe->video.height = spsinfo.height;
+        } else {
+            LOG_ERROR("h265 prase sps error");
+        }
+    }
+
+    if (m_videoframe->size + 4 + bytes <= m_videobufsize) {
+        m_videoframe->data[m_videoframe->size + 0] = 00;
+        m_videoframe->data[m_videoframe->size + 1] = 00;
+        m_videoframe->data[m_videoframe->size + 2] = 00;
+        m_videoframe->data[m_videoframe->size + 3] = 01;
+
+        memcpy(m_videoframe->data + m_videoframe->size + 4, packet, bytes);
+        m_videoframe->video.nalu[m_videopkgcnt] = bytes + 4;
+        m_videoframe->size += bytes + 4;
+        m_videopkgcnt++;
+    } else {
+        LOG_ERROR("pack error, reset time:%08u, bytes[%u], size[%u], pkgcnt[%u]", time, bytes, m_videoframe->size,
+                  m_videopkgcnt);
+        m_videoframe->size = 0;
+        m_videopkgcnt = 0;
+        return 0;
+    }
+
+    if (type >= 0 && type <= H265_NAL_UNIT_CODED_SLICE_CRA) {
+        m_videoframe->keyflag = (type >= H265_NAL_UNIT_CODED_SLICE_BLA_W_LP) ? ZC_FRAME_IDR : 0;
+        m_videoframe->seq = m_videoframe->seq + 1;
+        m_videoframe->utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+        m_videoframe->pts = m_videoframe->utc;
+        m_videoframe->video.encode = ZC_FRAME_ENC_H265;
+
+        if (m_videoframe->keyflag)
+            LOG_TRACE("H265,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu,pkgcnt:%d", time, m_videoframe->utc,
+                      m_videoframe->size, type, flags, m_videoframe->video.width, m_videoframe->video.height,
+                      m_videopkgcnt);
+
+        m_videoframe->size = 0;
+        m_videopkgcnt = 0;
+    }
+
+    return 0;
+}
+
+inline int CRtspClient::_frameAAC(const void *packet, int bytes, uint32_t time, int flags) {
+    struct timespec _ts;
+    clock_gettime(CLOCK_MONOTONIC, &_ts);
+    if (bytes + 7 <= m_audiobufsize) {
+        uint8_t ADTS[] = {0xFF, 0xF1, 0x00, 0x00, 0x00, 0x00, 0xFC};
+        int audioSamprate = 32000;  //
+        int audioChannel = 2;       //
+        switch (audioSamprate) {
+        case 16000:
+            ADTS[2] = 0x60;
+            break;
+        case 32000:
+            ADTS[2] = 0x54;
+            break;
+        case 44100:
+            ADTS[2] = 0x50;
+            break;
+        case 48000:
+            ADTS[2] = 0x4C;
+            break;
+        case 96000:
+            ADTS[2] = 0x40;
+            break;
+        default:
+            break;
+        }
+        ADTS[3] = (audioChannel == 2) ? 0x80 : 0x40;
+
+        int len = bytes + 7;
+        len <<= 5;    // 8bit * 2 - 11 = 5(headerSize 11bit)
+        len |= 0x1F;  // 5 bit    1
+        ADTS[4] = len >> 8;
+        ADTS[5] = len & 0xFF;
+        memcpy(m_audioframe->data, ADTS, sizeof(ADTS));
+
+        m_audioframe->keyflag = 0;
+        m_audioframe->seq = 0;
+        m_audioframe->utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+        m_audioframe->pts = m_audioframe->utc;
+        m_audioframe->size = bytes + 7;
+        m_audioframe->audio.encode = ZC_FRAME_ENC_AAC;
+
+        memcpy(m_audioframe->data + 7, packet, bytes);
+
+#if ZC_DEBUG
+        LOG_TRACE("AAC,time:%08u,utc:%u,len:%d,flags:%d", time, m_audioframe->size, m_audioframe->utc, flags);
+#endif
+    }
+
+    return 0;
+}
+
+int CRtspClient::onframe(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags) {
+    CRtspClient *pcli = reinterpret_cast<CRtspClient *>(param);
+    return pcli->_onframe(encode, packet, bytes, time, flags);
+}
+
+int CRtspClient::_onframe(int encode, const void *packet, int bytes, uint32_t time, int flags) {
+    if (flags) {
+        LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
+    }
+
+    if (ZC_FRAME_ENC_H264 == encode) {
+        return _frameH264(packet, bytes, time, flags);
+    } else if (ZC_FRAME_ENC_H265 == encode) {
+        return _frameH265(packet, bytes, time, flags);
+    } else if (ZC_FRAME_ENC_AAC == encode) {
+        return _frameAAC(packet, bytes, time, flags);
+    }
+
+    return -1;
 }
 
 int CRtspClient::send(void *param, const char *uri, const void *req, size_t bytes) {
@@ -185,7 +395,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], transport->source, port, payload, encoding);
 #else
-                m_pRtp[i] = new CRtpReceiver();
+                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this);
                 if (!m_pRtp[i]) {
                     LOG_ERROR("udp new CRtpReceiver error");
                     continue;
@@ -197,7 +407,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], ip, port, payload, encoding);
 #else
-                m_pRtp[i] = new CRtpReceiver();
+                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this);
                 if (!m_pRtp[i]) {
                     LOG_ERROR("udp new CRtpReceiver error");
                     continue;
@@ -211,7 +421,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
             rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
 #else
-            m_pRtp[i] = new CRtpReceiver();
+            m_pRtp[i] = new CRtpReceiver(m_client.onframe, this);
             if (!m_pRtp[i]) {
                 LOG_ERROR("udp new CRtpReceiver error");
                 continue;
@@ -273,7 +483,7 @@ bool CRtspClient::_startconn() {
     strncpy(tmp, m_url, sizeof(tmp) - 1);
     struct rtsp_client_handler_t *phandle = nullptr;
     rtsp_client_t *rtsp = nullptr;
-    // prase url
+    // parse url
     struct uri_t *url = uri_parse(tmp, strlen(tmp));
     if (!url)
         return -1;
@@ -285,8 +495,8 @@ bool CRtspClient::_startconn() {
         userptr = strtok_r(url->userinfo, "@", &pswptr);
     }
 
-    LOG_DEBUG("prase url host[%s]port[%hu] path[%s] ok", host, url->port, path);
-    LOG_DEBUG("prase url user[%s]psw[%s] ok", userptr, pswptr);
+    LOG_DEBUG("parse url host[%s]port[%hu] path[%s] ok", host, url->port, path);
+    LOG_DEBUG("parse url user[%s]psw[%s] ok", userptr, pswptr);
     phandle = (struct rtsp_client_handler_t *)malloc(sizeof(struct rtsp_client_handler_t));
     ZC_ASSERT(phandle);
     if (!phandle) {
@@ -303,7 +513,7 @@ bool CRtspClient::_startconn() {
     phandle->onpause = onpause;
     phandle->onteardown = onteardown;
     phandle->onrtp = onrtp;
-
+    m_client.onframe = onframe;
     if (ZC_RTSP_TRANSPORT_RTP_TCP == m_transport) {
         m_client.transport = RTSP_TRANSPORT_RTP_TCP;
     } else if (ZC_RTSP_TRANSPORT_RTP_UDP == m_transport) {

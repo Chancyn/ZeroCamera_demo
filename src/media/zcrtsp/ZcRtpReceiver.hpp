@@ -3,16 +3,18 @@
 // reference media-server:rtp-receiver-test.c
 
 #pragma once
-#include "rtsp-client.h"
-
+#include "NonCopyable.hpp"
 #include "Thread.hpp"
+#include "rtsp-client.h"
 #include "sockutil.h"
 #include "zc_type.h"
-
 #if ZC_DEBUG
 #define ZC_DEBUG_SAVE_RTP 1
 #endif
 
+typedef int (*rtponframe)(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags);
+
+class CRtspClient;
 namespace zc {
 typedef struct _rtp_context_ {
 #ifdef ZC_DEBUG_SAVE_RTP
@@ -21,6 +23,7 @@ typedef struct _rtp_context_ {
 #endif
 
     char encoding[64];
+    int encodetype;     // zc_frame_enc_e
     socket_t socket[2];
     struct sockaddr_storage ss[2];
 
@@ -42,7 +45,7 @@ class CRtpRxThread : public zc::Thread {
     CRtpReceiver *m_rtprx;
 };
 
-class CRtpReceiver {
+class CRtpReceiver : public NonCopyable {
     enum {
         RTP_STATUS_ERR = -1,
         RTP_STATUS_INIT = 0,
@@ -51,9 +54,10 @@ class CRtpReceiver {
     };
 
  public:
-    CRtpReceiver();
+    CRtpReceiver(rtponframe onframe, void *pclictx);
     virtual ~CRtpReceiver();
 
+    static int GetEncodeType(const char *encoding);
     int RtpReceiver(int timeout);
     bool RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int peerport[2], int payload, const char *encoding);
     bool RtpReceiverTcpStart(uint8_t interleave1, uint8_t interleave2, int payload, const char *encoding);
@@ -68,8 +72,10 @@ class CRtpReceiver {
     int _rtpOnpacket(const void *packet, int bytes, uint32_t timestamp, int flags);
 
  private:
+    int m_running;  // RTP_STATUS_ERR
     rtp_context_t *m_rtpctx;
+    rtponframe m_onframe;
+    void *m_pclictx;
     CRtpRxThread *m_udpthread;  // udp receiver thread
-    int m_running;      // RTP_STATUS_ERR
 };
 }  // namespace zc
