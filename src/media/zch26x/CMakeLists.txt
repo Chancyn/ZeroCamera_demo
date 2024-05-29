@@ -10,7 +10,6 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-add_subdirectory(zcrtsp)
-add_subdirectory(zch26x)
+add_library(zch26x STATIC ${DIR_SOURCE_SRCS})
 
-
+install(TARGETS zcrtsp DESTINATION ${ZC_LIB_INSTALL})
