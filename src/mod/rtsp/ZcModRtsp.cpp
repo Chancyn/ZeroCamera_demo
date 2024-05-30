@@ -23,6 +23,7 @@ CModRtsp::CModRtsp()
 
 CModRtsp::~CModRtsp() {
     _unInit();
+    ZC_SAFE_DELETE(m_pMsgProc);
 }
 
 bool CModRtsp::Init() {

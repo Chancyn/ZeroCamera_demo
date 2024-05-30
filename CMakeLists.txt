@@ -25,6 +25,8 @@ set (CFLAGS_SOC -mcpu=cortex-a55)
 set (CXXFLAGS_SOC -mcpu=cortex-a55)
 else()
 message("build ${ZC_SOC}")
+#build memoryleak detect tool ON
+option(WITH_ASAN "asan option" OFF)
 endif()
 
 set (CMAKE_C_COMPILER ${COMPILER_PREFIX}gcc)
@@ -39,6 +41,10 @@ set(CMAKE_CXX_FLAGS
     "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC"
 )
 
+if(WITH_ASAN)
+    add_compile_options(-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer)
+endif()
+
 #build cmd debug/release
 if(NOT CMAKE_BUILD_TYPE)
 message("build not define CMAKE_BUILD_TYPE")
@@ -48,6 +54,11 @@ message("build default " ${CMAKE_BUILD_TYPE})
 else()
 message("build with " ${CMAKE_BUILD_TYPE})
 endif()
+
+# ZC_LIVE_TEST test read h264file,and write to fifo
+add_definitions(-DZC_LIVE_TEST=1)
+# ZC_LIVE_TEST test read h264file,rtps write shmstreambuff, not process shared,
+add_definitions(-DZC_LIVE_TEST_THREADSHARED=0)
 
 if("${CMAKE_BUILD_TYPE}x" STREQUAL "Debugx")
        #SET(CMAKE_ZC_DEBUG 1)
@@ -59,6 +70,8 @@ else()
        message("build with Release")
 endif()
 
+#media server
+add_definitions(-D__ERROR__=00*10000000+__LINE__*1000)
 
 set(SPDLOG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/include)
 set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib)
@@ -69,6 +82,7 @@ set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
+set(ZCRTSP_INC ${CMAKE_SOURCE_DIR}/src/media/zcrtsp)
 
 set(MEDIAINTALL ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server)
 set(MEDIARTSPAIO rtspaio)
@@ -125,6 +139,7 @@ include/utilsxx
 include/utils
 include/msgcomm
 include/mod
+include/media
 )
 
 add_subdirectory(src)
@@ -133,6 +148,10 @@ add_subdirectory(tests)
 #add_subdirectory(tests)
 #option build if or not
 #option(WITH_BSW "bsw option"     ON)
+#if(WITH_BSW)
+#    TODO
+#    add_definitions(-DWITH_BSW)
+#endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

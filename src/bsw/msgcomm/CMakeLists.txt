@@ -10,9 +10,6 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-# set(NNG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/include)
-# set(NNG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/lib)
-
 #.a/so
 add_library(msgcomm SHARED ${DIR_SOURCE_SRCS})
 #add_library(msgcomm SHARED ${DIR_SOURCE_SRCS})

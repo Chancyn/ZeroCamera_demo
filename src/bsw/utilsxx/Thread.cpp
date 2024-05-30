@@ -34,7 +34,9 @@ void Thread::Stop() {
         _stopFlag = true;
         _state = Stoping;
         _condition.notify_all();  // Notify one waiting thread, if there is one.
-        _thread->join();          // wait for thread finished
+        if (_thread->joinable()) {
+            _thread->join();  // wait for thread finished
+        }
         delete _thread;
         _thread = nullptr;
         _state = Stoped;

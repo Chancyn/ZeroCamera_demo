@@ -26,5 +26,6 @@ message("build with src")
 add_subdirectory(bsw)
 add_subdirectory(plat)
 add_subdirectory(mod)
+add_subdirectory(media)
 add_subdirectory(app)
 

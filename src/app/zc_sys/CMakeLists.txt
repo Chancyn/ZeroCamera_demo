@@ -19,9 +19,9 @@ ${PLAT_BASIC_INC}
 ${MSGCOMM_INC}
 )
 
-# target_link_directories(zc_sys PRIVATE
-# # ${NNG_LIBPATH}
-# )
+target_link_directories(zc_sys PRIVATE
+${NNG_LIBPATH}
+)
 
 target_link_libraries(zc_sys PRIVATE
 mod_sys
@@ -32,8 +32,15 @@ utils
 plat_basic
 bsw_basic
 zc_log
-# nng
+nng
 pthread
 )
+
+#asan
+if(WITH_ASAN)
+target_link_libraries(zc_sys PRIVATE
+asan.a
+)
+endif()
 
 install(TARGETS zc_sys RUNTIME DESTINATION ${ZC_BIN_INSTALL})

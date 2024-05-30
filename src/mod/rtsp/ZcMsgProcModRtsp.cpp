@@ -117,9 +117,9 @@ bool CMsgProcModRtsp::Init() {
                  &CMsgProcModRtsp::_handleRepRtspManShutdown);
 
     // ZC_MID_RTSP_CFG_E
-    REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MID_RTSP_CFG_E, &CMsgProcModRtsp::_handleReqRtspCfgGet,
+    REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MSID_RTSP_CFG_GET_E, &CMsgProcModRtsp::_handleReqRtspCfgGet,
                  &CMsgProcModRtsp::_handleRepRtspCfgGet);
-    REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MID_RTSP_CFG_E, &CMsgProcModRtsp::_handleReqRtspCfgSet,
+    REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MSID_RTSP_CFG_SET_E, &CMsgProcModRtsp::_handleReqRtspCfgSet,
                  &CMsgProcModRtsp::_handleRepRtspCfgSet);
 
     // ZC_MID_RTSP_CTRL_E
@@ -140,8 +140,8 @@ bool CMsgProcModRtsp::UnInit() {
         return false;
     }
 
-    m_init = false;
     uninit();
+    m_init = false;
     return true;
 }
 

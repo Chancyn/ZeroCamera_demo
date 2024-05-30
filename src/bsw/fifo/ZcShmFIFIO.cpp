@@ -5,6 +5,7 @@
 #include <asm-generic/errno-base.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -79,7 +80,7 @@ static inline bool is_power_of_2(unsigned int n) {
 
 // userspace modify................
 namespace zc {
-CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool bwrite) {
+CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool bwrite) : m_bwrite(bwrite) {
     if (!is_power_of_2(size)) {
         BUG_ON(size > 0x80000000);
         size = roundup_pow_of_two(size);
@@ -89,7 +90,7 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
     m_pfifo.shmid = 0;
     m_pfifo.fifo = nullptr;
     // /dev/shm/shmfifo
-    snprintf(m_szfifoname, sizeof(m_szfifoname) - 1, "/tmp/shmfifo_%.8s", name);
+    snprintf(m_szfifoname, sizeof(m_szfifoname) - 1, "/tmp/shmfifo_%.8s%d", name, chn);
     if (access(m_szfifoname, F_OK) != 0) {
         LOG_ERROR("[%s] filenotexist, touch", m_szfifoname);
         char cmd[256];
@@ -97,7 +98,6 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
         system(cmd);
     }
     m_shmkey = _getkey(m_szfifoname, chn);
-    m_bwrite = bwrite;
 
     // ev mkfifo
     snprintf(m_szevname, sizeof(m_szevname) - 1, "/tmp/evfifo_%.8s%d", name, chn);
@@ -119,6 +119,84 @@ CShmFIFO::~CShmFIFO() {
 
 bool CShmFIFO::ShmAlloc() {
     return _shmalloc(m_size, m_shmkey, m_bwrite);
+}
+
+int CShmFIFO::share_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *mutexattr) {
+    if (pthread_mutexattr_init(mutexattr) != 0) {
+        LOG_ERROR("error: pthread_mutexattr_init");
+    }
+    if (pthread_mutexattr_setrobust(mutexattr, PTHREAD_MUTEX_ROBUST) != 0) {
+        LOG_ERROR("error: pthread_mutexattr_init");
+    }
+    if (pthread_mutexattr_setpshared(mutexattr, PTHREAD_PROCESS_SHARED) != 0) {
+        LOG_ERROR("error: pthread_mutexattr_init");
+    }
+
+    if (pthread_mutex_init(mutex, mutexattr) != 0) {
+        LOG_ERROR("error: pthread_mutex_init");
+    }
+
+    return 0;
+}
+int CShmFIFO::share_mutex_destroy(pthread_mutex_t *mutex, pthread_mutexattr_t *mutexattr) {
+    pthread_mutexattr_destroy(mutexattr);
+    pthread_mutex_destroy(mutex);
+
+    return 0;
+}
+
+inline int CShmFIFO::share_mutex_lock(pthread_mutex_t *mutex) {
+    int ret = 0;
+    int trycnt = 0;
+    while (1) {
+        ret = pthread_mutex_lock(mutex);
+        if (ret == 0) {
+            // lock ok
+            #if ZC_DEBUG
+            if (trycnt > 0) {
+                LOG_WARN("share_mutex_lock %p: ok trycnt[%d]", mutex, trycnt);
+            }
+            #endif
+            return 0;
+        } else if (ret == EOWNERDEAD) {
+            LOG_ERROR("share_mutex_lock %p, [%d][%s]: lock:%u, count:%u, owner:%u\n", mutex, ret, strerror(EOWNERDEAD),
+                      mutex->__data.__lock, mutex->__data.__count, mutex->__data.__owner);
+            ret = pthread_mutex_consistent_np(mutex);
+            if (ret != 0) {
+                LOG_ERROR("share_mutex_lock %p: consistent error[%d][%s]", mutex, ret, strerror(ret));
+                break;
+            }
+
+            LOG_WARN("share_mutex_lock consistent ok; unlocking\n");
+            ret = pthread_mutex_unlock(mutex);
+            if (ret != 0) {
+                LOG_WARN("share_mutex_lock %p: consistent _unlock error[%d][%s]", mutex, ret, strerror(ret));
+            }
+        } else {
+            // LOG_ERROR("share_mutex_lock %p: error[%d][%s]", mutex, ret, strerror(ret));
+        }
+
+        trycnt++;
+        if (trycnt > 10000) {
+            LOG_ERROR("deadlock share_mutex_lock:%p, trycnt[%d]", mutex, trycnt);
+            ZC_ASSERT(0);
+            return ret;
+        }
+    }
+
+    return ret;
+}
+
+inline int CShmFIFO::share_mutex_unlock(pthread_mutex_t *mutex) {
+    return pthread_mutex_unlock(mutex);
+}
+
+int CShmFIFO::ShareLock() {
+    return share_mutex_lock(&m_pfifo.fifo->mutex);
+}
+
+int CShmFIFO::ShareUnlock() {
+    return share_mutex_unlock(&m_pfifo.fifo->mutex);
 }
 
 bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
@@ -174,6 +252,9 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
         m_pfifo.fifo->size = m_size;
         m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
         m_pfifo.out = 0;
+
+        share_mutex_init(&m_pfifo.fifo->mutex, &m_pfifo.fifo->mutexattr);
+
     } else {
         // reader out pos = in pos
         m_pfifo.out = m_pfifo.fifo->in;
@@ -208,11 +289,17 @@ void CShmFIFO::_shmfree() {
                 unlink(m_szevname);
             }
         }
-        shmdt(m_pfifo.fifo);
-        m_pfifo.fifo = nullptr;
+
         if (m_bwrite) {
+            share_mutex_destroy(&m_pfifo.fifo->mutex, &m_pfifo.fifo->mutexattr);
+            shmdt(m_pfifo.fifo);
+            m_pfifo.fifo = nullptr;
             LOG_TRACE("_shmfree shmctl delete shmid[%d]", m_pfifo.shmid);
             shmctl(m_pfifo.shmid, IPC_RMID, NULL);
+        } else {
+            shmdt(m_pfifo.fifo);
+            m_pfifo.fifo = nullptr;
+            LOG_TRACE("_shmfree shmctl delete shmid[%d]", m_pfifo.shmid);
         }
         m_pfifo.shmid = 0;
     }
@@ -319,44 +406,68 @@ unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
     return len;
 }
 
-unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
-    unsigned int ret = 0;
-    ret = _put(buffer, len);
-
+void CShmFIFO::_putev() {
     // write evfd
-    if (ret && m_pfifo.evfd > 0 && write(m_pfifo.evfd, "w", 1) < 0) {
+    if (m_pfifo.evfd > 0 && write(m_pfifo.evfd, "w", 1) < 0) {
         char buf[ZC_EVFIFO_SIZE];
         LOG_ERROR("warn write evfifo error, read clear");
         read(m_pfifo.evfd, buf, sizeof(buf));
     }
+    return;
+}
+
+unsigned int CShmFIFO::put(const unsigned char *buffer, unsigned int len) {
+    share_mutex_lock(&m_pfifo.fifo->mutex);
+    unsigned int ret = 0;
+    ret = _put(buffer, len);
+
+    // write evfd
+    if (ret) {
+        _putev();
+    }
+    share_mutex_unlock(&m_pfifo.fifo->mutex);
     return ret;
 }
 
 unsigned int CShmFIFO::get(unsigned char *buffer, unsigned int len) {
-    return _get(buffer, len);
+    share_mutex_lock(&m_pfifo.fifo->mutex);
+    unsigned int ret = _get(buffer, len);
+    share_mutex_unlock(&m_pfifo.fifo->mutex);
+    return ret;
 }
 
 // unsafe be careful use
 void CShmFIFO::Reset() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
+    share_mutex_lock(&m_pfifo.fifo->mutex);
     m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
     m_pfifo.fifo->out = 0;
+    share_mutex_unlock(&m_pfifo.fifo->mutex);
     return;
 }
 
 unsigned int CShmFIFO::Len() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
-    return m_pfifo.fifo->in - m_pfifo.out;
+    share_mutex_lock(&m_pfifo.fifo->mutex);
+    unsigned int len = m_pfifo.fifo->in - m_pfifo.out;
+    share_mutex_unlock(&m_pfifo.fifo->mutex);
+    return len;
 }
 
 bool CShmFIFO::IsEmpty() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
-    return (m_pfifo.fifo->in == m_pfifo.out);
+    share_mutex_lock(&m_pfifo.fifo->mutex);
+    bool isempty = (m_pfifo.fifo->in == m_pfifo.out);
+    share_mutex_unlock(&m_pfifo.fifo->mutex);
+    return isempty;
 }
 
 bool CShmFIFO::IsFull() {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
-    return ((m_pfifo.fifo->in - m_pfifo.fifo->out) >= m_pfifo.fifo->size);
+    share_mutex_lock(&m_pfifo.fifo->mutex);
+    bool isfull = ((m_pfifo.fifo->in - m_pfifo.fifo->out) >= m_pfifo.fifo->size);
+    share_mutex_unlock(&m_pfifo.fifo->mutex);
+    return isfull;
 }
 
 }  // namespace zc

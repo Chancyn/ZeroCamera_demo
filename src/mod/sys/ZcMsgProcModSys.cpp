@@ -245,8 +245,8 @@ bool CMsgProcModSys::UnInit() {
         return false;
     }
 
-    m_init = false;
     uninit();
+    m_init = false;
     LOG_TRACE("UnInit ok");
     return true;
 }

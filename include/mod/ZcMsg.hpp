@@ -6,6 +6,7 @@
 
 #include "zc_mod_base.h"
 #include "zc_msg.h"
+#include "zc_macros.h"
 
 // define for msg register msg handle
 #ifndef ZC_MSG_SHAREPTR
@@ -16,8 +17,13 @@
                                    std::placeholders::_4); \
         auto stdfunrep = std::bind(repfun, this, std::placeholders::_1, std::placeholders::_2); \
         CMsgBase *pmsg = new CMsgBase(mod, id, sid, stdfunreq, stdfunrep); \
+        ZC_ASSERT(pmsg != nullptr); \
         if (pmsg) { \
-            registerMsg(id, sid, pmsg); \
+            if (!registerMsg(id, sid, pmsg)) { \
+                LOG_ERROR("insert id[%d],sid[%d]", id, sid); \
+                ZC_ASSERT(0); \
+                delete pmsg; \
+            } \
         } \
     } while (0);
 #else

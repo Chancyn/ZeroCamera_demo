@@ -50,15 +50,14 @@ ZC_S32 CMsgProcMod::MsgRepProc(zc_msg_t *rep, int size) {
     return 0;
 }
 
-ZC_S32 CMsgProcMod::registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg) {
+bool CMsgProcMod::registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg) {
     if (m_init || pMsg == nullptr) {
         return false;
     }
     ZC_U32 key = (id << 16) | sid;
     // m_msgmap.insert(key, pMsg);
-    m_msgmap.insert(std::make_pair(key, pMsg));
-
-    return true;
+    auto res = m_msgmap.insert(std::make_pair(key, pMsg));
+    return res.second;
 }
 
 bool CMsgProcMod::init() {
@@ -87,6 +86,7 @@ bool CMsgProcMod::uninit() {
     }
 
     m_msgmap.clear();
+    m_init = false;
     LOG_TRACE("uninit ok");
     return true;
 }

@@ -19,7 +19,7 @@ class CMsgProcMod {
     ZC_S32 MsgRepProc(zc_msg_t *rep, int size);
 
  protected:
-    ZC_S32 registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg);
+    bool registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg);
     bool init();
     bool uninit();
 

@@ -5,10 +5,10 @@ extern "C" {
 #endif /* __cplusplus */
 
 // 对齐到最接近的、不小于x的、alignment的倍数
-#define ALIGN_UP(x, alignment) (((x) + ((alignment) - 1)) & ~(((alignment) - 1)))
+#define ALIGN_UP(x, alignment) (((x) + ((alignment)-1)) & ~(((alignment)-1)))
 
 // 对齐到最接近的、不大于x的、alignment的倍数
-#define ALIGN_DOWN(x, alignment) ((x) & ~(((alignment) - 1)))
+#define ALIGN_DOWN(x, alignment) ((x) & ~(((alignment)-1)))
 
 #define ZC_USLEEP(Sec, Usec) \
     do { \
@@ -26,12 +26,14 @@ extern "C" {
         select(1, NULL, NULL, NULL, &_SleepTimeM_); \
     } while (0)
 
-
 #ifdef ZC_DEBUG
 #include <assert.h>
 #define ZC_ASSERT(x) assert(x)
 #else
-#define ZC_ASSERT(x)
+#define ZC_ASSERT(x) \
+    do { \
+        LOG_ERROR("assert error"); \
+    } while (0)
 #endif
 
 #ifdef __cplusplus
