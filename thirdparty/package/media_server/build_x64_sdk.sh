@@ -69,7 +69,14 @@ function build_make()
     #make PLATFORM=aarch64-v01c01-linux-gnu RELEASE=0
     make clean
     make ${buildargs} -j 16
-    make install
+    make_exit_code=$?
+    if [ $make_exit_code -eq 0 ]; then
+    echo "make succeeded"
+    else
+        echo "make failed with exit code $make_exit_code"
+        exit $make_exit_code
+    fi
+    # make install
     popd
 }
 
