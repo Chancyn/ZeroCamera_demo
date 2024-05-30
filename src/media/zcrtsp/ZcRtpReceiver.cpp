@@ -98,9 +98,9 @@ int CRtpReceiver::_rtpRead(socket_t s) {
     //     print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[0]);
     // }
     n += r;
-    // if (0 == i++ % 100)
-    //     LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
-    //               ((uint8_t)m_rtpctx->rtp_buffer[2] << 8) | (uint8_t)m_rtpctx->rtp_buffer[3], r, n);
+    if (0 == i++ % 100)
+        LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
+                  ((uint8_t)m_rtpctx->rtp_buffer[2] << 8) | (uint8_t)m_rtpctx->rtp_buffer[3], r, n);
 
     size[0] = r >> 8;
     size[1] = r >> 0;
@@ -284,7 +284,7 @@ bool CRtpReceiver::RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int pe
         goto _err;
     }
     m_udpthread->Start();
-
+    LOG_TRACE("rtp receiver udp start ok");
     return true;
 _err:
     m_running = RTP_STATUS_ERR;
@@ -313,6 +313,7 @@ bool CRtpReceiver::RtpReceiverTcpStart(uint8_t interleave1, uint8_t interleave2,
     }
 
     m_running = RTP_STATUS_RUNNING;
+    LOG_TRACE("rtp receiver tcp start ok");
     return true;
 _err:
     m_running = RTP_STATUS_ERR;

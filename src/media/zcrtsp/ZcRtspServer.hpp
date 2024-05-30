@@ -17,7 +17,7 @@
 #include "rtp-udp-transport.h"
 
 #include "Thread.hpp"
-#include "rtsp/ZcModRtsp.hpp"
+// #include "rtsp/ZcModRtsp.hpp"
 
 #define ZC_RTSP_MAX_CHN ZC_STREAM_VIDEO_MAX_CHN
 #define ZC_RTSP_URL_CHN_PREFIX "live.ch"
