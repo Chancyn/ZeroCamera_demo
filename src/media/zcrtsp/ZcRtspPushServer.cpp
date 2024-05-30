@@ -259,7 +259,7 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
         if (RTSP_TRANSPORT_RTP_UDP == stream->transport.transport) {
             assert(!stream->transport.multicast);
             int port[2] = {stream->transport.rtp.u.client_port1, stream->transport.rtp.u.client_port2};
-            // TODO(zhoucc): recvice
+            // TODO(zhoucc): recvicer
             // rtp_receiver_test(stream->socket, stream->transport.destination, port, stream->media->avformats[0].fmt,
             //                   stream->media->avformats[0].encoding);
             stream->rtpreceiver.reset(new CRtpReceiver(onframe, this));
@@ -438,6 +438,27 @@ void CRtspPushServer::_onerror(rtsp_server_t *rtsp, int code) {
     return;
 }
 
+void CRtspPushServer::rtsp_onerror2(void *ptr, rtsp_server_t *rtsp, int code, void *ptr2) {
+    CRtspPushServer *psvr = reinterpret_cast<CRtspPushServer *>(ptr);
+    return psvr->_onerror2(rtsp, code, ptr2);
+}
+
+void CRtspPushServer::_onerror2(rtsp_server_t *rtsp, int code, void *ptr2) {
+    // ptr2[session]
+    LOG_ERROR("rtsp_onerror2 code=%d, rtsp=%p, ptr2[%p]\n", code, rtsp, ptr2);
+    TPushSessions::iterator it;
+    std::lock_guard<std::mutex> locker(m_pushmutex);
+    // for (it = m_pushsessions.begin(); it != m_pushsessions.end(); ++it) {
+    //     if (rtsp == it->second.rtsp) {
+    //         it->second.media->Pause();
+    //         m_pushsessions.erase(it);
+    //         break;
+    //     }
+    // }
+
+    return;
+}
+
 int CRtspPushServer::rtsp_send(void *ptr, const void *data, size_t bytes) {
     // TODO(zhoucc)
     CRtspPushServer *psvr = reinterpret_cast<CRtspPushServer *>(ptr);
@@ -459,6 +480,17 @@ void CRtspPushServer::onrtp(void *param, uint8_t channel, const void *data, uint
 
 void CRtspPushServer::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
     LOG_ERROR("_onrtp channel:%u, bytes:%hu", channel, bytes);
+    // ZC_ASSERT(channel <= ZC_MEIDIA_NUM);
+    // stream->rtpreceiver->RtpReceiverTcpInput(channel, data, bytes);
+}
+
+void CRtspPushServer::onrtp2(void *param, uint8_t channel, const void *data, uint16_t bytes, void *ptr2) {
+    CRtspPushServer *psvr = reinterpret_cast<CRtspPushServer *>(param);
+    return psvr->_onrtp2(channel, data, bytes, ptr2);
+}
+
+void CRtspPushServer::_onrtp2(uint8_t channel, const void *data, uint16_t bytes, void *ptr2) {
+    LOG_TRACE("_onrtp channel:%u, bytes:%hu, this[%p], ptr2[%p]\n", channel, bytes, this, ptr2);
     // ZC_ASSERT(channel <= ZC_MEIDIA_NUM);
     // stream->rtpreceiver->RtpReceiverTcpInput(channel, data, bytes);
 }
@@ -497,6 +529,8 @@ bool CRtspPushServer::_init() {
 
     // pushserver
     phandler->onrtp = onrtp;
+    phandler->onrtp2 = onrtp2;
+    phandler->onerror2 = rtsp_onerror2;
     // 1. check s_workdir, MUST be end with '/' or '\\'
     // 2. url: rtsp://127.0.0.1:8554/vod/<filename>
     // void *tcp = rtsp_server_listen("0.0.0.0", 8554, phandler, NULL);

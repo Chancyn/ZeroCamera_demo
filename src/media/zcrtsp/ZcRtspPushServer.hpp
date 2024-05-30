@@ -99,11 +99,16 @@ class CRtspPushServer : public Thread {
     static void rtsp_onerror(void *ptr, rtsp_server_t *rtsp, int code);
     void _onerror(rtsp_server_t *rtsp, int code);
 
+    static void rtsp_onerror2(void *ptr, rtsp_server_t *rtsp, int code, void *ptr2);
+    void _onerror2(rtsp_server_t *rtsp, int code, void *ptr2);
+
     static int rtsp_send(void *ptr, const void *data, size_t bytes);
     int _send(const void *data, size_t bytes);
 
     static void onrtp(void *param, uint8_t channel, const void *data, uint16_t bytes);
     void _onrtp(uint8_t channel, const void *data, uint16_t bytes);
+   static void onrtp2(void *param, uint8_t channel, const void *data, uint16_t bytes, void *ptr2);
+    void _onrtp2(uint8_t channel, const void *data, uint16_t bytes, void *ptr2);
  private:
     bool m_init;
     int m_running;

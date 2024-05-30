@@ -25,7 +25,9 @@ struct rtsp_session_t
 	socklen_t addrlen;
 
 	void (*onerror)(void* param, rtsp_server_t* rtsp, int code);
+    void (*onerror2)(void* param, rtsp_server_t* rtsp, int code, void *ptr);
 	void (*onrtp)(void* param, uint8_t channel, const void* data, uint16_t bytes);
+	void (*onrtp2)(void* param, uint8_t channel, const void* data, uint16_t bytes, void *ptr);
 	void* param;
 };
 
@@ -89,7 +91,7 @@ static void rtsp_session_onrecv(void* param, int code, size_t bytes)
 				p = end - remain;
 			}
 		} while (p < end && 0 == code);
-		
+
 		if (code >= 0)
 		{
 			// need more data
@@ -128,6 +130,46 @@ static int rtsp_session_send(void* ptr, const void* data, size_t bytes)
 	return bytes == socket_send(session->socket, data, bytes, 0) ? 0 : -1;
 }
 
+static void rtsp_session_onrtp(void *param, uint8_t channel, const void *data, uint16_t bytes)
+{
+    struct rtsp_session_t* session = (struct rtsp_session_t*)param;
+    if (session)
+    {
+        if (session->onrtp2)
+        {
+            printf("rtsp_session_onrtp onrtp2 session:%p, param:%p\n", session, session->param);
+            // session->param:rtsp_transport_tcp_create regitster param ptr, return with session ptr
+            return session->onrtp2(session->param, channel, data, bytes, session);
+        }
+        else if (session->onrtp)
+        {
+            printf("rtsp_session_onrtp onrtp session:%p\n", session);
+            return session->onrtp(session->param, channel, data, bytes);
+        }
+    }
+    return;
+}
+
+static void rtsp_session_onerror(void* param, rtsp_server_t* rtsp, int code, void *ptr)
+{
+    struct rtsp_session_t* session = (struct rtsp_session_t*)param;
+    if (session)
+    {
+        if (session->onerror2)
+        {
+            printf("rtsp_session_onrtp onerror2 session:%p, param:%p\n", session, session->param);
+            // session->param:rtsp_transport_tcp_create regitster param ptr, return with session ptr
+            return session->onerror2(session->param, rtsp, code, session);
+        }
+        else if (session->onerror)
+        {
+            printf("rtsp_session_onrtp onerror session:%p\n", session);
+            return session->onerror(session->param, rtsp, code);
+        }
+    }
+    return;
+}
+
 int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, socklen_t addrlen, struct aio_rtsp_handler_t* handler, void* param)
 {
 	char ip[65];
@@ -162,9 +204,23 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 		rtsp_session_ondestroy(session);
 		return -ENOMEM;
 	}
-	
-	session->rtp.param = param;
-	session->rtp.onrtp = handler->onrtp;
+
+    // version2 regiester
+	if (handler->onrtp2)
+	{
+        printf("create session:%p, param:%p\n", session, param);
+		session->rtp.param = session;               // must use seesion ptr
+		session->rtp.onrtp = rtsp_session_onrtp;    // call onrtp2,callback with seesion ptr
+		session->onrtp2 = handler->onrtp2;
+        session->onrtp = handler->onrtp;
+        // session->rtp.onerror = rtsp_session_onerror;  // call onrtp2,callback with seesion ptr
+        // session->onerror2 = handler->onerror2;
+        // session->onerror = handler->onerror;
+	}else {
+		session->rtp.param = param;
+		session->rtp.onrtp = handler->onrtp;
+	}
+
 	aio_transport_set_timeout(session->aio, TIMEOUT_RECV, TIMEOUT_SEND);
 	if (0 != aio_transport_recv(session->aio, session->buffer, sizeof(session->buffer)))
 	{
