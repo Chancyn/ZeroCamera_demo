@@ -25,9 +25,9 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
-CMediaTrack::CMediaTrack(media_track_e track, int code)
-    : m_create(false), m_track(track), m_code(code), m_fiforeader(nullptr), m_rtppacker(nullptr), m_rtp(nullptr),
-      m_evfd(0), m_sendcnt(0), m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
+CMediaTrack::CMediaTrack(media_track_e track, int code, int chn)
+    : m_create(false), m_track(track), m_code(code), m_chn(chn), m_fiforeader(nullptr), m_rtppacker(nullptr),
+      m_rtp(nullptr), m_evfd(0), m_sendcnt(0), m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
     memset(m_packet, 0, sizeof(m_packet));
     m_timestamp = 0;
     m_dts_first = -1;
@@ -174,7 +174,8 @@ int CMediaTrack::GetData2Send() {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-            LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size, now - pframe->utc);
+            LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size,
+                      now - pframe->utc);
         }
         if (-1 == m_dts_first)
             m_dts_first = pframe->pts;

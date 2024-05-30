@@ -12,7 +12,7 @@ installabsdir=$basepath/../../install/hi3519dv500/media_server/${srcname}
 installdir=$(cd $installabsdir; pwd)
 
 #debug/release
-RELEASE=0
+RELEASE=1
 if [ x$RELEASE == x1 ]; then
 	BUILD=release
 else

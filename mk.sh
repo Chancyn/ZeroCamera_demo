@@ -65,8 +65,8 @@ export WITH_DEBUG=y
 # export WITH_ZC_TEST=0
 
 build_cmake
-#build_make
-build_make_debug
+build_make
+#build_make_debug
 #build_make_append
 build_copy_thirdparty
 echo "mk soc=${soc} end"

@@ -43,7 +43,7 @@ typedef enum {
 class CLiveSource;
 class CMediaTrack {
  public:
-    explicit CMediaTrack(media_track_e track, int code);
+    explicit CMediaTrack(media_track_e track, int code, int chn);
     virtual ~CMediaTrack();
     virtual bool Init(void *info = nullptr) = 0;
     virtual void UnInit();
@@ -80,6 +80,7 @@ class CMediaTrack {
     bool m_create;  // create ok
     int m_track;    // trackid
     int m_code;     // codectype
+    int m_chn;
     //CShmFIFOR *m_fiforeader;
     CShmStreamR *m_fiforeader;
     void *m_rtppacker;  // rtp encoder
@@ -106,5 +107,6 @@ class CMediaTrack {
     uint32_t m_debug_framecnt_last;
     uint32_t m_debug_framecnt;
 #endif
+
 };
 }  // namespace zc

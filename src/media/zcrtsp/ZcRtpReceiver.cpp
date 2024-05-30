@@ -91,12 +91,12 @@ int CRtpReceiver::_rtpRead(socket_t s) {
     r = recvfrom(s, m_rtpctx->rtp_buffer, sizeof(m_rtpctx->rtp_buffer), 0, (struct sockaddr *)&ss, &len);
     if (r < 12)
         return -1;
-    // assert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]));
-    if (0 != socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]))
-    {
-        print_sockaddr((const struct sockaddr *)&ss);
-        print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[0]);
-    }
+    assert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]));
+    // if (0 != socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]))
+    // {
+    //     print_sockaddr((const struct sockaddr *)&ss);
+    //     print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[0]);
+    // }
     n += r;
     // if (0 == i++ % 100)
     //     LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,

@@ -14,7 +14,7 @@ namespace zc {
 
 class CMediaTrackH264 : public CMediaTrack {
  public:
-    CMediaTrackH264();
+    explicit CMediaTrackH264(int chn);
     virtual ~CMediaTrackH264();
     virtual bool Init(void *info = nullptr);
 };

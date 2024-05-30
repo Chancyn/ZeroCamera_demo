@@ -19,18 +19,18 @@ class CMediaTrackFac {
  public:
     CMediaTrackFac() {}
     ~CMediaTrackFac() {}
-    CMediaTrack *CreateMediaTrack(ZC_U8 code) {
+    CMediaTrack *CreateMediaTrack(ZC_U8 code, int chn) {
         CMediaTrack *track = nullptr;
         LOG_ERROR("CreateMediaTrack into, code[%d]", code);
         switch (code) {
         case MEDIA_CODE_H264:
-            track = new CMediaTrackH264();
+            track = new CMediaTrackH264(chn);
             break;
         case MEDIA_CODE_H265:
-            track = new CMediaTrackH265();
+            track = new CMediaTrackH265(chn);
             break;
         case MEDIA_CODE_AAC:
-            track = new CMediaTrackAAC();
+            track = new CMediaTrackAAC(chn);
             break;
         // case MEDIA_CODE_AAC:
         // track = new CMediaTrackAAC();

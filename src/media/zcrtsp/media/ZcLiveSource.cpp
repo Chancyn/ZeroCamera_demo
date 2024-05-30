@@ -95,16 +95,17 @@ int CLiveSource::Init() {
         if (i == MEDIA_TRACK_VIDEO) {
             LOG_TRACE("Init m_chn[%d]", m_chn);
             if (m_chn == 0) {
-                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H265);
+                // mtrack = fac.CreateMediaTrack(MEDIA_CODE_H265);
+                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H264, m_chn);  // zhoucc
             } else {
                 LOG_TRACE("Init H264[%d]", m_chn);
-                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H264);
+                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H264, m_chn);
             }
 
         } else if (i == MEDIA_TRACK_AUDIO) {
-            mtrack = fac.CreateMediaTrack(MEDIA_CODE_AAC);
+            mtrack = fac.CreateMediaTrack(MEDIA_CODE_AAC, 0);
         } else if (i == MEDIA_TRACK_META) {
-            mtrack = fac.CreateMediaTrack(MEDIA_CODE_METADATA);
+            mtrack = fac.CreateMediaTrack(MEDIA_CODE_METADATA, 0);
         }
 
         if (!mtrack) {

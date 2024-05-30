@@ -24,7 +24,7 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_FREQUENCE (48000)     // frequence
 
 namespace zc {
-CMediaTrackAAC::CMediaTrackAAC() : CMediaTrack(MEDIA_TRACK_AUDIO, MEDIA_CODE_AAC) {
+CMediaTrackAAC::CMediaTrackAAC(int chn) : CMediaTrack(MEDIA_TRACK_AUDIO, MEDIA_CODE_AAC, chn) {
     memset(&m_meidainfo, 0, sizeof(m_meidainfo));
     m_meidainfo.channels = 2;
     m_meidainfo.sample_bits = 2;
@@ -62,7 +62,7 @@ bool CMediaTrackAAC::Init(void *pinfo) {
     event.on_rtcp = CMediaTrack::OnRTCPEvent;
 
     // m_fiforeader = new CShmFIFOR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, 0);
-    m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, 0);
+    m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, m_chn);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader");
         goto _err;
