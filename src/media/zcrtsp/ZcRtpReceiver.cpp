@@ -52,6 +52,33 @@ CRtpReceiver::~CRtpReceiver() {
     RtpReceiverStop();
     ZC_SAFE_FREE(m_rtpctx);
 }
+#if 1
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+static void print_sockaddr(const struct sockaddr *addr) {
+    char addr_str[INET6_ADDRSTRLEN];
+
+    switch (addr->sa_family) {
+        case AF_INET: {
+            struct sockaddr_in *sa_in = (struct sockaddr_in *)addr;
+            const void *in_addr = &(sa_in->sin_addr);
+            inet_ntop(AF_INET, in_addr, addr_str, sizeof(addr_str));
+            printf("IPv4 Address:%s:%d\n", addr_str, ntohs(sa_in->sin_port));
+            break;
+        }
+        case AF_INET6: {
+            struct sockaddr_in6 *sa_in6 = (struct sockaddr_in6 *)addr;
+            const void *in6_addr = &(sa_in6->sin6_addr);
+            inet_ntop(AF_INET6, in6_addr, addr_str, sizeof(addr_str));
+            printf("IPv6 Address: %s:%d\n", addr_str, ntohs(sa_in6->sin6_port));
+            break;
+        }
+        default:
+            printf("Unknown address family: %d\n", addr->sa_family);
+    }
+}
+#endif
 
 int CRtpReceiver::_rtpRead(socket_t s) {
     int r;
@@ -64,12 +91,16 @@ int CRtpReceiver::_rtpRead(socket_t s) {
     r = recvfrom(s, m_rtpctx->rtp_buffer, sizeof(m_rtpctx->rtp_buffer), 0, (struct sockaddr *)&ss, &len);
     if (r < 12)
         return -1;
-    assert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]));
-
+    // assert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]));
+    if (0 != socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]))
+    {
+        print_sockaddr((const struct sockaddr *)&ss);
+        print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[0]);
+    }
     n += r;
-    if (0 == i++ % 100)
-        LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
-                  ((uint8_t)m_rtpctx->rtp_buffer[2] << 8) | (uint8_t)m_rtpctx->rtp_buffer[3], r, n);
+    // if (0 == i++ % 100)
+    //     LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
+    //               ((uint8_t)m_rtpctx->rtp_buffer[2] << 8) | (uint8_t)m_rtpctx->rtp_buffer[3], r, n);
 
     size[0] = r >> 8;
     size[1] = r >> 0;

@@ -10,16 +10,12 @@
 #include <string>
 #include <vector>
 
-#include "media-source.h"
-
 #include "time64.h"
 #include "zc_frame.h"
 
 #include "Singleton.hpp"
 #include "Thread.hpp"
 #include "ZcLiveTestWriter.hpp"
-#include "ZcLiveTestWriterH264.hpp"
-#include "ZcLiveTestWriterH265.hpp"
 
 class CMediaTrack;
 namespace zc {
@@ -27,24 +23,10 @@ class CLiveTestWriterFac {
  public:
     CLiveTestWriterFac() {}
     ~CLiveTestWriterFac() {}
-    ILiveTestWriter *CreateLiveTestWriter(int code, const live_test_info_t &info) {
-        ILiveTestWriter *pw = nullptr;
-        switch (code) {
-        case ZC_FRAME_ENC_H264:
-            pw = new CLiveTestWriterH264(info);
-            break;
-        case ZC_FRAME_ENC_H265:
-            pw = new CLiveTestWriterH265(info);
-            break;
-        default:
-            LOG_ERROR("error, modid[%d]", pw);
-            break;
-        }
-        return pw;
-    }
+    ILiveTestWriter *CreateLiveTestWriter(int code, const live_test_info_t &info);
 };
 
-class CLiveTestWriterSys : public Singleton<CLiveTestWriterSys>  {
+class CLiveTestWriterSys : public Singleton<CLiveTestWriterSys> {
  public:
     CLiveTestWriterSys();
     virtual ~CLiveTestWriterSys();
@@ -58,7 +40,7 @@ class CLiveTestWriterSys : public Singleton<CLiveTestWriterSys>  {
     std::vector<ILiveTestWriter *> m_vector;
     std::mutex m_mutex;
 };
-#define g_ZCLiveTestWriterInstance (CLiveTestWriterSys::GetInstance())
+#define g_ZCLiveTestWriterInstance (zc::CLiveTestWriterSys::GetInstance())
 
 }  // namespace zc
 #endif

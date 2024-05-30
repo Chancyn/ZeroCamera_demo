@@ -174,7 +174,7 @@ int CMediaTrack::GetData2Send() {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-            LOG_TRACE("rtsp:pts:%u,utc:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, pframe->size, now - pframe->utc);
+            LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size, now - pframe->utc);
         }
         if (-1 == m_dts_first)
             m_dts_first = pframe->pts;

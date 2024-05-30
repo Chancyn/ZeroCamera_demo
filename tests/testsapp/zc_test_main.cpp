@@ -44,7 +44,6 @@ int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-
     int nodetype = 0;
     int fifotype = 0;
     if (argc > 1) {
@@ -71,17 +70,17 @@ int main(int argc, char **argv) {
 
     // zc_test_utilsxx_epoll_start();
     // shm fifo test
-    zc_test_shmfifoev_start(fifotype, nodetype);
+    // zc_test_shmfifoev_start(fifotype, nodetype);
 
     // zc_test_utilsxx_semaphore();
     // zc_test_utilsxx_unsemaphore();
     while (!bExitFlag) {
-        sleep(1);
+        usleep(100*1000);
         LOG_DEBUG("sleep exit");
     }
     LOG_ERROR("app loop exit");
     // zc_test_utilsxx_epoll_stop();
-    zc_test_shmfifoev_stop(nodetype);
+    // zc_test_shmfifoev_stop(nodetype);
     // if (fifotype == 0) {
     //     zc_test_fifo_nolock_stop(nodetype);
     // } else {
@@ -90,6 +89,7 @@ int main(int argc, char **argv) {
 
     // zc_test_mod_stop(nodetype);
     //  zc_test_msgcomm_stop();
+
     zc_log_uninit();
     printf("main exit\n");
     return 0;

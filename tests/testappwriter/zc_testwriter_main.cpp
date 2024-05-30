@@ -2,19 +2,23 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #include <signal.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "zc_log.h"
-
-#include "ZcRtspManager.hpp"
-#if (ZC_LIVE_TEST && DZC_LIVE_TEST_THREADSHARED)
+#if ZC_LIVE_TEST
 #include "ZcLiveTestWriterSys.hpp"
 #endif
 
 #define ZC_LOG_PATH "./log"
-#define ZC_LOG_APP_NAME "zc_rtsp.log"
+#define ZC_LOG_APP_NAME "zc_tests.log"
+
+#ifndef BOOL
+#define BOOL int
+#define TRUE 1
+#define FALSE 0
+#endif
 
 static BOOL bExitFlag = FALSE;
 
@@ -35,22 +39,16 @@ int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-#if (ZC_LIVE_TEST && DZC_LIVE_TEST_THREADSHARED)
-#warning "zhoucc not process share testwrite"
+#if ZC_LIVE_TEST
     g_ZCLiveTestWriterInstance.Init();
 #endif
-    zc::CRtspManager rtsp;
-    rtsp.Init();
-    rtsp.Start();
-    while (!bExitFlag) {
-        usleep(100*1000);
-        // LOG_DEBUG("sleep ");
-    }
 
+    while (!bExitFlag) {
+        sleep(1);
+        // LOG_DEBUG("sleep exit");
+    }
     LOG_ERROR("app loop exit");
-    rtsp.Stop();
-    rtsp.UnInit();
-#if (ZC_LIVE_TEST && DZC_LIVE_TEST_THREADSHARED)
+#if ZC_LIVE_TEST
     g_ZCLiveTestWriterInstance.UnInit();
 #endif
     zc_log_uninit();

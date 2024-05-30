@@ -123,9 +123,8 @@ inline int CRtspClient::_frameH264(const void *packet, int bytes, uint32_t time,
         m_videoframe->video.encode = ZC_FRAME_ENC_H264;
 
         if (m_videoframe->keyflag)
-            LOG_TRACE("H264,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu,pkgcnt:%d", time, m_videoframe->utc,
-                      m_videoframe->size, type, flags, m_videoframe->video.width, m_videoframe->video.height,
-                      m_videopkgcnt);
+            LOG_TRACE("H264,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu", time, m_videoframe->utc,
+                      m_videoframe->size, type, flags, m_videoframe->video.width, m_videoframe->video.height);
         // putto fifo
         m_videoframe->size = 0;
         m_videopkgcnt = 0;

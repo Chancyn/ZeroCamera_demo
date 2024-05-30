@@ -38,8 +38,6 @@
 #include "ZcType.hpp"
 #include "media/ZcLiveSource.hpp"
 
-#include "media/ZcLiveTestWriter.hpp"
-
 #define ZC_N_AIO_THREAD (4)  // aio thread num
 #define ZC_TEST_SESSION 1    // test示例代码
 #define ZC_SUPPORT_VOD 1     // video on Demand 点播
@@ -657,9 +655,7 @@ bool CRtspServer::Init() {
         LOG_ERROR("already init");
         return false;
     }
-#if ZC_LIVE_TEST
-    g_ZCLiveTestWriterInstance.Init();
-#endif
+
     if (!_init()) {
         goto _err;
     }
@@ -689,9 +685,7 @@ bool CRtspServer::UnInit() {
     }
 
     _unInit();
-#if ZC_LIVE_TEST
-    g_ZCLiveTestWriterInstance.UnInit();
-#endif
+
     m_init = false;
     return false;
 }

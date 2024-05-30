@@ -57,6 +57,8 @@ endif()
 
 # ZC_LIVE_TEST test read h264file,and write to fifo
 add_definitions(-DZC_LIVE_TEST=1)
+# ZC_LIVE_TEST test read h264file,rtps write shmstreambuff, not process shared,
+add_definitions(-DZC_LIVE_TEST_THREADSHARED=0)
 
 if("${CMAKE_BUILD_TYPE}x" STREQUAL "Debugx")
        #SET(CMAKE_ZC_DEBUG 1)

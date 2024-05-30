@@ -38,6 +38,22 @@ const static live_test_info_t g_livetestinfo[ZC_STREAM_VIDEO_MAX_CHN] = {
     {1, ZC_STREAM_SUB_VIDEO_SIZE, ZC_FRAME_ENC_H264, ZC_STREAM_VIDEO_SHM_PATH, "test.h264", "TestWH264_1"},
 };
 
+ILiveTestWriter *CLiveTestWriterFac::CreateLiveTestWriter(int code, const live_test_info_t &info) {
+    ILiveTestWriter *pw = nullptr;
+    switch (code) {
+    case ZC_FRAME_ENC_H264:
+        pw = new CLiveTestWriterH264(info);
+        break;
+    case ZC_FRAME_ENC_H265:
+        pw = new CLiveTestWriterH265(info);
+        break;
+    default:
+        LOG_ERROR("error, modid[%d]", pw);
+        break;
+    }
+    return pw;
+}
+
 CLiveTestWriterSys::CLiveTestWriterSys() : m_init(0) {
     Init();
 }

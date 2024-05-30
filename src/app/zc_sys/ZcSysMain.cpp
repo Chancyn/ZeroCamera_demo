@@ -33,17 +33,19 @@ int main(int argc, char **argv) {
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
     LOG_DEBUG("sizeof(void*)=%zu", sizeof(void *));
+
     zc::CSysManager sys;
     sys.Init();
     sys.Start();
     while (!bExitFlag) {
-        sleep(1);
+        usleep(100*1000);
         // LOG_TRACE("sleep ");
     }
 
     LOG_ERROR("app loop exit");
     sys.Stop();
     sys.UnInit();
+
     zc_log_uninit();
     printf("main exit\n");
     return 0;

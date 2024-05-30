@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
     cli.StartCli();
     while (!bExitFlag) {
-        sleep(1);
+        usleep(100*1000);
         // LOG_DEBUG("sleep ");
     }
 
