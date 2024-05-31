@@ -12,7 +12,7 @@
 #define ZC_DEBUG_SAVE_RTP 1
 #endif
 
-typedef int (*rtponframe)(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags);
+typedef int (*rtponframe)(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
 
 class CRtspClient;
 namespace zc {
@@ -54,10 +54,12 @@ class CRtpReceiver : public NonCopyable {
     };
 
  public:
-    CRtpReceiver(rtponframe onframe, void *pclictx);
+    // for rtsp-client, m_ptr1 = CRtspClient, ptr2 not use
+    // for rtsp-push-server, m_ptr1 = CRtspServer, ptr2 = Session,
+    CRtpReceiver(rtponframe onframe, void *ptr1, void *ptr2);
     virtual ~CRtpReceiver();
 
-    static int GetEncodeType(const char *encoding);
+    static int Encodingtrans2Type(const char *encoding);
     int RtpReceiver(int timeout);
     bool RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int peerport[2], int payload, const char *encoding);
     bool RtpReceiverTcpStart(uint8_t interleave1, uint8_t interleave2, int payload, const char *encoding);
@@ -75,7 +77,8 @@ class CRtpReceiver : public NonCopyable {
     int m_running;  // RTP_STATUS_ERR
     rtp_context_t *m_rtpctx;
     rtponframe m_onframe;
-    void *m_pclictx;
+    void *m_ptr1;
+    void *m_ptr2;
     CRtpRxThread *m_udpthread;  // udp receiver thread
 };
 }  // namespace zc

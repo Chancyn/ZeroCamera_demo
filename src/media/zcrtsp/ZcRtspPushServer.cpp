@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "media/ZcLiveTestWriterSys.hpp"
+#include "media/ZcMediaReceiver.hpp"
 #include "media/ZcMediaTrack.hpp"
 #include "zc_log.h"
 #include "zc_macros.h"
@@ -34,27 +35,21 @@
 #include "ZcRtspPushServer.hpp"
 #include "ZcType.hpp"
 #include "media/ZcLiveSource.hpp"
+#include "media/ZcMediaReceiverFac.hpp"
 
 #define ZC_N_AIO_THREAD (4)  // aio thread num
 
 namespace zc {
-int CRtspPushServer::onframe(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags) {
-    CRtspPushServer *psvr = reinterpret_cast<CRtspPushServer *>(param);
-    return psvr->_onframe(encode, packet, bytes, time, flags);
+int CRtspPushServer::onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time,
+                             int flags) {
+    CRtspPushServer *psvr = reinterpret_cast<CRtspPushServer *>(ptr1);
+    return psvr->_onframe(ptr2, encode, packet, bytes, time, flags);
 }
 
-int CRtspPushServer::_onframe(int encode, const void *packet, int bytes, uint32_t time, int flags) {
-    LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
-
-    // if (ZC_FRAME_ENC_H264 == encode) {
-    //     return _frameH264(packet, bytes, time, flags);
-    // } else if (ZC_FRAME_ENC_H265 == encode) {
-    //     return _frameH265(packet, bytes, time, flags);
-    // } else if (ZC_FRAME_ENC_AAC == encode) {
-    //     return _frameAAC(packet, bytes, time, flags);
-    // }
-
-    return -1;
+int CRtspPushServer::_onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
+    // LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
+    CMediaReceiver *precv = reinterpret_cast<CMediaReceiver *>(ptr2);
+    return precv->RtpOnFrameIn(packet, bytes, time, flags);
 }
 
 int CRtspPushServer::rtsp_uri_parse(const char *uri, std::string &path) {
@@ -173,12 +168,16 @@ int CRtspPushServer::_onsetup(rtsp_server_t *rtsp, const char *uri, const char *
         if (RTSP_TRANSPORT_RTP_TCP == transports[i].transport) {
             // RTP/AVP/TCP
             // 10.12 Embedded (Interleaved) Binary Data (p40)
+            stream->tack = i;  // save trackid
+            stream->trackcode = CRtpReceiver::Encodingtrans2Type(stream->media->avformats[0].encoding);
             memcpy(&stream->transport, t, sizeof(rtsp_header_transport_t));
             // RTP/AVP/TCP;interleaved=0-1
             snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=%d-%d",
                      stream->transport.interleaved1, stream->transport.interleaved2);
             break;
         } else if (RTSP_TRANSPORT_RTP_UDP == transports[i].transport) {
+            stream->tack = i;  // save trackid
+            stream->trackcode = CRtpReceiver::Encodingtrans2Type(stream->media->avformats[0].encoding);
             // RTP/AVP/UDP
             memcpy(&stream->transport, t, sizeof(rtsp_header_transport_t));
 
@@ -196,7 +195,7 @@ int CRtspPushServer::_onsetup(rtsp_server_t *rtsp, const char *uri, const char *
                     // 500 Internal Server Error
                     return rtsp_server_reply_setup(rtsp, 500, NULL, NULL);
                 }
-
+                stream->tack = i;  // save trackid
                 assert(stream->transport.rtp.u.client_port1 && stream->transport.rtp.u.client_port2);
                 if (0 == stream->transport.destination[0])
                     snprintf(stream->transport.destination, sizeof(stream->transport.destination), "%s",
@@ -259,10 +258,22 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
         if (RTSP_TRANSPORT_RTP_UDP == stream->transport.transport) {
             assert(!stream->transport.multicast);
             int port[2] = {stream->transport.rtp.u.client_port1, stream->transport.rtp.u.client_port2};
-            // TODO(zhoucc): recvicer
+            // media receiver, receiver frame
+            if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
+                stream->mediarecv.reset(new CMediaReceiverH264(0, ZC_STREAM_MAXFRAME_SIZE));
+            } else if (ZC_MEDIA_CODE_H265 == stream->trackcode) {
+                stream->mediarecv.reset(new CMediaReceiverH265(0, ZC_STREAM_MAXFRAME_SIZE));
+            } else if (ZC_MEDIA_CODE_AAC == stream->trackcode) {
+                stream->mediarecv.reset(new CMediaReceiverAAC(0));
+            } else {
+                stream->mediarecv.reset();
+                // continue;
+            }
+            stream->mediarecv->Init();
+            // TODO(zhoucc): rtp recvicer, receiver rtp package
             // rtp_receiver_test(stream->socket, stream->transport.destination, port, stream->media->avformats[0].fmt,
             //                   stream->media->avformats[0].encoding);
-            stream->rtpreceiver.reset(new CRtpReceiver(onframe, this));
+            stream->rtpreceiver.reset(new CRtpReceiver(onframe, this, stream->mediarecv.get()));
             stream->rtpreceiver->RtpReceiverUdpStart(stream->socket, stream->transport.destination, port,
                                                      stream->media->avformats[0].fmt,
                                                      stream->media->avformats[0].encoding);
@@ -271,7 +282,19 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
             // assert(0);
             // to be continue
             LOG_ERROR("tcp new into");
-            stream->rtpreceiver.reset(new CRtpReceiver(onframe, this));
+            // media receiver, receiver frame
+            if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
+                stream->mediarecv.reset(new CMediaReceiverH264(0, ZC_STREAM_MAXFRAME_SIZE));
+            } else if (ZC_MEDIA_CODE_H265 == stream->trackcode) {
+                stream->mediarecv.reset(new CMediaReceiverH265(0, ZC_STREAM_MAXFRAME_SIZE));
+            } else if (ZC_MEDIA_CODE_AAC == stream->trackcode) {
+                stream->mediarecv.reset(new CMediaReceiverAAC(0));
+            } else {
+                stream->mediarecv.reset();
+                // continue;
+            }
+            stream->mediarecv->Init();
+            stream->rtpreceiver.reset(new CRtpReceiver(onframe, this, stream->mediarecv.get()));
             stream->rtpreceiver->RtpReceiverTcpStart(stream->transport.interleaved1, stream->transport.interleaved2,
                                                      stream->media->avformats[0].fmt,
                                                      stream->media->avformats[0].encoding);
@@ -424,8 +447,11 @@ void CRtspPushServer::rtsp_onerror(void *ptr, rtsp_server_t *rtsp, int code) {
 }
 
 void CRtspPushServer::_onerror(rtsp_server_t *rtsp, int code) {
-    printf("rtsp_onerror code=%d, rtsp=%p\n", code, rtsp);
+    LOG_ERROR("rtsp_onerror code=%d, rtsp=%p, rtsp->session=%p,  \n", code, rtsp, rtsp->session);
     TPushSessions::iterator it;
+
+    // TODO(zhoucc): Teardown
+
     std::lock_guard<std::mutex> locker(m_pushmutex);
     // for (it = m_pushsessions.begin(); it != m_pushsessions.end(); ++it) {
     //     if (rtsp == it->second.rtsp) {
@@ -445,7 +471,7 @@ void CRtspPushServer::rtsp_onerror2(void *ptr, rtsp_server_t *rtsp, int code, vo
 
 void CRtspPushServer::_onerror2(rtsp_server_t *rtsp, int code, void *ptr2) {
     // ptr2[session]
-    LOG_ERROR("rtsp_onerror2 code=%d, rtsp=%p, ptr2[%p]\n", code, rtsp, ptr2);
+    LOG_ERROR("rtsp_onerror2 code=%d, rtsp=%p, rtsp.session=%p, ptr2[%p]\n", code, rtsp, rtsp->session, ptr2);
     TPushSessions::iterator it;
     std::lock_guard<std::mutex> locker(m_pushmutex);
     // for (it = m_pushsessions.begin(); it != m_pushsessions.end(); ++it) {
@@ -489,10 +515,39 @@ void CRtspPushServer::onrtp2(void *param, uint8_t channel, const void *data, uin
     return psvr->_onrtp2(channel, data, bytes, ptr2);
 }
 
-void CRtspPushServer::_onrtp2(uint8_t channel, const void *data, uint16_t bytes, void *ptr2) {
-    LOG_TRACE("_onrtp channel:%u, bytes:%hu, this[%p], ptr2[%p]\n", channel, bytes, this, ptr2);
-    // ZC_ASSERT(channel <= ZC_MEIDIA_NUM);
-    // stream->rtpreceiver->RtpReceiverTcpInput(channel, data, bytes);
+void CRtspPushServer::_onrtp2(uint8_t channel, const void *data, uint16_t bytes, void *session) {
+    // ZC_ASSERT(ptr2 != nullptr);
+    // struct rtsp_session_t *session = (struct rtsp_session_t *)ptr2;
+    const char *sessionstr = (const char *)session;
+
+    // ZC_ASSERT(sessionstr[0] != '\0');
+    if (sessionstr[0] == '\0') {
+        return;
+    }
+    // LOG_TRACE("_onrtp channel:%u, bytes:%hu, this[%p], sessionstr[%s]", channel, bytes, this, sessionstr);
+    if (channel % 2) {
+        // TODO(zhoucc): rtcp channel ,maybe recv rtcp data? maybe todo
+        return;
+    }
+    std::list<std::shared_ptr<pushrtsp_stream_t>> streams;
+    {
+        TPushSessions::iterator it;
+        // AutoThreadLocker locker(s_locker);
+        std::lock_guard<std::mutex> locker(m_pushmutex);
+        it = m_pushsessions.find(sessionstr);
+        if (it != m_pushsessions.end()) {
+            streams = it->second->streams;
+        }
+    }
+
+    std::list<std::shared_ptr<pushrtsp_stream_t>>::iterator it;
+    for (it = streams.begin(); it != streams.end(); ++it) {
+        std::shared_ptr<pushrtsp_stream_t> &stream = *it;
+        if (stream->tack == channel / 2) {
+            stream->rtpreceiver->RtpReceiverTcpInput(channel, data, bytes);
+            break;
+        }
+    }
 }
 
 CRtspPushServer::CRtspPushServer()

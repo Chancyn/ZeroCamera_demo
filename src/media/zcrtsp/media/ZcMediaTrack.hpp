@@ -9,7 +9,7 @@
 
 #include "media-source.h"
 #include "zc_frame.h"
-
+#include "zc_media_track.h"
 #include "ZcShmFIFO.hpp"
 #include "ZcShmStream.hpp"
 #include "ZcType.hpp"
@@ -17,33 +17,11 @@
 #define ZC_DEBUG_MEDIATRACK 1
 
 namespace zc {
-typedef enum {
-    MEDIA_TRACK_VIDEO = 0,  // a=control:video
-    MEDIA_TRACK_AUDIO = 1,  // a=control:audio
-    MEDIA_TRACK_META = 2,   // a=control:meta
-
-    MEDIA_TRACK_BUTT,
-} media_track_e;
-
-// video
-typedef enum {
-    // video
-    MEDIA_CODE_H264 = 0,
-    MEDIA_CODE_H265 = 1,
-
-    // audio
-    MEDIA_CODE_AAC = 10,
-
-    // metadata
-    MEDIA_CODE_METADATA = 20,
-
-    MEDIA_CODE_BUTT,
-} media_code_e;
 
 class CLiveSource;
 class CMediaTrack {
  public:
-    explicit CMediaTrack(media_track_e track, int code, int chn);
+    explicit CMediaTrack(zc_media_track_e track, int code, int chn);
     virtual ~CMediaTrack();
     virtual bool Init(void *info = nullptr) = 0;
     virtual void UnInit();

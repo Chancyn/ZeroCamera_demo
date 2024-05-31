@@ -41,7 +41,7 @@ class CLiveSource : public IMediaSource, public Thread {
     std::string m_sdp;
     int m_status;
     const int m_chn;
-    CMediaTrack *m_tracks[MEDIA_TRACK_BUTT];
+    CMediaTrack *m_tracks[ZC_MEDIA_TRACK_BUTT];
     int m_count;
 };
 }  // namespace zc

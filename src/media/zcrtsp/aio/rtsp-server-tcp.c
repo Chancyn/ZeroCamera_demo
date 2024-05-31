@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <errno.h>
 
+#include "rtsp-server-internal.h"
+
 #define TIMEOUT_RECV 65000
 #define TIMEOUT_SEND 10000
 
@@ -135,11 +137,11 @@ static void rtsp_session_onrtp(void *param, uint8_t channel, const void *data, u
     struct rtsp_session_t* session = (struct rtsp_session_t*)param;
     if (session)
     {
-        if (session->onrtp2)
+        if (session->onrtp2 && session->rtsp)
         {
-            printf("rtsp_session_onrtp onrtp2 session:%p, param:%p\n", session, session->param);
+            // printf("rtsp_session_onrtp onrtp2 session:%p, param:%p, session[%s]\n", session, session->param, session->rtsp->session.session[0]);
             // session->param:rtsp_transport_tcp_create regitster param ptr, return with session ptr
-            return session->onrtp2(session->param, channel, data, bytes, session);
+            return session->onrtp2(session->param, channel, data, bytes, session->rtsp->session.session);
         }
         else if (session->onrtp)
         {

@@ -52,9 +52,10 @@ ${NNG_LIBPATH}
 #连接库
 target_link_libraries(zc_testwriter PRIVATE
 zcrtsp
+${MEDIARTSPMEDIA}
+zch26x
 ${MEDIAAIO}
 ${MEDIARTSPAIO}
-${MEDIARTSPMEDIA}
 ${MEDIAFILEBUF}
 ${MEDIARTSP}
 ${MEDIAAVBSF}

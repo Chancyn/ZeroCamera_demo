@@ -44,8 +44,10 @@ int CRtpRxThread::process() {
     return -1;
 }
 
-CRtpReceiver::CRtpReceiver(rtponframe onframe, void *pclictx)
-    : m_running(RTP_STATUS_INIT), m_rtpctx(new rtp_context_t()), m_onframe(onframe), m_pclictx(pclictx),
+// for rtsp-client, m_ptr1 = CRtspClient, ptr2 not use
+// for rtsp-push-server, m_ptr1 = CRtspServer, ptr2 = Session,
+CRtpReceiver::CRtpReceiver(rtponframe onframe, void *ptr1, void *ptr2)
+    : m_running(RTP_STATUS_INIT), m_rtpctx(new rtp_context_t()), m_onframe(onframe), m_ptr1(ptr1), m_ptr2(ptr2),
       m_udpthread(nullptr) {}
 
 CRtpReceiver::~CRtpReceiver() {
@@ -53,29 +55,29 @@ CRtpReceiver::~CRtpReceiver() {
     ZC_SAFE_FREE(m_rtpctx);
 }
 #if 1
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 static void print_sockaddr(const struct sockaddr *addr) {
     char addr_str[INET6_ADDRSTRLEN];
 
     switch (addr->sa_family) {
-        case AF_INET: {
-            struct sockaddr_in *sa_in = (struct sockaddr_in *)addr;
-            const void *in_addr = &(sa_in->sin_addr);
-            inet_ntop(AF_INET, in_addr, addr_str, sizeof(addr_str));
-            printf("IPv4 Address:%s:%d\n", addr_str, ntohs(sa_in->sin_port));
-            break;
-        }
-        case AF_INET6: {
-            struct sockaddr_in6 *sa_in6 = (struct sockaddr_in6 *)addr;
-            const void *in6_addr = &(sa_in6->sin6_addr);
-            inet_ntop(AF_INET6, in6_addr, addr_str, sizeof(addr_str));
-            printf("IPv6 Address: %s:%d\n", addr_str, ntohs(sa_in6->sin6_port));
-            break;
-        }
-        default:
-            printf("Unknown address family: %d\n", addr->sa_family);
+    case AF_INET: {
+        struct sockaddr_in *sa_in = (struct sockaddr_in *)addr;
+        const void *in_addr = &(sa_in->sin_addr);
+        inet_ntop(AF_INET, in_addr, addr_str, sizeof(addr_str));
+        printf("IPv4 Address:%s:%d\n", addr_str, ntohs(sa_in->sin_port));
+        break;
+    }
+    case AF_INET6: {
+        struct sockaddr_in6 *sa_in6 = (struct sockaddr_in6 *)addr;
+        const void *in6_addr = &(sa_in6->sin6_addr);
+        inet_ntop(AF_INET6, in6_addr, addr_str, sizeof(addr_str));
+        printf("IPv6 Address: %s:%d\n", addr_str, ntohs(sa_in6->sin6_port));
+        break;
+    }
+    default:
+        printf("Unknown address family: %d\n", addr->sa_family);
     }
 }
 #endif
@@ -222,13 +224,13 @@ int CRtpReceiver::_rtpOnpacket(const void *packet, int bytes, uint32_t timestamp
     (void)flags;
 
     if (m_onframe) {
-        m_onframe(m_pclictx, m_rtpctx->encodetype, packet, bytes, timestamp, flags);
+        m_onframe(m_ptr1, m_ptr2, m_rtpctx->encodetype, packet, bytes, timestamp, flags);
     }
 
     return 0;
 }
 
-int CRtpReceiver::GetEncodeType(const char *encoding) {
+int CRtpReceiver::Encodingtrans2Type(const char *encoding) {
     if (0 == strcasecmp("H264", encoding)) {
         return ZC_FRAME_ENC_H264;
     } else if (0 == strcasecmp("H265", encoding)) {
@@ -237,7 +239,7 @@ int CRtpReceiver::GetEncodeType(const char *encoding) {
         return ZC_FRAME_ENC_AAC;
     } else if (0 == strcmp("MP4A-LATM", encoding)) {
         // add ADTS header
-        return ZC_FRAME_ENC_AAC;     // TODO(zhoucc):
+        return ZC_FRAME_ENC_AAC;  // TODO(zhoucc):
     }
 
     return -1;
@@ -274,7 +276,7 @@ bool CRtpReceiver::RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int pe
     // assert(0 == connect(rtp[1], (struct sockaddr*)&m_rtpctx->ss[1], len));
 
     snprintf(m_rtpctx->encoding, sizeof(m_rtpctx->encoding), "%s", encoding);
-    m_rtpctx->encodetype = GetEncodeType(m_rtpctx->encoding);
+    m_rtpctx->encodetype = Encodingtrans2Type(m_rtpctx->encoding);
     m_rtpctx->socket[0] = rtp[0];
     m_rtpctx->socket[1] = rtp[1];
     m_running = RTP_STATUS_RUNNING;
@@ -303,7 +305,7 @@ bool CRtpReceiver::RtpReceiverTcpStart(uint8_t interleave1, uint8_t interleave2,
     m_rtpctx->fp = fopen(m_rtpctx->rtp_buffer, "wb");
     m_rtpctx->frtp = fopen(m_rtpctx->rtcp_buffer, "wb");
     snprintf(m_rtpctx->encoding, sizeof(m_rtpctx->encoding), "%s", encoding);
-    m_rtpctx->encodetype = GetEncodeType(m_rtpctx->encoding);
+    m_rtpctx->encodetype = Encodingtrans2Type(m_rtpctx->encoding);
     profile = rtp_profile_find(payload);
     m_rtpctx->demuxer =
         rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtpOnpacket, this);

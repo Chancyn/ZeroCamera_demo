@@ -54,8 +54,8 @@ class CRtspClient : protected Thread {
     inline int _frameAAC(const void *packet, int bytes, uint32_t time, int flags);
 
     // rtp on frame
-    static int onframe(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags);
-    int _onframe(int encode, const void *packet, int bytes, uint32_t time, int flags);
+    static int onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
+    int _onframe( void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
 
     static int send(void *param, const char *uri, const void *req, size_t bytes);
     int _send(const char *uri, const void *req, size_t bytes);

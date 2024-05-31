@@ -25,7 +25,7 @@ extern "C" uint32_t rtp_ssrc(void);
 #define VIDEO_FREQUENCE (90000)  // frequence
 
 namespace zc {
-CMediaTrackH265::CMediaTrackH265(int chn) : CMediaTrack(MEDIA_TRACK_VIDEO, MEDIA_CODE_H265, chn) {
+CMediaTrackH265::CMediaTrackH265(int chn) : CMediaTrack(ZC_MEDIA_TRACK_VIDEO, ZC_MEDIA_CODE_H265, chn) {
     m_frequency = VIDEO_FREQUENCE;
     LOG_TRACE("Constructor");
 }

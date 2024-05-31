@@ -10,8 +10,17 @@ extern "C" {
 
 #include "zc_type.h"
 
+// rtsp-server live shmfifo
 #define ZC_STREAM_VIDEO_SHM_PATH "video"
 #define ZC_STREAM_AUDIO_SHM_PATH "audio"
+
+// push-server -recv shmfifo
+#define ZC_STREAM_VIDEOPUSH_SHM_PATH "push_v"  // video push fifo / or client recv fifo
+#define ZC_STREAM_AUDIOPUSH_SHM_PATH "push_a"  // audio push fifo / or client recv fifo
+
+// rtsp-cli pull recv shmfifo
+#define ZC_STREAM_VIDEOCLI_SHM_PATH "cli_v"   // video push fifo / or client recv fifo
+#define ZC_STREAM_AUDIOPUSH_SHM_PATH "cli_a"  // audio push fifo / or client recv fifo
 
 // stream fifo max size
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)

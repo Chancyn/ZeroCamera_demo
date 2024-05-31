@@ -247,12 +247,12 @@ inline int CRtspClient::_frameAAC(const void *packet, int bytes, uint32_t time, 
     return 0;
 }
 
-int CRtspClient::onframe(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags) {
-    CRtspClient *pcli = reinterpret_cast<CRtspClient *>(param);
-    return pcli->_onframe(encode, packet, bytes, time, flags);
+int CRtspClient::onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
+    CRtspClient *pcli = reinterpret_cast<CRtspClient *>(ptr1);
+    return pcli->_onframe(ptr2, encode, packet, bytes, time, flags);
 }
 
-int CRtspClient::_onframe(int encode, const void *packet, int bytes, uint32_t time, int flags) {
+int CRtspClient::_onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
     if (flags) {
         LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
     }
@@ -337,6 +337,11 @@ void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
 #if RTP_RECIEIVER_TEST
     rtp_receiver_tcp_input(channel, data, bytes);
 #else
+    // must rtp channel
+    if (channel % 2){
+        // TODO(zhoucc): rtcp channel ,maybe recv rtcp data? maybe todo
+        return;
+    }
     ZC_ASSERT(channel <= ZC_MEIDIA_NUM);
     ZC_ASSERT(m_pRtp[channel / 2] != nullptr);
     m_pRtp[channel / 2]->RtpReceiverTcpInput(channel, data, bytes);
@@ -394,7 +399,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], transport->source, port, payload, encoding);
 #else
-                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this);
+                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, NULL);
                 if (!m_pRtp[i]) {
                     LOG_ERROR("udp new CRtpReceiver error");
                     continue;
@@ -406,7 +411,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], ip, port, payload, encoding);
 #else
-                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this);
+                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, NULL);
                 if (!m_pRtp[i]) {
                     LOG_ERROR("udp new CRtpReceiver error");
                     continue;
@@ -420,7 +425,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
             rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
 #else
-            m_pRtp[i] = new CRtpReceiver(m_client.onframe, this);
+            m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, NULL);
             if (!m_pRtp[i]) {
                 LOG_ERROR("udp new CRtpReceiver error");
                 continue;

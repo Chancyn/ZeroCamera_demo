@@ -40,7 +40,7 @@ unsigned int CShmStreamW::Put(const unsigned char *buffer, unsigned int len, voi
     ret = _put(buffer, len);
 
     // callback function need call puting to put framedata append
-    if (m_puting_cb) {
+    if (m_puting_cb && stream) {
         ret += m_puting_cb(m_u, stream);
     }
     // put last data, write evfifo

@@ -8,6 +8,7 @@
 #include <mutex>
 #include <string>
 
+#include "media/ZcMediaReceiver.hpp"
 #include "zc_frame.h"
 #include "zc_type.h"
 
@@ -18,20 +19,22 @@
 #include "rtsp-media.h"
 
 #include "Thread.hpp"
-#include "rtsp/ZcModRtsp.hpp"
 #include "ZcRtpReceiver.hpp"
+#include "rtsp/ZcModRtsp.hpp"
 
 #define ZC_RTSP_MAX_CHN ZC_STREAM_VIDEO_MAX_CHN
 #define ZC_RTSP_URL_CHN_PREFIX "live.ch"
 
-
-
 namespace zc {
+// TODO(zhoucc) : optimization to cstruct style
 struct pushrtsp_stream_t {
+    std::shared_ptr<CMediaReceiver> mediarecv;  // media frame receiver
     std::shared_ptr<rtsp_media_t> media;
     std::shared_ptr<CRtpReceiver> rtpreceiver;
     struct rtsp_header_transport_t transport;
     socket_t socket[2];  // rtp/rtcp socket
+    unsigned int tack;   // media trackid
+    int trackcode;       // media track encode
 };
 
 struct pushrtsp_source_t {
@@ -40,9 +43,11 @@ struct pushrtsp_source_t {
 };
 
 struct pushrtsp_session_t {
+    // TODO(zhoucc) : optimization to cstruct style, array, to find streams/rtpreceiver quick
     std::list<std::shared_ptr<pushrtsp_stream_t>> streams;
     int status;  // setup-init, 1-play, 2-pause
 };
+
 typedef std::map<std::string, std::shared_ptr<pushrtsp_session_t>> TPushSessions;
 
 // static std::map<std::string, std::shared_ptr<pushrtsp_source_t> > s_pushsources;
@@ -63,8 +68,8 @@ class CRtspPushServer : public Thread {
     bool _unInit();
     virtual int process();
     bool _aio_work();
-    static int onframe(void *param, int encode, const void *packet, int bytes, uint32_t time, int flags);
-    int _onframe(int encode, const void *packet, int bytes, uint32_t time, int flags);
+    static int onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
+    int _onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
     int rtsp_uri_parse(const char *uri, std::string &path);
 
     int _pushrtsp_find_media(const char *uri, std::shared_ptr<pushrtsp_source_t> &source);
@@ -107,8 +112,9 @@ class CRtspPushServer : public Thread {
 
     static void onrtp(void *param, uint8_t channel, const void *data, uint16_t bytes);
     void _onrtp(uint8_t channel, const void *data, uint16_t bytes);
-   static void onrtp2(void *param, uint8_t channel, const void *data, uint16_t bytes, void *ptr2);
+    static void onrtp2(void *param, uint8_t channel, const void *data, uint16_t bytes, void *ptr2);
     void _onrtp2(uint8_t channel, const void *data, uint16_t bytes, void *ptr2);
+
  private:
     bool m_init;
     int m_running;

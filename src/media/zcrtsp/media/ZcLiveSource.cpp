@@ -31,9 +31,9 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
-// CLiveSource::CLiveSource() :m_count(MEDIA_TRACK_BUTT){}
-CLiveSource::CLiveSource(int chn) : Thread("LiveSource"), m_status(0), m_chn(chn), m_count(MEDIA_TRACK_META) {
-    for (int i = 0; i < MEDIA_TRACK_BUTT; i++) {
+// CLiveSource::CLiveSource() :m_count(ZC_MEDIA_TRACK_BUTT){}
+CLiveSource::CLiveSource(int chn) : Thread("LiveSource"), m_status(0), m_chn(chn), m_count(ZC_MEDIA_TRACK_META) {
+    for (int i = 0; i < ZC_MEDIA_TRACK_BUTT; i++) {
         m_tracks[i] = nullptr;
     }
     Init();
@@ -80,7 +80,7 @@ int CLiveSource::GetDuration(int64_t &duration) const {
 
 int CLiveSource::UnInit() {
     Stop();
-    for (int i = 0; i < MEDIA_TRACK_BUTT; i++) {
+    for (int i = 0; i < ZC_MEDIA_TRACK_BUTT; i++) {
         ZC_SAFE_DELETE(m_tracks[i]);
     }
 
@@ -92,20 +92,20 @@ int CLiveSource::Init() {
 
     for (int i = 0; i < m_count; i++) {
         CMediaTrack *mtrack = nullptr;
-        if (i == MEDIA_TRACK_VIDEO) {
+        if (i == ZC_MEDIA_TRACK_VIDEO) {
             LOG_TRACE("Init m_chn[%d]", m_chn);
             if (m_chn == 0) {
-                // mtrack = fac.CreateMediaTrack(MEDIA_CODE_H265);
-                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H264, m_chn);  // zhoucc
+                // mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H265);
+                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_chn);  // zhoucc
             } else {
                 LOG_TRACE("Init H264[%d]", m_chn);
-                mtrack = fac.CreateMediaTrack(MEDIA_CODE_H264, m_chn);
+                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_chn);
             }
 
-        } else if (i == MEDIA_TRACK_AUDIO) {
-            mtrack = fac.CreateMediaTrack(MEDIA_CODE_AAC, 0);
-        } else if (i == MEDIA_TRACK_META) {
-            mtrack = fac.CreateMediaTrack(MEDIA_CODE_METADATA, 0);
+        } else if (i == ZC_MEDIA_TRACK_AUDIO) {
+            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_AAC, 0);
+        } else if (i == ZC_MEDIA_TRACK_META) {
+            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_METADATA, 0);
         }
 
         if (!mtrack) {
