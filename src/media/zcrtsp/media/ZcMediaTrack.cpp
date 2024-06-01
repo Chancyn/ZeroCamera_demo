@@ -101,7 +101,8 @@ int CMediaTrack::SendRTCP(uint64_t clock) {
         size_t n = rtp_rtcp_report(m_rtp, rtcp, sizeof(rtcp));
 
         // send RTCP packet
-        m_transport->Send(true, rtcp, n);
+        if (m_transport)
+            m_transport->Send(true, rtcp, n);
 
         m_rtcp_clock = clock;
     }

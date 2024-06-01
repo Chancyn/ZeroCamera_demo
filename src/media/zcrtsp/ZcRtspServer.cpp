@@ -589,7 +589,7 @@ int CRtspServer::rtsp_send(void *ptr, const void *data, size_t bytes) {
 int CRtspServer::_send(void *ptr, const void *data, size_t bytes) {
     socket_t socket = (socket_t)(intptr_t)ptr;
 
-    // TODO(zhoucc): send multiple rtp packet once time;unuse
+    // TODO(zhoucc): send multiple rtp packet once time;unuse ??
     return bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
 }
 

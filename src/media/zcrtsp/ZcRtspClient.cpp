@@ -65,6 +65,7 @@ CRtspClient::CRtspClient(const char *url, int transport)
     m_videoframe->type = ZC_STREAM_AUDIO;
     m_videopkgcnt = 0;
     m_lasttime = 0;
+    m_keepalive = 0;
 }
 
 CRtspClient::~CRtspClient() {
@@ -333,12 +334,11 @@ void CRtspClient::onrtp(void *param, uint8_t channel, const void *data, uint16_t
 }
 
 void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
-    static int keepalive = 0;
 #if RTP_RECIEIVER_TEST
     rtp_receiver_tcp_input(channel, data, bytes);
 #else
     // must rtp channel
-    if (channel % 2){
+    if (channel % 2) {
         // TODO(zhoucc): rtcp channel ,maybe recv rtcp data? maybe todo
         return;
     }
@@ -346,7 +346,7 @@ void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
     ZC_ASSERT(m_pRtp[channel / 2] != nullptr);
     m_pRtp[channel / 2]->RtpReceiverTcpInput(channel, data, bytes);
 #endif
-    if (++keepalive % 1000 == 0) {
+    if (++m_keepalive % 1000 == 0) {
         rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL, NULL);
     }
 }
@@ -370,13 +370,13 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
     char ip[65];
     u_short rtspport;
     int ret = 0;
-    ret = rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), &npt, NULL);
+    rtsp_client_t *rtsp = reinterpret_cast<rtsp_client_t *>(m_client.rtsp);
+    ret = rtsp_client_play(rtsp, &npt, NULL);
     ZC_ASSERT(0 == ret);
     if (ret != 0) {
         LOG_ERROR("rtsp_client_play error ret[%d]", ret);
         return -1;
     }
-    rtsp_client_t *rtsp = reinterpret_cast<rtsp_client_t *>(m_client.rtsp);
     int media_count = rtsp_client_media_count(rtsp);
     media_count = media_count < ZC_MEIDIA_NUM ? media_count : ZC_MEIDIA_NUM;
 

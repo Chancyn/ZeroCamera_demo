@@ -83,6 +83,7 @@ class CRtspClient : protected Thread {
     char *m_pbuf;  // buffer
     char m_url[ZC_MAX_PATH];
     void *m_phandle;  // handle
+    unsigned int m_keepalive;
     zc_rtsp_client_t m_client;
     unsigned int m_videobufsize;
     unsigned int m_audiobufsize;
