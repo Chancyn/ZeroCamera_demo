@@ -30,6 +30,7 @@
 #include "Thread.hpp"
 #include "ZcRtpReceiver.hpp"
 #include "ZcRtspClient.hpp"
+#include "media/ZcMediaReceiverFac.hpp"
 #include "zc_h26x_sps_parse.h"
 
 #define RTP_RECIEIVER_TEST 0  // 0 media-server demo for test; 1 CRtpReceiver
@@ -72,12 +73,13 @@ CRtspClient::~CRtspClient() {
     StopCli();
     for (unsigned int i = 0; i < ZC_MEIDIA_NUM; i++) {
         ZC_SAFE_DELETE(m_pRtp[i]);
+        ZC_SAFE_DELETE(m_mediarecv[i]);
     }
     ZC_SAFE_DELETEA(m_pbuf);
     ZC_SAFE_FREE(m_audioframe);
     ZC_SAFE_FREE(m_videoframe);
 }
-
+#if 0
 inline int CRtspClient::_frameH264(const void *packet, int bytes, uint32_t time, int flags) {
     uint8_t type = *(uint8_t *)packet & 0x1f;
     struct timespec _ts;
@@ -247,12 +249,20 @@ inline int CRtspClient::_frameAAC(const void *packet, int bytes, uint32_t time, 
 
     return 0;
 }
+#endif
 
 int CRtspClient::onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
     CRtspClient *pcli = reinterpret_cast<CRtspClient *>(ptr1);
     return pcli->_onframe(ptr2, encode, packet, bytes, time, flags);
 }
 
+#if 1
+int CRtspClient::_onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
+    // LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
+    CMediaReceiver *precv = reinterpret_cast<CMediaReceiver *>(ptr2);
+    return precv->RtpOnFrameIn(packet, bytes, time, flags);
+}
+#else  // remove to CMediaReceiver
 int CRtspClient::_onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
     if (flags) {
         LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
@@ -268,7 +278,7 @@ int CRtspClient::_onframe(void *ptr2, int encode, const void *packet, int bytes,
 
     return -1;
 }
-
+#endif
 int CRtspClient::send(void *param, const char *uri, const void *req, size_t bytes) {
     CRtspClient *pcli = reinterpret_cast<CRtspClient *>(param);
     return pcli->_send(uri, req, bytes);
@@ -377,6 +387,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
     char ip[65];
     u_short rtspport;
     int ret = 0;
+    CMediaReceiverFac fac;
     rtsp_client_t *rtsp = reinterpret_cast<rtsp_client_t *>(m_client.rtsp);
     ret = rtsp_client_play(rtsp, &npt, NULL);
     ZC_ASSERT(0 == ret);
@@ -406,7 +417,16 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], transport->source, port, payload, encoding);
 #else
-                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, NULL);
+                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
+                if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
+
+                    m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
+                } else {
+                    // donot regiester recv onframe callback
+                    LOG_ERROR("CreateMediaReceiver error, don't recv frame, i:%d, encoding:%s", i, encoding);
+                    m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
+                }
+
                 if (!m_pRtp[i]) {
                     LOG_ERROR("udp new CRtpReceiver error");
                     continue;
@@ -418,7 +438,15 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
                 rtp_receiver_test(m_client.rtp[i], ip, port, payload, encoding);
 #else
-                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, NULL);
+                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
+                if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
+
+                    m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
+                } else {
+                    // donot regiester recv onframe callback
+                    LOG_ERROR("CreateMediaReceiver error, don't recv frame, i:%d, encoding:%s", i, encoding);
+                    m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
+                }
                 if (!m_pRtp[i]) {
                     LOG_ERROR("udp new CRtpReceiver error");
                     continue;
@@ -432,7 +460,15 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 #if RTP_RECIEIVER_TEST
             rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
 #else
-            m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, NULL);
+            m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
+            if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
+
+                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
+            } else {
+                // donot regiester recv onframe callback
+                LOG_ERROR("CreateMediaReceiver error, don't recv frame, i:%d, encoding:%s", i, encoding);
+                m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
+            }
             if (!m_pRtp[i]) {
                 LOG_ERROR("udp new CRtpReceiver error");
                 continue;
@@ -456,6 +492,7 @@ int CRtspClient::_onteardown() {
     LOG_WARN("onteardown %p", this);
     for (unsigned int i = 0; i < ZC_MEIDIA_NUM; i++) {
         ZC_SAFE_DELETE(m_pRtp[i]);
+        ZC_SAFE_DELETE(m_mediarecv[i]);
     }
 
     return 0;

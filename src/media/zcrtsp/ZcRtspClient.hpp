@@ -6,6 +6,7 @@
 
 #include <mutex>
 
+#include "media/ZcMediaReceiver.hpp"
 #include "rtsp-client.h"
 #include "sockutil.h"
 #include "zc_frame.h"
@@ -48,10 +49,11 @@ class CRtspClient : protected Thread {
     bool _stopconn();
     virtual int process();
     int _cliwork();
-
+    #if 0
     inline int _frameH264(const void *packet, int bytes, uint32_t time, int flags);
     inline int _frameH265(const void *packet, int bytes, uint32_t time, int flags);
     inline int _frameAAC(const void *packet, int bytes, uint32_t time, int flags);
+    #endif
 
     // rtp on frame
     static int onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
@@ -89,8 +91,8 @@ class CRtspClient : protected Thread {
     unsigned int m_audiobufsize;
     zc_frame_t *m_videoframe;  //  sizeof(zc_frme_t) + ZC_STREAM_MAXFRAME_SIZE;
     zc_frame_t *m_audioframe;  //  sizeof(zc_frme_t) + ZC_STREAM_MAXFRAME_SIZE_A;
-
     CRtpReceiver *m_pRtp[ZC_MEIDIA_NUM];  // [rtp&rtcp] Receiver
+    CMediaReceiver *m_mediarecv[ZC_MEIDIA_NUM];
     unsigned int m_videopkgcnt;
     unsigned int m_lasttime;
     std::mutex m_mutex;
