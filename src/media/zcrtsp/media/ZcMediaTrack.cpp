@@ -12,6 +12,7 @@
 #include "sys/system.h"
 
 #include "ZcType.hpp"
+#include "zc_frame.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_type.h"
@@ -25,9 +26,9 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
-CMediaTrack::CMediaTrack(zc_media_track_e track, int code, int chn)
-    : m_create(false), m_track(track), m_code(code), m_chn(chn), m_fiforeader(nullptr), m_rtppacker(nullptr),
-      m_rtp(nullptr), m_evfd(0), m_sendcnt(0), m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
+CMediaTrack::CMediaTrack(zc_media_track_e track, int encode, int code, int chn)
+    : m_create(false), m_track(track), m_encode(encode), m_code(code), m_chn(chn), m_fiforeader(nullptr),
+      m_rtppacker(nullptr), m_rtp(nullptr), m_evfd(0), m_sendcnt(0), m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
     memset(m_packet, 0, sizeof(m_packet));
     m_timestamp = 0;
     m_dts_first = -1;
@@ -171,6 +172,11 @@ int CMediaTrack::GetData2Send() {
         ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
         ZC_ASSERT(ret > sizeof(zc_frame_t));
         ZC_ASSERT(pframe->size > 0);
+        if (pframe->video.encode != m_encode) {
+            if (pframe->keyflag)
+                LOG_ERROR("encode error frame:%d!=m_encode:%d", pframe->video.encode, m_encode);
+            continue;
+        }
         if (pframe->keyflag) {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);

@@ -24,7 +24,7 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_FREQUENCE (48000)     // frequence
 
 namespace zc {
-CMediaTrackAAC::CMediaTrackAAC(int chn) : CMediaTrack(ZC_MEDIA_TRACK_AUDIO, ZC_MEDIA_CODE_AAC, chn) {
+CMediaTrackAAC::CMediaTrackAAC(int chn) : CMediaTrack(ZC_MEDIA_TRACK_AUDIO, ZC_FRAME_ENC_AAC, ZC_MEDIA_CODE_AAC, chn) {
     memset(&m_meidainfo, 0, sizeof(m_meidainfo));
     m_meidainfo.channels = 2;
     m_meidainfo.sample_bits = 2;
