@@ -73,7 +73,6 @@ class CRtspPushServer : public Thread {
     int rtsp_uri_parse(const char *uri, std::string &path);
 
     int _pushrtsp_find_media(const char *uri, std::shared_ptr<pushrtsp_source_t> &source);
-
     static int rtsp_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                             const struct rtsp_header_transport_t transports[], size_t num);
     int _onsetup(rtsp_server_t *rtsp, const char *uri, const char *session,

@@ -114,7 +114,13 @@ int CRtspPushClient::_rtpport(int media, const char *source, unsigned short rtp[
     switch (m_client.transportmode) {
     case RTSP_TRANSPORT_RTP_UDP:
         // TODO: ipv6
-        assert(0 == sockpair_create("0.0.0.0", m_client.rtp[media], m_client.port[media]));
+         if (sockpair_create("0.0.0.0", m_client.rtp[media], m_client.port[media]) != 0) {
+            // TODO(zhoucc): ipv6
+            LOG_ERROR("socket error, media:%d,port:%hu-%hu,rtp:%d-%d", media, m_client.port[media][0],
+                      m_client.port[media][1], m_client.rtp[media][0], m_client.rtp[media][1]);
+            ZC_ASSERT(0);
+            return 0;
+        }
         rtp[0] = m_client.port[media][0];
         rtp[1] = m_client.port[media][1];
 

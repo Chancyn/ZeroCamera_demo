@@ -191,7 +191,8 @@ int CRtspPushServer::_onsetup(rtsp_server_t *rtsp, const char *uri, const char *
             } else {
                 // unicast
                 unsigned short port[2];
-                if (0 != sockpair_create(NULL, stream->socket, port)) {
+                // 0.0.0.0 set recvfrom any
+                if (0 != sockpair_create("0.0.0.0", stream->socket, port)) {
                     // 500 Internal Server Error
                     return rtsp_server_reply_setup(rtsp, 500, NULL, NULL);
                 }
@@ -206,6 +207,7 @@ int CRtspPushServer::_onsetup(rtsp_server_t *rtsp, const char *uri, const char *
                          "RTP/AVP;unicast;client_port=%hu-%hu;server_port=%hu-%hu%s%s", t->rtp.u.client_port1,
                          t->rtp.u.client_port2, port[0], port[1], t->destination[0] ? ";destination=" : "",
                          t->destination[0] ? t->destination : "");
+                // LOG_TRACE("socket%d-%d,port%hu-%hu", stream->socket[0], stream->socket[1], port[0], port[1]);
             }
             break;
         } else {
@@ -258,6 +260,9 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
         if (RTSP_TRANSPORT_RTP_UDP == stream->transport.transport) {
             assert(!stream->transport.multicast);
             int port[2] = {stream->transport.rtp.u.client_port1, stream->transport.rtp.u.client_port2};
+            // LOG_ERROR("cport:%hu-%hu, sport:%hu-%hu", stream->transport.rtp.u.client_port1,
+            //           stream->transport.rtp.u.client_port2, stream->transport.rtp.u.server_port1,
+            //           stream->transport.rtp.u.server_port2);
             // media receiver, receiver frame
             if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
                 stream->mediarecv.reset(new CMediaReceiverH264(0, ZC_STREAM_MAXFRAME_SIZE));

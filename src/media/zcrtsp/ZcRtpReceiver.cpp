@@ -23,6 +23,7 @@
 #include "zc_log.h"
 #include "zc_macros.h"
 
+#include "Epoll.hpp"
 #include "ZcRtpReceiver.hpp"
 #include "ZcType.hpp"
 
@@ -100,9 +101,9 @@ int CRtpReceiver::_rtpRead(socket_t s) {
     //     print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[0]);
     // }
     n += r;
-    if (0 == i++ % 100)
-        LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
-                  ((uint8_t)m_rtpctx->rtp_buffer[2] << 8) | (uint8_t)m_rtpctx->rtp_buffer[3], r, n);
+    // if (0 == i++ % 100)
+    //     LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
+    //               ((uint8_t)m_rtpctx->rtp_buffer[2] << 8) | (uint8_t)m_rtpctx->rtp_buffer[3], r, n);
 
     size[0] = r >> 8;
     size[1] = r >> 0;
@@ -130,7 +131,57 @@ int CRtpReceiver::_rtcpRead(socket_t s) {
     fflush(m_rtpctx->fp);
     return r;
 }
+#if 1
+int CRtpReceiver::RtpReceiver(int timeout) {
+    LOG_TRACE("RtpReceiver into\n");
+    CEpoll ep{timeout};  // set timeout 100ms,for rtspsource thread exit
+    int ret = 0;
 
+    if (!ep.Create()) {
+        LOG_ERROR("epoll create error");
+        return -1;
+    }
+
+    if (m_rtpctx->socket[0] > 0) {
+        // LOG_WARN("epoll add rtp fd[%d]", m_rtpctx->socket[0]);
+        ep.Add(m_rtpctx->socket[0], EPOLLIN, &m_rtpctx->socket[0]);
+    }
+
+    if (m_rtpctx->socket[1] > 0) {
+        // LOG_WARN("epoll add rtcp fd[%d]", m_rtpctx->socket[1]);
+        ep.Add(m_rtpctx->socket[1], EPOLLIN, &m_rtpctx->socket[1]);
+    }
+
+    while (m_running == RTP_STATUS_RUNNING) {
+        // RTCP report
+        ret = rtp_demuxer_rtcp(m_rtpctx->demuxer, m_rtpctx->rtcp_buffer, sizeof(m_rtpctx->rtcp_buffer));
+        if (ret > 0)
+            ret = socket_sendto(m_rtpctx->socket[1], m_rtpctx->rtcp_buffer, ret, 0,
+                                (const struct sockaddr *)&m_rtpctx->ss[1],
+                                socket_addr_len((const struct sockaddr *)&m_rtpctx->ss[1]));
+        ret = ep.Wait();
+        if (ret == -1) {
+            LOG_ERROR("epoll error ret[%d]errno [%d]\n", ret, errno);
+            m_running = RTP_STATUS_ERR;
+        } else if (ret > 0) {
+            for (int i = 0; i < ret; i++) {
+                if (ep[i].events & EPOLLIN) {
+                    // LOG_TRACE("epoll wait ok ret[%d], i[%d], fd[%d] ptr[%d]", ret, i, ep[i].data.fd,
+                    //          *(int*)ep[i].data.ptr);
+                    if (ep[i].data.ptr == &m_rtpctx->socket[0]) {
+                        _rtpRead(m_rtpctx->socket[0]);
+                    } else if (ep[i].data.ptr == &m_rtpctx->socket[1]) {
+                        _rtcpRead(m_rtpctx->socket[1]);
+                    }
+                }
+            }
+        }
+    }
+
+    LOG_TRACE("RtpReceiver exit ret[%d], m_running[%d]\n", ret, m_running);
+    return -1;
+}
+#else
 int CRtpReceiver::RtpReceiver(int timeout) {
     LOG_TRACE("RtpReceiver into\n");
     int i, r;
@@ -177,7 +228,7 @@ int CRtpReceiver::RtpReceiver(int timeout) {
     LOG_TRACE("RtpReceiver exit ret[%d], m_running[%d]\n", r, m_running);
     return -1;
 }
-
+#endif
 int CRtpReceiver::rtpOnpacket(void *param, const void *packet, int bytes, uint32_t timestamp, int flags) {
     CRtpReceiver *pcli = reinterpret_cast<CRtpReceiver *>(param);
     return pcli->_rtpOnpacket(packet, bytes, timestamp, flags);

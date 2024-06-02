@@ -173,7 +173,7 @@ int CLiveSource::_sendProcess() {
     LOG_WARN("process into\n");
     CEpoll ep{100};  // set timeout 100ms,for rtspsource thread exit
     int ret = 0;
-#if 1
+
     if (!ep.Create()) {
         LOG_ERROR("epoll create error");
         return -1;
@@ -202,7 +202,7 @@ int CLiveSource::_sendProcess() {
             }
         }
     }
-#endif
+
     LOG_WARN("process exit\n");
     return -1;
 }
