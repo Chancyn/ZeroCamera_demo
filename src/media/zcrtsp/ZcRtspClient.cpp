@@ -33,13 +33,7 @@
 #include "media/ZcMediaReceiverFac.hpp"
 #include "zc_h26x_sps_parse.h"
 
-#define RTP_RECIEIVER_TEST 0  // 0 media-server demo for test; 1 CRtpReceiver
-#if RTP_RECIEIVER_TEST
-#include "rtp-receiver-test.h"
-void rtp_receiver_tcp_input(uint8_t channel, const void *data, uint16_t bytes);
-void rtp_receiver_test(socket_t rtp[2], const char *peer, int peerport[2], int payload, const char *encoding);
-void *rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payload, const char *encoding);
-#endif
+// CRtpReceiver reference "rtp-receiver-test.h"
 
 //#define UDP_MULTICAST_ADDR "239.0.0.2"
 #define ZC_RTSP_CLI_BUF_SIZE (2 * 1024 * 1024)
@@ -53,19 +47,6 @@ CRtspClient::CRtspClient(const char *url, int transport)
     memset(&m_client, 0, sizeof(m_client));
     if (url)
         strncpy(m_url, url, sizeof(m_url));
-    m_videobufsize = ZC_STREAM_MAXFRAME_SIZE;
-    m_audiobufsize = ZC_STREAM_MAXFRAME_SIZE_A;
-    m_videoframe = (zc_frame_t *)calloc(1, m_videobufsize + sizeof(zc_frame_t));
-    m_audioframe = (zc_frame_t *)calloc(1, m_audiobufsize + sizeof(zc_frame_t));
-    ZC_ASSERT(m_videoframe != nullptr);
-    ZC_ASSERT(m_audioframe != nullptr);
-
-    m_videoframe->magic = ZC_FRAME_VIDEO_MAGIC;
-    m_videoframe->type = ZC_STREAM_VIDEO;
-    m_videoframe->magic = ZC_FRAME_AUDIO_MAGIC;
-    m_videoframe->type = ZC_STREAM_AUDIO;
-    m_videopkgcnt = 0;
-    m_lasttime = 0;
     m_keepalive = 0;
 }
 
@@ -76,180 +57,7 @@ CRtspClient::~CRtspClient() {
         ZC_SAFE_DELETE(m_mediarecv[i]);
     }
     ZC_SAFE_DELETEA(m_pbuf);
-    ZC_SAFE_FREE(m_audioframe);
-    ZC_SAFE_FREE(m_videoframe);
 }
-#if 0
-inline int CRtspClient::_frameH264(const void *packet, int bytes, uint32_t time, int flags) {
-    uint8_t type = *(uint8_t *)packet & 0x1f;
-    struct timespec _ts;
-    clock_gettime(CLOCK_MONOTONIC, &_ts);
-    m_lasttime = _ts.tv_sec;
-
-    ZC_ASSERT(m_videoframe != nullptr);
-
-    // sps;
-    if (type == H264_NAL_UNIT_TYPE_SPS) {
-        zc_h26x_sps_info_t spsinfo = {0};
-        if (zc_h264_sps_parse((const uint8_t *)packet, bytes, &spsinfo) == 0) {
-            m_videoframe->video.width = spsinfo.width;
-            m_videoframe->video.height = spsinfo.height;
-        } else {
-            LOG_ERROR("h264 prase sps error");
-        }
-    }
-
-    if (m_videoframe->size + 4 + bytes <= m_videobufsize) {
-        m_videoframe->data[m_videoframe->size + 0] = 00;
-        m_videoframe->data[m_videoframe->size + 1] = 00;
-        m_videoframe->data[m_videoframe->size + 2] = 00;
-        m_videoframe->data[m_videoframe->size + 3] = 01;
-
-        memcpy(m_videoframe->data + m_videoframe->size + 4, packet, bytes);
-        m_videoframe->video.nalu[m_videopkgcnt] = bytes + 4;
-        m_videoframe->size += bytes + 4;
-        m_videopkgcnt++;
-    } else {
-        LOG_ERROR("pack error, reset time:%08u, bytes[%u], size[%u], pkgcnt[%u]", time, bytes, m_videoframe->size,
-                  m_videopkgcnt);
-        m_videoframe->size = 0;
-        m_videopkgcnt = 0;
-        return 0;
-    }
-
-    // I frame, P Frame
-    if (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR || type == H264_NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) {
-        m_videoframe->keyflag = (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR) ? ZC_FRAME_IDR : 0;
-        m_videoframe->seq = m_videoframe->seq + 1;
-        m_videoframe->utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-        m_videoframe->pts = m_videoframe->utc;
-        m_videoframe->video.encode = ZC_FRAME_ENC_H264;
-
-        if (m_videoframe->keyflag)
-            LOG_TRACE("H264,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu", time, m_videoframe->utc,
-                      m_videoframe->size, type, flags, m_videoframe->video.width, m_videoframe->video.height);
-        // putto fifo
-        m_videoframe->size = 0;
-        m_videopkgcnt = 0;
-    }
-
-    return 0;
-}
-
-inline int CRtspClient::_frameH265(const void *packet, int bytes, uint32_t time, int flags) {
-    uint8_t type = (*(uint8_t *)packet >> 1) & 0x3f;
-    struct timespec _ts;
-    clock_gettime(CLOCK_MONOTONIC, &_ts);
-    m_lasttime = _ts.tv_sec;
-    if (type >= H265_NAL_UNIT_CODED_SLICE_TRAIL_N && type <= H265_NAL_UNIT_CODED_SLICE_RASL_R) {
-        // TODO(zhoucc): B frame
-    } else if (type >= H265_NAL_UNIT_CODED_SLICE_BLA_W_LP && type <= H265_NAL_UNIT_CODED_SLICE_CRA) {
-        // I Frame 16-21,
-        // TODO(zhoucc): I frame
-    } else if (type >= H265_NAL_UNIT_VPS) {
-        // !vcl;
-        // LOG_WARN("%p => encoding:H265, time:%08u, flags:%d, bytes:%d", this, time, flags, bytes);
-    }
-
-    if (type == H265_NAL_UNIT_SPS) {
-        zc_h26x_sps_info_t spsinfo = {0};
-        if (zc_h265_sps_parse((const uint8_t *)packet, bytes, &spsinfo) == 0) {
-            m_videoframe->video.width = spsinfo.width;
-            m_videoframe->video.height = spsinfo.height;
-        } else {
-            LOG_ERROR("h265 prase sps error");
-        }
-    }
-
-    if (m_videoframe->size + 4 + bytes <= m_videobufsize) {
-        m_videoframe->data[m_videoframe->size + 0] = 00;
-        m_videoframe->data[m_videoframe->size + 1] = 00;
-        m_videoframe->data[m_videoframe->size + 2] = 00;
-        m_videoframe->data[m_videoframe->size + 3] = 01;
-
-        memcpy(m_videoframe->data + m_videoframe->size + 4, packet, bytes);
-        m_videoframe->video.nalu[m_videopkgcnt] = bytes + 4;
-        m_videoframe->size += bytes + 4;
-        m_videopkgcnt++;
-    } else {
-        LOG_ERROR("pack error, reset time:%08u, bytes[%u], size[%u], pkgcnt[%u]", time, bytes, m_videoframe->size,
-                  m_videopkgcnt);
-        m_videoframe->size = 0;
-        m_videopkgcnt = 0;
-        return 0;
-    }
-
-    if (type >= 0 && type <= H265_NAL_UNIT_CODED_SLICE_CRA) {
-        m_videoframe->keyflag = (type >= H265_NAL_UNIT_CODED_SLICE_BLA_W_LP) ? ZC_FRAME_IDR : 0;
-        m_videoframe->seq = m_videoframe->seq + 1;
-        m_videoframe->utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-        m_videoframe->pts = m_videoframe->utc;
-        m_videoframe->video.encode = ZC_FRAME_ENC_H265;
-
-        if (m_videoframe->keyflag)
-            LOG_TRACE("H265,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu,pkgcnt:%d", time, m_videoframe->utc,
-                      m_videoframe->size, type, flags, m_videoframe->video.width, m_videoframe->video.height,
-                      m_videopkgcnt);
-
-        m_videoframe->size = 0;
-        m_videopkgcnt = 0;
-    }
-
-    return 0;
-}
-
-inline int CRtspClient::_frameAAC(const void *packet, int bytes, uint32_t time, int flags) {
-    struct timespec _ts;
-    clock_gettime(CLOCK_MONOTONIC, &_ts);
-    if (bytes + 7 <= m_audiobufsize) {
-        uint8_t ADTS[] = {0xFF, 0xF1, 0x00, 0x00, 0x00, 0x00, 0xFC};
-        int audioSamprate = 32000;  //
-        int audioChannel = 2;       //
-        switch (audioSamprate) {
-        case 16000:
-            ADTS[2] = 0x60;
-            break;
-        case 32000:
-            ADTS[2] = 0x54;
-            break;
-        case 44100:
-            ADTS[2] = 0x50;
-            break;
-        case 48000:
-            ADTS[2] = 0x4C;
-            break;
-        case 96000:
-            ADTS[2] = 0x40;
-            break;
-        default:
-            break;
-        }
-        ADTS[3] = (audioChannel == 2) ? 0x80 : 0x40;
-
-        int len = bytes + 7;
-        len <<= 5;    // 8bit * 2 - 11 = 5(headerSize 11bit)
-        len |= 0x1F;  // 5 bit    1
-        ADTS[4] = len >> 8;
-        ADTS[5] = len & 0xFF;
-        memcpy(m_audioframe->data, ADTS, sizeof(ADTS));
-
-        m_audioframe->keyflag = 0;
-        m_audioframe->seq = 0;
-        m_audioframe->utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-        m_audioframe->pts = m_audioframe->utc;
-        m_audioframe->size = bytes + 7;
-        m_audioframe->audio.encode = ZC_FRAME_ENC_AAC;
-
-        memcpy(m_audioframe->data + 7, packet, bytes);
-
-#if ZC_DEBUG
-        LOG_TRACE("AAC,time:%08u,utc:%u,len:%d,flags:%d", time, m_audioframe->size, m_audioframe->utc, flags);
-#endif
-    }
-
-    return 0;
-}
-#endif
 
 int CRtspClient::onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
     CRtspClient *pcli = reinterpret_cast<CRtspClient *>(ptr1);
@@ -351,9 +159,6 @@ void CRtspClient::onrtp(void *param, uint8_t channel, const void *data, uint16_t
 }
 
 void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
-#if RTP_RECIEIVER_TEST
-    rtp_receiver_tcp_input(channel, data, bytes);
-#else
     // must rtp channel
     if (channel % 2) {
         // TODO(zhoucc): rtcp channel ,maybe recv rtcp data? maybe todo
@@ -362,7 +167,7 @@ void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
     ZC_ASSERT(channel <= ZC_MEIDIA_NUM);
     ZC_ASSERT(m_pRtp[channel / 2] != nullptr);
     m_pRtp[channel / 2]->RtpReceiverTcpInput(channel, data, bytes);
-#endif
+
     if (++m_keepalive % 1000 == 0) {
         rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL, NULL);
     }
@@ -414,12 +219,8 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
             port[0] = transport->rtp.u.server_port1;
             port[1] = transport->rtp.u.server_port2;
             if (*transport->source) {
-#if RTP_RECIEIVER_TEST
-                rtp_receiver_test(m_client.rtp[i], transport->source, port, payload, encoding);
-#else
                 m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
                 if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
-
                     m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
                 } else {
                     // donot regiester recv onframe callback
@@ -432,15 +233,12 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
                     continue;
                 }
                 m_pRtp[i]->RtpReceiverUdpStart(m_client.rtp[i], transport->source, port, payload, encoding);
-#endif
+
             } else {
                 socket_getpeername(m_client.socket, ip, &rtspport);
-#if RTP_RECIEIVER_TEST
-                rtp_receiver_test(m_client.rtp[i], ip, port, payload, encoding);
-#else
+
                 m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
                 if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
-
                     m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
                 } else {
                     // donot regiester recv onframe callback
@@ -452,17 +250,13 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
                     continue;
                 }
                 m_pRtp[i]->RtpReceiverUdpStart(m_client.rtp[i], ip, port, payload, encoding);
-#endif
             }
         } else if (RTSP_TRANSPORT_RTP_TCP == transport->transport) {
-// assert(transport->rtp.u.client_port1 == transport->interleaved1);
-// assert(transport->rtp.u.client_port2 == transport->interleaved2);
-#if RTP_RECIEIVER_TEST
-            rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
-#else
+            // assert(transport->rtp.u.client_port1 == transport->interleaved1);
+            // assert(transport->rtp.u.client_port2 == transport->interleaved2);
+
             m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
             if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
-
                 m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
             } else {
                 // donot regiester recv onframe callback
@@ -474,7 +268,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
                 continue;
             }
             m_pRtp[i]->RtpReceiverTcpStart(transport->interleaved1, transport->interleaved2, payload, encoding);
-#endif
+
         } else {
             ZC_ASSERT(0);  // TODO(zhoucc)
         }

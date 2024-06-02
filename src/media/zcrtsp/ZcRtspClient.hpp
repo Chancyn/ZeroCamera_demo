@@ -87,14 +87,8 @@ class CRtspClient : protected Thread {
     void *m_phandle;  // handle
     unsigned int m_keepalive;
     zc_rtsp_client_t m_client;
-    unsigned int m_videobufsize;
-    unsigned int m_audiobufsize;
-    zc_frame_t *m_videoframe;  //  sizeof(zc_frme_t) + ZC_STREAM_MAXFRAME_SIZE;
-    zc_frame_t *m_audioframe;  //  sizeof(zc_frme_t) + ZC_STREAM_MAXFRAME_SIZE_A;
     CRtpReceiver *m_pRtp[ZC_MEIDIA_NUM];  // [rtp&rtcp] Receiver
     CMediaReceiver *m_mediarecv[ZC_MEIDIA_NUM];
-    unsigned int m_videopkgcnt;
-    unsigned int m_lasttime;
     std::mutex m_mutex;
 };
 
