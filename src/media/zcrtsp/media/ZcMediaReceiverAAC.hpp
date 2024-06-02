@@ -93,7 +93,7 @@ enum mpeg4_aac_object_type {
 
 class CMediaReceiverAAC : public CMediaReceiver {
  public:
-    explicit CMediaReceiverAAC(int chn);
+    explicit CMediaReceiverAAC(int shmtype, int chn);
     virtual ~CMediaReceiverAAC();
     virtual bool Init(void *info = nullptr);
     virtual int RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags);

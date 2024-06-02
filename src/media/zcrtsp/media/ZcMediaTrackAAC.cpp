@@ -10,9 +10,9 @@
 #include "sys/path.h"
 #include "sys/system.h"
 
+#include "zc_frame.h"
 #include "zc_log.h"
 #include "zc_macros.h"
-#include "zc_frame.h"
 #include "zc_type.h"
 
 #include "ZcMediaTrackAAC.hpp"
@@ -24,7 +24,8 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_FREQUENCE (48000)     // frequence
 
 namespace zc {
-CMediaTrackAAC::CMediaTrackAAC(int chn) : CMediaTrack(ZC_MEDIA_TRACK_AUDIO, ZC_FRAME_ENC_AAC, ZC_MEDIA_CODE_AAC, chn) {
+CMediaTrackAAC::CMediaTrackAAC(int shmtype, int chn)
+    : CMediaTrack(ZC_MEDIA_TRACK_AUDIO, ZC_FRAME_ENC_AAC, ZC_MEDIA_CODE_AAC, shmtype, chn) {
     memset(&m_meidainfo, 0, sizeof(m_meidainfo));
     m_meidainfo.channels = 2;
     m_meidainfo.sample_bits = 2;
@@ -42,13 +43,13 @@ bool CMediaTrackAAC::Init(void *pinfo) {
     } else {
         memcpy(&info, &m_meidainfo, sizeof(audio_info_t));
     }
-    #if 0
+#if 0
     static const char *pattern =
         "m=audio 0 RTP/AVP %d\n"
         "a=rtpmap:%d MPEG4-GENERIC/%d/%d\n"
         "a=fmtp:%d "
         "streamType=5;profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=";
-    #endif
+#endif
     uint32_t ssrc = rtp_ssrc();
     m_timestamp = ssrc;
     static struct rtp_payload_t s_rtpfunc = {
@@ -62,7 +63,17 @@ bool CMediaTrackAAC::Init(void *pinfo) {
     event.on_rtcp = CMediaTrack::OnRTCPEvent;
 
     // m_fiforeader = new CShmFIFOR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, 0);
-    m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, m_chn);
+    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
+        // push stream
+        m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_VIDEOPUSH_SHM_PATH, m_chn);
+    } else if (m_shmtype == ZC_SHMSTREAM_PULL) {
+        // pull stream
+        m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_VIDEOPULL_SHM_PATH, m_chn);
+    } else {
+        // live stream
+        m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, m_chn);
+    }
+
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader");
         goto _err;

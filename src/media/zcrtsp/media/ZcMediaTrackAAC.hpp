@@ -20,7 +20,7 @@ class CMediaTrackAAC : public CMediaTrack {
     } audio_info_t;
 
  public:
-    explicit CMediaTrackAAC(int chn);
+    explicit CMediaTrackAAC(int shmtype, int chn);
     virtual ~CMediaTrackAAC();
     virtual bool Init(void *info = nullptr);
 

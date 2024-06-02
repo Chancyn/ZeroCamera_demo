@@ -32,7 +32,8 @@ extern "C" uint32_t rtp_ssrc(void);
 
 namespace zc {
 // CLiveSource::CLiveSource() :m_count(ZC_MEDIA_TRACK_BUTT){}
-CLiveSource::CLiveSource(int chn) : Thread("LiveSource"), m_status(0), m_chn(chn), m_count(ZC_MEDIA_TRACK_META) {
+CLiveSource::CLiveSource(int shmtype, int chn)
+    : Thread("LiveSource"), m_status(0), m_shmtype((zc_shmstream_e)shmtype), m_chn(chn), m_count(ZC_MEDIA_TRACK_META) {
     for (int i = 0; i < ZC_MEDIA_TRACK_BUTT; i++) {
         m_tracks[i] = nullptr;
     }
@@ -96,16 +97,16 @@ int CLiveSource::Init() {
             LOG_TRACE("Init m_chn[%d]", m_chn);
             if (m_chn == 0) {
                 // mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H265);
-                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_chn);  // zhoucc
+                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_shmtype, m_chn);  // zhoucc
             } else {
                 LOG_TRACE("Init H264[%d]", m_chn);
-                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_chn);
+                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_shmtype, m_chn);
             }
 
         } else if (i == ZC_MEDIA_TRACK_AUDIO) {
-            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_AAC, 0);
+            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_AAC, m_shmtype, 0);
         } else if (i == ZC_MEDIA_TRACK_META) {
-            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_METADATA, 0);
+            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_METADATA, m_shmtype, 0);
         }
 
         if (!mtrack) {
@@ -218,7 +219,7 @@ int CLiveSource::process() {
                 goto _err;
             }
         } else if (m_status >= 0) {
-            usleep(100*1000);
+            usleep(100 * 1000);
             continue;
         } else {
             LOG_WARN("status error m_status[%d]\n", m_status);

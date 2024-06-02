@@ -2,13 +2,13 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#include <string>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
 
-#include "zc_type.h"
 #include "zc_frame.h"
+#include "zc_type.h"
 
 #include "rtsp-server-internal.h"
 #include "rtsp-server.h"
@@ -20,7 +20,18 @@
 // #include "rtsp/ZcModRtsp.hpp"
 
 #define ZC_RTSP_MAX_CHN ZC_STREAM_VIDEO_MAX_CHN
-#define ZC_RTSP_URL_CHN_PREFIX "live.ch"
+
+/*
+ * rtspserver live stream url
+ * ch0:rtsp://192.168.1.166:8554/live/live.ch0; chn1:rtsp://192.168.1.166:8554/live/live.ch1
+ * rtsppushcli push stream to server url; rtsp-server forwarding stream url
+ * ch1:rtsp://192.168.1.166:8554/live/push.ch0; chn1:rtsp://192.168.1.166:8554/live/push.ch1
+ * rtspcli get pull stream, rtsp-server forwarding stream url
+ * ch1:rtsp://192.168.1.166:8554/live/pull.ch0; chn1:rtsp://192.168.1.166:8554/live/pull.ch1
+ */
+#define ZC_RTSP_LIVEURL_CHN_PREFIX "live.ch"  // livestream prefix url
+#define ZC_RTSP_PUSHURL_CHN_PREFIX "push.ch"  // rtsppush prefix url, forwarding stream prefix url
+#define ZC_RTSP_PULLURL_CHN_PREFIX "pull.ch"  // rtpcli pull forwarding prefix url
 
 namespace zc {
 struct rtsp_media_t {

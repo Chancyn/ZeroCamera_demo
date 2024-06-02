@@ -22,7 +22,7 @@ namespace zc {
 
 class CMediaReceiver {
  public:
-    explicit CMediaReceiver(zc_media_track_e track, int code, int chn, unsigned int m_maxframelen);
+    explicit CMediaReceiver(zc_media_track_e track, int code, int shmtype, int chn, unsigned int m_maxframelen);
     virtual ~CMediaReceiver();
     virtual bool Init(void *info = nullptr) = 0;
     virtual void UnInit();
@@ -34,7 +34,8 @@ class CMediaReceiver {
     bool m_create;  // create ok
     int m_track;    // trackid
     int m_code;     // codectype
-    int m_chn;
+    const zc_shmstream_e m_shmtype;  // push/pull
+    const int m_chn;
     unsigned int m_maxframelen;
     char *m_framebuf;      // sizeof(zc_frame_t)+ZC_STREAM_MAXFRAME_SIZE
     CShmStreamW *m_fifowriter;

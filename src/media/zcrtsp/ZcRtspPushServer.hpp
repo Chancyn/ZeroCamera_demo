@@ -23,7 +23,6 @@
 #include "rtsp/ZcModRtsp.hpp"
 
 #define ZC_RTSP_MAX_CHN ZC_STREAM_VIDEO_MAX_CHN
-#define ZC_RTSP_URL_CHN_PREFIX "live.ch"
 
 namespace zc {
 // TODO(zhoucc) : optimization to cstruct style

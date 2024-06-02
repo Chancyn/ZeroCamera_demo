@@ -7,12 +7,12 @@
 #include <memory>
 #include <string>
 
-#include "media-source.h"
-#include "zc_frame.h"
-#include "zc_media_track.h"
 #include "ZcShmFIFO.hpp"
 #include "ZcShmStream.hpp"
 #include "ZcType.hpp"
+#include "media-source.h"
+#include "zc_frame.h"
+#include "zc_media_track.h"
 
 #define ZC_DEBUG_MEDIATRACK 1
 
@@ -21,7 +21,7 @@ namespace zc {
 class CLiveSource;
 class CMediaTrack {
  public:
-    explicit CMediaTrack(zc_media_track_e track, int encode, int code, int chn);
+    explicit CMediaTrack(zc_media_track_e track, int encode, int code, int shmtype, int chn);
     virtual ~CMediaTrack();
     virtual bool Init(void *info = nullptr) = 0;
     virtual void UnInit();
@@ -59,8 +59,9 @@ class CMediaTrack {
     int m_track;    // trackid
     int m_encode;   // frame codectype
     int m_code;     // track codectype
+    zc_shmstream_e m_shmtype;   // live or push;different path
     int m_chn;
-    //CShmFIFOR *m_fiforeader;
+    // CShmFIFOR *m_fiforeader;
     CShmStreamR *m_fiforeader;
     void *m_rtppacker;  // rtp encoder
     void *m_rtp;        // rtp status
@@ -76,16 +77,15 @@ class CMediaTrack {
     int m_pollcnt;
     uint64_t m_rtp_clock;
     uint64_t m_rtcp_clock;
-    int64_t m_dts_first; // first frame timestamp
-	int64_t m_dts_last; // last frame timestamp
+    int64_t m_dts_first;  // first frame timestamp
+    int64_t m_dts_last;   // last frame timestamp
 
     unsigned char m_packet[MAX_UDP_PACKET + 14];
-    unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];     // framebuf TODO(zhoucc): different size new
+    unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];  // framebuf TODO(zhoucc): different size new
 #if ZC_DEBUG_MEDIATRACK
     uint64_t m_debug_cnt_lasttime;
     uint32_t m_debug_framecnt_last;
     uint32_t m_debug_framecnt;
 #endif
-
 };
 }  // namespace zc

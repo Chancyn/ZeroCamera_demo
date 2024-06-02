@@ -9,6 +9,7 @@
 #include <string>
 
 #include "media-source.h"
+#include "zc_frame.h"
 
 #include "Thread.hpp"
 #include "ZcMediaTrack.hpp"
@@ -17,7 +18,7 @@ class CMediaTrack;
 namespace zc {
 class CLiveSource : public IMediaSource, public Thread {
  public:
-    explicit CLiveSource(int chn);
+    explicit CLiveSource(int shmtype, int chn);
     virtual ~CLiveSource();
 
  public:
@@ -40,6 +41,7 @@ class CLiveSource : public IMediaSource, public Thread {
  private:
     std::string m_sdp;
     int m_status;
+    const zc_shmstream_e m_shmtype;   // live or push;different path
     const int m_chn;
     CMediaTrack *m_tracks[ZC_MEDIA_TRACK_BUTT];
     int m_count;

@@ -66,7 +66,7 @@ int CRtspPushClient::rtsp_client_sdp(const char *host) {
     int offset = 0;
 
     int64_t duration;
-    m_client.source.reset(new CLiveSource(m_chn));
+    m_client.source.reset(new CLiveSource(ZC_SHMSTREAM_PUSH, m_chn));
 
     offset = snprintf(m_client.sdp, sizeof(m_client.sdp), pattern_live, ntp64_now(), ntp64_now(), "127.0.0.1", host);
     assert(offset > 0 && offset + 1 < sizeof(m_client.sdp));

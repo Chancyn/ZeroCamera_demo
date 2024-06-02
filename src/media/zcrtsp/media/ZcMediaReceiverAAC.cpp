@@ -67,7 +67,8 @@ typedef struct {
 } audio_raw_frame_t;
 
 // bufsize = zc_frame_t hdr + ADTS_HDR
-CMediaReceiverAAC::CMediaReceiverAAC(int chn) : CMediaReceiver(ZC_MEDIA_TRACK_AUDIO, ZC_MEDIA_CODE_AAC, chn, 7) {
+CMediaReceiverAAC::CMediaReceiverAAC(int shmtype, int chn)
+    : CMediaReceiver(ZC_MEDIA_TRACK_AUDIO, ZC_MEDIA_CODE_AAC, shmtype, chn, 7) {
     m_frame = (zc_frame_t *)m_framebuf;
     memset(m_frame, 0, sizeof(zc_frame_t));
     m_frame->magic = ZC_FRAME_AUDIO_MAGIC;
@@ -85,7 +86,15 @@ CMediaReceiverAAC::~CMediaReceiverAAC() {}
 
 bool CMediaReceiverAAC::Init(void *pinfo) {
     // TODO(zhoucc): update dts hdr
-    m_fifowriter = new CShmStreamW(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIOPUSH_SHM_PATH, m_chn, putingCb, this);
+    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
+        // push-server recv stream
+        m_fifowriter =
+            new CShmStreamW(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIOPUSH_SHM_PATH, m_chn, putingCb, this);
+    } else {
+        // pull-cli recv stream,
+        m_fifowriter =
+            new CShmStreamW(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIOPULL_SHM_PATH, m_chn, putingCb, this);
+    }
     if (!m_fifowriter) {
         LOG_ERROR("Create m_fifowriter");
         goto _err;

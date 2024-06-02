@@ -31,7 +31,7 @@ H264FileReader::~H264FileReader()
 {
 	if (m_ptr)
 	{
-		assert(m_capacity > 0);
+		// assert(m_capacity > 0);
 		free(m_ptr);
 	}
 }

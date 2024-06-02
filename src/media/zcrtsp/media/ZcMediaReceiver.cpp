@@ -15,8 +15,8 @@
 #include "ZcMediaReceiver.hpp"
 
 namespace zc {
-CMediaReceiver::CMediaReceiver(zc_media_track_e track, int code, int chn, unsigned int maxframelen)
-    : m_create(false), m_track(track), m_code(code), m_chn(chn), m_maxframelen(maxframelen),
+CMediaReceiver::CMediaReceiver(zc_media_track_e track, int code, int shmtype, int chn, unsigned int maxframelen)
+    : m_create(false), m_track(track), m_code(code), m_shmtype((zc_shmstream_e)shmtype), m_chn(chn), m_maxframelen(maxframelen),
       m_framebuf(new char[maxframelen + sizeof(zc_frame_t)]), m_fifowriter(nullptr) {
 
 #if ZC_DEBUG_MEDIATRACK

@@ -265,11 +265,11 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
             //           stream->transport.rtp.u.server_port2);
             // media receiver, receiver frame
             if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH264(0, ZC_STREAM_MAXFRAME_SIZE));
+                stream->mediarecv.reset(new CMediaReceiverH264(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
             } else if (ZC_MEDIA_CODE_H265 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH265(0, ZC_STREAM_MAXFRAME_SIZE));
+                stream->mediarecv.reset(new CMediaReceiverH265(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
             } else if (ZC_MEDIA_CODE_AAC == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverAAC(0));
+                stream->mediarecv.reset(new CMediaReceiverAAC(ZC_SHMSTREAM_PUSH, 0));
             } else {
                 stream->mediarecv.reset();
                 // continue;
@@ -289,11 +289,11 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
             LOG_ERROR("tcp new into");
             // media receiver, receiver frame
             if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH264(0, ZC_STREAM_MAXFRAME_SIZE));
+                stream->mediarecv.reset(new CMediaReceiverH264(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
             } else if (ZC_MEDIA_CODE_H265 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH265(0, ZC_STREAM_MAXFRAME_SIZE));
+                stream->mediarecv.reset(new CMediaReceiverH265(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
             } else if (ZC_MEDIA_CODE_AAC == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverAAC(0));
+                stream->mediarecv.reset(new CMediaReceiverAAC(ZC_SHMSTREAM_PUSH, 0));
             } else {
                 stream->mediarecv.reset();
                 // continue;

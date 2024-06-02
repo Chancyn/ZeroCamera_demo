@@ -25,8 +25,8 @@ extern "C" uint32_t rtp_ssrc(void);
 #define VIDEO_FREQUENCE (90000)  // frequence
 
 namespace zc {
-CMediaTrackH264::CMediaTrackH264(int chn)
-    : CMediaTrack(ZC_MEDIA_TRACK_VIDEO, ZC_FRAME_ENC_H264, ZC_MEDIA_CODE_H264, chn) {
+CMediaTrackH264::CMediaTrackH264(int shmtype, int chn)
+    : CMediaTrack(ZC_MEDIA_TRACK_VIDEO, ZC_FRAME_ENC_H264, ZC_MEDIA_CODE_H264, shmtype, chn) {
     m_frequency = VIDEO_FREQUENCE;
     LOG_TRACE("Constructor");
 }
@@ -57,8 +57,17 @@ bool CMediaTrackH264::Init(void *pinfo) {
     const char *test_sps = "Z00AKpY1QPAET8s3AQEBAgAAAAE=,aO4xsgAAAAEG5QHpgAAAAAFluAAADJ1wAAE/6Q==";
     // profile-level-id=4D002A;
     char profileid[3] = {0x4D, 0x00, 0x2A};
-    // m_fiforeader = new CShmFIFOR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, 0);
-    m_fiforeader = new CShmStreamR(ZC_STREAM_SUB_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, m_chn);
+    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
+         // push stream
+        m_fiforeader = new CShmStreamR(ZC_STREAM_SUB_VIDEO_SIZE, ZC_STREAM_VIDEOPUSH_SHM_PATH, m_chn);
+    } else if (m_shmtype == ZC_SHMSTREAM_PULL) {
+        // pull stream
+        m_fiforeader = new CShmStreamR(ZC_STREAM_SUB_VIDEO_SIZE, ZC_STREAM_VIDEOPULL_SHM_PATH, m_chn);
+    } else {
+        // live stream
+        m_fiforeader = new CShmStreamR(ZC_STREAM_SUB_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, m_chn);
+    }
+
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader error");
         goto _err;

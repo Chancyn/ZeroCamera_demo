@@ -117,7 +117,7 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
         assert(0);
         return -1;
     }
-
+    int vod = 0;
     char buffer[1024] = {0};
     {
         // AutoThreadLocker locker(s_locker);
@@ -127,15 +127,32 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
             // unlock
             TFileDescription describe;
             std::shared_ptr<IMediaSource> source;
-            if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
-                int t = atoi(filename.c_str() + strlen(ZC_RTSP_URL_CHN_PREFIX));
+            if (0 == strncasecmp(filename.c_str(), ZC_RTSP_LIVEURL_CHN_PREFIX, strlen(ZC_RTSP_LIVEURL_CHN_PREFIX))) {
+                int t = atoi(filename.c_str() + strlen(ZC_RTSP_LIVEURL_CHN_PREFIX));
                 if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
                     t = 0;
                 }
-                source.reset(new CLiveSource(t));
-                LOG_TRACE("test live %s, %d,", filename.c_str(), t);
+                source.reset(new CLiveSource(ZC_SHMSTREAM_LIVE, t));
+                LOG_TRACE("livestream live %s, %d,", filename.c_str(), t);
+            } else if (0 ==
+                       strncasecmp(filename.c_str(), ZC_RTSP_PUSHURL_CHN_PREFIX, strlen(ZC_RTSP_PUSHURL_CHN_PREFIX))) {
+                int t = atoi(filename.c_str() + strlen(ZC_RTSP_PUSHURL_CHN_PREFIX));
+                if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
+                    t = 0;
+                }
+                source.reset(new CLiveSource(ZC_SHMSTREAM_PUSH, t));
+                LOG_TRACE("pushstream live %s, %d,", filename.c_str(), t);
+            } else if (0 ==
+                       strncasecmp(filename.c_str(), ZC_RTSP_PULLURL_CHN_PREFIX, strlen(ZC_RTSP_PULLURL_CHN_PREFIX))) {
+                int t = atoi(filename.c_str() + strlen(ZC_RTSP_PULLURL_CHN_PREFIX));
+                if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
+                    t = 0;
+                }
+                source.reset(new CLiveSource(ZC_SHMSTREAM_PULL, t));
+                LOG_TRACE("pullstream live %s, %d,", filename.c_str(), t);
             } else {
-                LOG_TRACE("test vod %s", filename.c_str());
+                vod = 1;
+                LOG_TRACE("vod %s", filename.c_str());
                 if (strendswith(filename.c_str(), ".ps"))
                     source.reset(new PSFileSource(filename.c_str()));
                 else if (strendswith(filename.c_str(), ".h264"))
@@ -159,13 +176,14 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
         }
     }
 
-    // /live/live.ch
-    if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
-        snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
-    } else {
+    //
+    if (vod) {
         // vod testfile /live/xxx.h264,/live/xxx.h265,
         snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri,
                  it->second.duration / 1000.0);
+    } else {
+        // live/live.ch, live/push.ch, live/pull.ch,
+        snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
     }
 
     std::string sdp{buffer};
@@ -229,17 +247,27 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
         item.channel = 0;
         item.status = 0;
 
-        if (0 == strcmp(filename.c_str(), "camera")) {
-#if defined(_HAVE_FFMPEG_)
-            item.media.reset(new FFLiveSource("video=Integrated Webcam"));
-#endif
-        } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
-            int t = atoi(filename.c_str() + strlen(ZC_RTSP_URL_CHN_PREFIX));
+        if (0 == strncasecmp(filename.c_str(), ZC_RTSP_LIVEURL_CHN_PREFIX, strlen(ZC_RTSP_LIVEURL_CHN_PREFIX))) {
+            int t = atoi(filename.c_str() + strlen(ZC_RTSP_LIVEURL_CHN_PREFIX));
             if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
                 t = 0;
             }
-            LOG_TRACE("test live %s, %d", filename.c_str(), t);
-            item.media.reset(new CLiveSource(t));
+            item.media.reset(new CLiveSource(ZC_SHMSTREAM_LIVE, t));
+            LOG_TRACE("livestream live %s, %d,", filename.c_str(), t);
+        } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_PUSHURL_CHN_PREFIX, strlen(ZC_RTSP_PUSHURL_CHN_PREFIX))) {
+            int t = atoi(filename.c_str() + strlen(ZC_RTSP_PUSHURL_CHN_PREFIX));
+            if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
+                t = 0;
+            }
+            item.media.reset(new CLiveSource(ZC_SHMSTREAM_PUSH, t));
+            LOG_TRACE("pushstream live %s, %d,", filename.c_str(), t);
+        } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_PULLURL_CHN_PREFIX, strlen(ZC_RTSP_PULLURL_CHN_PREFIX))) {
+            int t = atoi(filename.c_str() + strlen(ZC_RTSP_PULLURL_CHN_PREFIX));
+            if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
+                t = 0;
+            }
+            item.media.reset(new CLiveSource(ZC_SHMSTREAM_PULL, t));
+            LOG_TRACE("pullstream live %s, %d,", filename.c_str(), t);
         } else {
             if (strendswith(filename.c_str(), ".ps"))
                 item.media.reset(new PSFileSource(filename.c_str()));

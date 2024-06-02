@@ -36,7 +36,7 @@ typedef enum {
 
 class CRtspClient : protected Thread {
  public:
-    explicit CRtspClient(const char *url, int transport = ZC_RTSP_TRANSPORT_RTP_UDP);
+    explicit CRtspClient(const char *url, int chn = 0,int transport = ZC_RTSP_TRANSPORT_RTP_UDP);
     virtual ~CRtspClient();
 
  public:
@@ -81,6 +81,7 @@ class CRtspClient : protected Thread {
  private:
     bool m_init;
     int m_running;
+    int m_chn;
     int m_transport;
     char *m_pbuf;  // buffer
     char m_url[ZC_MAX_PATH];

@@ -41,8 +41,8 @@
 extern "C" int rtsp_addr_is_multicast(const char *ip);
 
 namespace zc {
-CRtspClient::CRtspClient(const char *url, int transport)
-    : Thread("RtspCli"), m_init(false), m_running(0), m_transport(transport), m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]),
+CRtspClient::CRtspClient(const char *url, int chn, int transport)
+    : Thread("RtspCli"), m_init(false), m_running(0), m_chn(chn), m_transport(transport), m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]),
       m_phandle(nullptr) {
     memset(&m_client, 0, sizeof(m_client));
     if (url)
@@ -219,12 +219,12 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
             port[0] = transport->rtp.u.server_port1;
             port[1] = transport->rtp.u.server_port2;
             if (*transport->source) {
-                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
+                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), ZC_SHMSTREAM_PULL, m_chn);
                 if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
                     m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
                 } else {
                     // donot regiester recv onframe callback
-                    LOG_ERROR("CreateMediaReceiver error, don't recv frame, i:%d, encoding:%s", i, encoding);
+                    LOG_ERROR("error, don't recv frame, i:%d, encoding:%s", i, encoding);
                     m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
                 }
 
@@ -237,12 +237,12 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
             } else {
                 socket_getpeername(m_client.socket, ip, &rtspport);
 
-                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
+                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), ZC_SHMSTREAM_PULL, m_chn);
                 if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
                     m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
                 } else {
                     // donot regiester recv onframe callback
-                    LOG_ERROR("CreateMediaReceiver error, don't recv frame, i:%d, encoding:%s", i, encoding);
+                    LOG_ERROR("error, don't recv frame, i:%d, encoding:%s", i, encoding);
                     m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
                 }
                 if (!m_pRtp[i]) {
@@ -255,12 +255,12 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
             // assert(transport->rtp.u.client_port1 == transport->interleaved1);
             // assert(transport->rtp.u.client_port2 == transport->interleaved2);
 
-            m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), 0);
+            m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), ZC_SHMSTREAM_PULL, m_chn);
             if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
                 m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
             } else {
                 // donot regiester recv onframe callback
-                LOG_ERROR("CreateMediaReceiver error, don't recv frame, i:%d, encoding:%s", i, encoding);
+                LOG_ERROR("error, don't recv frame, i:%d, encoding:%s", i, encoding);
                 m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
             }
             if (!m_pRtp[i]) {
