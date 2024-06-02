@@ -19,8 +19,8 @@ extern "C" {
 #define ZC_STREAM_AUDIOPUSH_SHM_PATH "push_a"  // audio push fifo / or client recv fifo
 
 // rtsp-cli pull recv shmfifo
-#define ZC_STREAM_VIDEOCLI_SHM_PATH "cli_v"   // video push fifo / or client recv fifo
-#define ZC_STREAM_AUDIOPUSH_SHM_PATH "cli_a"  // audio push fifo / or client recv fifo
+#define ZC_STREAM_VIDEOPULL_SHM_PATH "pull_v"   // video push fifo / or client recv fifo
+#define ZC_STREAM_AUDIOPULL_SHM_PATH "pull_a"  // audio push fifo / or client recv fifo
 
 // stream fifo max size
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)
@@ -38,6 +38,15 @@ extern "C" {
 #define ZC_FRAME_VIDEO_MAGIC (0x5A435645)  // "ZCVE"
 #define ZC_FRAME_AUDIO_MAGIC (0x5A434155)  // "ZCAU"
 #define ZC_FRAME_META_MAGIC (0x5A434D54)   // "ZCME"
+
+// shmstream type
+typedef enum {
+    ZC_SHMSTREAM_LIVE = 0,      // live shmstream,url /live/live.ch0
+    ZC_SHMSTREAM_PUSH,          // push shmstream,url /live/push.ch0
+    ZC_SHMSTREAM_PULL,          // rtspcli pull shmstream, server forwarding url /live/push.ch0
+
+    ZC_SHMSTREAM_BUTT,
+} zc_shmstream_e;
 
 // video
 typedef enum {
