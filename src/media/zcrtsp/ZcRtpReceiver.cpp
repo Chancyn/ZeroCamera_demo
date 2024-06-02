@@ -94,12 +94,13 @@ int CRtpReceiver::_rtpRead(socket_t s) {
     r = recvfrom(s, m_rtpctx->rtp_buffer, sizeof(m_rtpctx->rtp_buffer), 0, (struct sockaddr *)&ss, &len);
     if (r < 12)
         return -1;
-    assert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]));
-    // if (0 != socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]))
-    // {
-    //     print_sockaddr((const struct sockaddr *)&ss);
-    //     print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[0]);
-    // }
+    // assert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0]));
+    if (0 != socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[0])) {
+        // print_sockaddr((const struct sockaddr *)&ss);
+        // print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[0]);
+        // ZC_ASSERT(0);
+        // return 0;
+    }
     n += r;
     // if (0 == i++ % 100)
     //     LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
@@ -122,11 +123,17 @@ int CRtpReceiver::_rtcpRead(socket_t s) {
     r = recvfrom(s, m_rtpctx->rtcp_buffer, sizeof(m_rtpctx->rtcp_buffer), 0, (struct sockaddr *)&ss, &len);
     if (r < 12)
         return -1;
-    assert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[1]));
-
+    // ssert(0 == socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[1]));
+    if (0 != socket_addr_compare((const struct sockaddr *)&ss, (const struct sockaddr *)&m_rtpctx->ss[1])) {
+        // 本地拉流,不采用环回地址192:168.1.166,会导致,server回复的rtp包不通过本机地址发送过来，此处是否无需判断
+        // print_sockaddr((const struct sockaddr *)&ss);
+        // print_sockaddr((const struct sockaddr *)&m_rtpctx->ss[1]);
+        // ZC_ASSERT(0);
+        // return 0;
+    }
     r = rtp_demuxer_input(m_rtpctx->demuxer, m_rtpctx->rtcp_buffer, r);
     if (RTCP_BYE == r) {
-        printf("finished\n");
+        LOG_WARN("finished\n");
     }
     fflush(m_rtpctx->fp);
     return r;
@@ -321,11 +328,21 @@ bool CRtpReceiver::RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int pe
         LOG_ERROR("create rtp_demuxer_create error");
         goto _err;  // ignore
     }
-    assert(0 == socket_addr_from(&m_rtpctx->ss[0], NULL, peer, (u_short)peerport[0]));
-    assert(0 == socket_addr_from(&m_rtpctx->ss[1], NULL, peer, (u_short)peerport[1]));
+
+    if (0 != socket_addr_from(&m_rtpctx->ss[0], NULL, peer, (u_short)peerport[0])) {
+        ZC_ASSERT(0);
+        LOG_ERROR("socket_addr_from rtp error, %s:%hu", peer, peerport[0]);
+        goto _err;
+    }
+
+    if (0 != socket_addr_from(&m_rtpctx->ss[1], NULL, peer, (u_short)peerport[1])) {
+        ZC_ASSERT(0);
+        LOG_ERROR("socket_addr_from error, rtcp %s:%hu", peer, peerport[1]);
+        goto _err;
+    }
     // assert(0 == connect(rtp[0], (struct sockaddr*)&m_rtpctx->ss[0], len));
     // assert(0 == connect(rtp[1], (struct sockaddr*)&m_rtpctx->ss[1], len));
-
+    LOG_TRACE("rtp/rtcp  peer:%s,%hu-%hu", peer, peerport[0], peerport[0]);
     snprintf(m_rtpctx->encoding, sizeof(m_rtpctx->encoding), "%s", encoding);
     m_rtpctx->encodetype = Encodingtrans2Type(m_rtpctx->encoding);
     m_rtpctx->socket[0] = rtp[0];

@@ -127,23 +127,15 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
             // unlock
             TFileDescription describe;
             std::shared_ptr<IMediaSource> source;
-            if (0 == strcmp(filename.c_str(), "camera")) {
-#if defined(_HAVE_FFMPEG_)
-                source.reset(new FFLiveSource("video=Integrated Webcam"));
-#endif
-                int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
-                assert(offset > 0 && offset + 1 < sizeof(buffer));
-            } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
+            if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
                 int t = atoi(filename.c_str() + strlen(ZC_RTSP_URL_CHN_PREFIX));
                 if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
                     t = 0;
                 }
-                LOG_TRACE("test live %s, %d", filename.c_str(), t);
                 source.reset(new CLiveSource(t));
-                int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
-                assert(offset > 0 && offset + 1 < sizeof(buffer));
+                LOG_TRACE("test live %s, %d,", filename.c_str(), t);
             } else {
-                LOG_TRACE("test live %s", filename.c_str());
+                LOG_TRACE("test vod %s", filename.c_str());
                 if (strendswith(filename.c_str(), ".ps"))
                     source.reset(new PSFileSource(filename.c_str()));
                 else if (strendswith(filename.c_str(), ".h264"))
@@ -158,10 +150,6 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
 #endif
                 }
                 source->GetDuration(describe.duration);
-
-                int offset = snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri,
-                                      describe.duration / 1000.0);
-                assert(offset > 0 && offset + 1 < sizeof(buffer));
             }
 
             source->GetSDPMedia(describe.sdpmedia);
@@ -171,8 +159,19 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
         }
     }
 
-    std::string sdp = buffer;
-    sdp += it->second.sdpmedia;
+    // /live/live.ch
+    if (0 == strncasecmp(filename.c_str(), ZC_RTSP_URL_CHN_PREFIX, strlen(ZC_RTSP_URL_CHN_PREFIX))) {
+        snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
+    } else {
+        // vod testfile /live/xxx.h264,/live/xxx.h265,
+        snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri,
+                 it->second.duration / 1000.0);
+    }
+
+    std::string sdp{buffer};
+    sdp = sdp.append(it->second.sdpmedia);
+
+    LOG_TRACE("222 live %s, sdp[%s]", buffer, sdp.c_str());
     return rtsp_server_reply_describe(rtsp, 200, sdp.c_str());
 }
 
@@ -339,6 +338,7 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
         assert(transport->rtp.u.client_port1 && transport->rtp.u.client_port2);
         unsigned short port[2] = {transport->rtp.u.client_port1, transport->rtp.u.client_port2};
         const char *ip = transport->destination[0] ? transport->destination : rtsp_server_get_client(rtsp, NULL);
+        LOG_TRACE("ip:%s:%hu", ip, port);
         if (0 != ((RTPUdpTransport *)item.transport.get())->Init(ip, port)) {
             // log
 

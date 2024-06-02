@@ -187,7 +187,7 @@ int CLiveSource::_sendProcess() {
         }
     }
 
-    while (State() == Running /*&&  i < loopcnt*/) {
+    while (State() == Running) {
         ret = ep.Wait();
         if (ret == -1) {
             LOG_ERROR("epoll wait error");
@@ -210,13 +210,19 @@ int CLiveSource::_sendProcess() {
 int CLiveSource::process() {
     LOG_WARN("process into\n");
     int ret = 0;
-    while (State() == Running /*&&  i < loopcnt*/) {
+    while (State() == Running) {
         if (m_status == 1) {
             ret = _sendProcess();
             if (ret < 0) {
                 LOG_WARN("process exit\n");
                 goto _err;
             }
+        } else if (m_status >= 0) {
+            usleep(100*1000);
+            continue;
+        } else {
+            LOG_WARN("status error m_status[%d]\n", m_status);
+            goto _err;
         }
     }
 _err:
