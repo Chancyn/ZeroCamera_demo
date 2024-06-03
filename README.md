@@ -54,10 +54,11 @@ TODO:nng客户端加锁
 ### 5.rtsps协议
 实现了rtspserver,rtspcli rtsppushserver,rtsppushcli模块
 对应测试进程
-zc_rtsp
-zc_rtspcli
-zc_rtsppushs
-zc_rtsppushcli
+
+zc_rtspcli:rtsp客户端，pull rtsp流写入到共享内存中/tmp/shmfifo_pull_v0[1]
+zc_rtsppushs:rtsppushs服务器，客户端推送上来大的流，写入到共享内存中/tmp/shmfifo_push_v0[1]
+zc_rtsppushcli：rtsp推流客户端，将/tmp/shmfifo_video0[1]中的推送到rtsp服务器
+zc_rtsp:rtsp流服务器,实时流服务,推送上来的流,cli拉取的流,进行流转发
 
 测试方法
 ```
