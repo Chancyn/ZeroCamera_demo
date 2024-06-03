@@ -18,7 +18,6 @@ thirdparty/package/nng/nng
 thirdparty/package/spdlog/spdlog
 thirdparty/package/spdlog/media_server/sdk
 thirdparty/package/spdlog/media_server/avcodec
-thirdparty/package/spdlog/media_server/media-server
 build/
 debug/
 output/
