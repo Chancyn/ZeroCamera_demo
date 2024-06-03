@@ -14,7 +14,9 @@ struct aio_rtsp_handler_t
 	struct rtsp_handler_t base;
 
 	void (*onerror)(void* param, rtsp_server_t* rtsp, int code);
+	void (*onerror2)(void* param, rtsp_server_t* rtsp, int code, void *ptr2);
 	void (*onrtp)(void* param, uint8_t channel, const void* data, uint16_t bytes);
+	void (*onrtp2)(void* param, uint8_t channel, const void* data, uint16_t bytes, void *ptr2);
 };
 
 void* rtsp_server_listen(const char* ip, int port, struct aio_rtsp_handler_t* handler, void* param);
