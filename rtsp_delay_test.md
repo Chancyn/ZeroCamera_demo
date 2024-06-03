@@ -2,25 +2,27 @@
 测试视频按照1080P60,H264,CBR,4M
 
 ## 测试结果
-1.使用easyplay播放器播放，sample_vio low delay模式延时在180ms左右;
-![alt text](image-7.png)
+1.sample_vio(hi3519dv500) -> rtspserver(hi3519dv500) -> easyplay(pc) \
+使用easyplay播放器播放，sample_vio low delay模式延时在180ms左右; \
+![svr实时流](./doc/delay-rtsp.png)
 
-2.使用easyplay播放器播放，sample_vio low delay模式，x64-PC端使用rtspcli拉流,在通过rtspserver进行转发流测试
+2.sample_vio(3519dv500) -> rtspserver(3519dv500) -> rtspcli(x64) -> rtspserver(x64)-> easyplay(pc)
+使用easyplay播放器播放，sample_vio low delay模式，x64-PC端使用rtspcli拉流,在通过rtspserver进行转发流测试 \
+拉取rtspserver /live/pull.ch0下的流实际测试延时在200ms; \
+![cli转发测试](./doc/delay-rtsp-rtspcli.jpg)
 
-拉取rtspserver /live/pull.ch0下的流实际测试延时在200ms;
+3.sample_vio(3519dv500) -> rtspserver(3519dv500) -> rtspcli(3519dv500) \
+通过打印时间戳的统计延时，在同一个hi3519dv500的测试板上跑rtspserver,rtspcli;rtspcli拉流延时在6-10ms
 
-![alt text](c9b844f5a4ff58afae81578c3e53682.jpg)
-3.通过打印时间戳的统计延时，在同一个hi3519dv500的测试板上跑rtspserver,rtspcli;rtspcli拉流延时在6-10ms
-
-4.使用easyplay播放器播放，sample_venc 延时在280ms左右;vlc/ffmpeg在500-600ms左右
+4.使用easyplay播放器播放，sample_venc 延时在280ms左右;vlc/ffmpeg在500-600ms左右 \
 
 
 ## 测试过程
 
 ### rtsp测试;rtspcli
 hi35519dv500平台测试
-sample_vio->rtspserver-rtspcli延时数据.
-通过打印时间戳的统计延时，在同一个hi3519dv500的测试板上跑rtspserver,rtspcli;rtspcli拉流延时在6-10ms
+sample_vio(3519dv500) -> rtspserver(3519dv500) -> rtspcli(3519dv500) \
+通过打印时间戳的统计延时，在同一个hi3519dv500的测试板上跑rtspserver,rtspcli;rtspcli拉流延时在6-10ms \
 [GetData2Send]rtsp:pts:9637224,utc:9634334,now:9634336,len:97578,cos:2ms
 [GetData2Send]rtsp:pts:9638224,utc:9635334,now:9635336,len:97042,cos:2ms
 [GetData2Send]rtsp:pts:9639224,utc:9636334,now:9636336,len:100095,cos:2ms
