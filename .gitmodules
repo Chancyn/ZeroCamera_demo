@@ -1,3 +1,3 @@
-[submodule "thirdparty/package/media_server/thirdparty/package/media_server/media-server"]
-	path = thirdparty/package/media_server/thirdparty/package/media_server/media-server
+[submodule "thirdparty/package/media_server/media-server"]
+	path = thirdparty/package/media_server/media-server
 	url = git@github.com:Chancyn/media-server.git
