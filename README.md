@@ -92,10 +92,14 @@ vlc/ffmpeg: rtsp://192.168.1.166:8554/live/pull.ch1
 ## build
 ### build for linux x64 gcc/g++
 ```
+git clone git@github.com:Chancyn/ZeroCamera_demo.git;
+cd ZeroCamera_demo;
 ./build.sh
 ```
 ### build for linux hi3519dv500 gcc/g++
 ```
+git clone git@github.com:Chancyn/ZeroCamera_demo.git;
+cd ZeroCamera_demo;
 ./build.sh soc=hi3519dv500
 ```
 ### 编译option
