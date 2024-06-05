@@ -33,7 +33,7 @@ plat_basic
 bsw_basic
 zc_log
 nng
-pthread
+#pthread
 )
 
 #asan

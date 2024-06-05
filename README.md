@@ -129,6 +129,20 @@ git clone git@github.com:Chancyn/ZeroCamera_demo.git;
 cd ZeroCamera_demo;
 ./build.sh soc=hi3519dv500
 ```
+
+
+## 编译第三方库
+cd thirdparty/nng;
+./build_x64.sh
+cd thirdparty/spdlog;
+./build_x64.sh
+
+如需自行编译media-server
+git clone git@github.com:Chancyn/ZeroCamera_demo.git; #编译
+git submodule init thirdparty/package/media_server/media-server
+git submodule update
+./build_x64.sh
+
 ### 编译option
 WITH_ASAN 内存泄漏检测ASAN工具
 

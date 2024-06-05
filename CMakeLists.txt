@@ -23,6 +23,10 @@ set(COMPILER_PREFIX "aarch64-v01c01-linux-gnu-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set (CFLAGS_SOC -mcpu=cortex-a55)
 set (CXXFLAGS_SOC -mcpu=cortex-a55)
+elseif("${ZC_SOC}x" STREQUAL "rk3588x" )
+message("build rk3588")
+set(COMPILER_PREFIX "aarch64-none-linux-gnu-")
+set(CMAKE_SYSTEM_PROCESSOR arm)
 else()
 message("build ${ZC_SOC}")
 #build memoryleak detect tool ON
@@ -33,12 +37,12 @@ set (CMAKE_C_COMPILER ${COMPILER_PREFIX}gcc)
 set (CMAKE_CXX_COMPILER ${COMPILER_PREFIX}g++)
 
 set(CMAKE_C_FLAGS
-    "${CFLAGS_SOC} -Wall -std=gnu11 -fPIC"
+    "${CFLAGS_SOC} -Wall -std=gnu11 -fPIC -pthread"
 )
 
 #"${CXXFLAGS_SOC} -Wall -std=c++11 -Werror" -std=c++11
 set(CMAKE_CXX_FLAGS
-    "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC"
+    "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC -pthread"
 )
 
 if(WITH_ASAN)
