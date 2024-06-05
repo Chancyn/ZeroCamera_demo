@@ -83,11 +83,46 @@ vlc/ffmpeg: rtsp://192.168.1.166:8554/live/pull.ch1
 
 ## build
 ### build for linux x64 gcc/g++
+# x64编译环境
+thridparty/install中上传的三方库编译由
+ubuntu22.04, 编译环境要求glibc2.34以上
+```
+#uname -a
+Linux lubancat-vm 5.15.0-69-generic #76~20.04.1-Ubuntu SMP
+ldd --version
+ldd (Ubuntu GLIBC 2.35-0ubuntu3.8) 2.35
+```
+
 ```
 git clone git@github.com:Chancyn/ZeroCamera_demo.git;
 cd ZeroCamera_demo;
 ./build.sh
 ```
+
+```
+测试编译环境ubuntu20.04 编译报错
+undefined reference to `pthread_mutexattr_init@GLIBC_2.34'
+#uname -a
+Linux lubancat-vm 5.15.0-69-generic #76~20.04.1-Ubuntu SMP
+#查看系统glibc版本
+strings /lib/x86_64-linux-gnu/libc.so.6 |grep GLIBC_
+glibc 2.30
+需要升级系统glibc到2.34
+#解决办法升级glibc
+##修改软件源
+sudo vi /etc/apt/sources.list 最后添加
+deb http://th.archive.ubuntu.com/ubuntu jammy main    #添加该行到文件
+
+##升级
+sudo apt update
+sudo apt install libc6
+#sudo apt-get install glibc-doc manpages-posix-dev
+strings /lib/x86_64-linux-gnu/libc.so.6 |grep GLIBC_
+或者使用ldd --version 查看glibc是否升级到2.34以上
+```
+
+
+
 ### build for linux hi3519dv500 gcc/g++
 ```
 git clone git@github.com:Chancyn/ZeroCamera_demo.git;
