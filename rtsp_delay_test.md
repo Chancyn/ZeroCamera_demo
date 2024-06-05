@@ -1,4 +1,14 @@
 # rtsp延时测试:
+
+PC测试环境
+处理器	Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz   1.80 GHz
+机带 RAM	16.0 GB (15.9 GB 可用)
+系统类型	64 位操作系统, 基于 x64 的处理器
+版本	Windows 11 家庭中文版
+版本	23H2
+操作系统版本	22631.3593
+体验	Windows Feature Experience Pack 1000.22700.1003.0
+
 测试视频按照1080P60,H264,CBR,4M
 
 ## 测试结果
