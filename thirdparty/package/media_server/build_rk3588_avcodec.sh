@@ -67,7 +67,7 @@ function build_make()
     pushd $srcdir
     #
     #make PLATFORM=aarch64-v01c01-linux-gnu RELEASE=0
-    make PLATFORM=${platform} clean
+    make ${buildargs} clean
     make ${buildargs} -j 16
     make_exit_code=$?
     if [ $make_exit_code -eq 0 ]; then
