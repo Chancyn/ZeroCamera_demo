@@ -16,8 +16,9 @@
 thirdparty/package/nanomq/nanomq
 thirdparty/package/nng/nng
 thirdparty/package/spdlog/spdlog
-thirdparty/package/spdlog/media_server/sdk
-thirdparty/package/spdlog/media_server/avcodec
+thirdparty/package/media_server/sdk
+thirdparty/package/media_server/avcodec
+thirdparty/package/v4l2cpp/v4l2cpp
 build/
 debug/
 output/
