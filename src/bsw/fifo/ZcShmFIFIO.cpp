@@ -161,7 +161,7 @@ inline int CShmFIFO::share_mutex_lock(pthread_mutex_t *mutex) {
         } else if (ret == EOWNERDEAD) {
             LOG_ERROR("share_mutex_lock %p, [%d][%s]: lock:%u, count:%u, owner:%u\n", mutex, ret, strerror(EOWNERDEAD),
                       mutex->__data.__lock, mutex->__data.__count, mutex->__data.__owner);
-            ret = pthread_mutex_consistent_np(mutex);
+            ret = pthread_mutex_consistent(mutex);
             if (ret != 0) {
                 LOG_ERROR("share_mutex_lock %p: consistent error[%d][%s]", mutex, ret, strerror(ret));
                 break;
