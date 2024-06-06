@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 #aux_source_directory(./ DIR_SOURCE_SRCS)
 add_executable(zc_testwriter zc_testwriter_main.cpp)
 foreach(SOURCE_FILE zc_testwriter_main.cpp)

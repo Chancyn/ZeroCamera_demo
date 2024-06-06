@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 aux_source_directory(./ SUB_DIR_SOURCE_SRCS)
 
 foreach(SOURCE_FILE ${SUB_DIR_SOURCE_SRCS})
