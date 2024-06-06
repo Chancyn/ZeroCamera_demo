@@ -14,6 +14,10 @@ hi3519dv500 )
 echo "soc type is ${soc}"
 export soc=${soc}
 ;;
+ss928v100 )
+echo "soc type is ${soc}"
+export soc=${soc}
+;;
 rk3588 )
 echo "soc type is ${soc}"
 export soc=${soc}

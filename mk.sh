@@ -27,8 +27,9 @@ function build_make(){
     # Run make
     #make
     #bear --output /home/zhoucc/work/study/cmake/test/compile_commands.json -- make
-    make
-    bear --output ${basepath}/compile_commands.json -- make -j 16
+
+    #bear --output ${basepath}/compile_commands.json -- make -j 16
+    make VERBOSE=on -j 16
     make install
     popd
 }

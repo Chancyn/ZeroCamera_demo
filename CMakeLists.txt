@@ -18,24 +18,30 @@ set (CXXFLAGS_SOC )
 
 # set platform
 if("${ZC_SOC}x" STREQUAL "hi3519dv500x" )
-message("build hi3519dv500")
+message("build hi3519dv500 ####")
 set(COMPILER_PREFIX "aarch64-v01c01-linux-gnu-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set (CFLAGS_SOC -mcpu=cortex-a55)
 set (CXXFLAGS_SOC -mcpu=cortex-a55)
+elseif("${ZC_SOC}x" STREQUAL "ss928v100x" )
+message("build ss928v100 ####")
+set(COMPILER_PREFIX "aarch64-mix210-linux-")
+set(CMAKE_SYSTEM_PROCESSOR arm)
 elseif("${ZC_SOC}x" STREQUAL "rk3588x" )
-message("build rk3588")
+message("build rk3588 ####")
 set(COMPILER_PREFIX "aarch64-none-linux-gnu-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
 else()
-message("build ${ZC_SOC}")
+message("build ${ZC_SOC} ####")
 #build memoryleak detect tool ON
 option(WITH_ASAN "asan option" OFF)
 endif()
 
+
 set (CMAKE_C_COMPILER ${COMPILER_PREFIX}gcc)
 set (CMAKE_CXX_COMPILER ${COMPILER_PREFIX}g++)
-
+message("build #### C compiler:${CMAKE_C_COMPILER} ####")
+message("build #### CXX compiler:${CMAKE_CXX_COMPILER} ####")
 set(CMAKE_C_FLAGS
     "${CFLAGS_SOC} -Wall -std=gnu11 -fPIC -pthread"
 )

@@ -20,8 +20,8 @@ target_include_directories(msgcomm PUBLIC
 ${NNG_INC}
 )
 
-target_link_directories(msgcomm PRIVATE ${NNG_LIBPATH})
-target_link_libraries(msgcomm PRIVATE nng)
+#target_link_directories(msgcomm PRIVATE ${NNG_LIBPATH})
+#target_link_libraries(msgcomm PRIVATE nng)
 
 #install(TARGETS msgcomm RUNTIME DESTINATION ${ZC_LIB_INSTALL})
 install(TARGETS msgcomm DESTINATION ${ZC_LIB_INSTALL})
