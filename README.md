@@ -138,10 +138,14 @@ cd thirdparty/spdlog;
 ./build_x64.sh
 
 如需自行编译media-server
-git clone git@github.com:Chancyn/ZeroCamera_demo.git; #编译
-git submodule init thirdparty/package/media_server/media-server
-git submodule update
-./build_x64.sh
+git clone git@github.com:Chancyn/ZeroCamera_demo.git; #编译 \
+git submodule init thirdparty/package/media_server/media-server \
+git submodule update \
+#进入media_server目录编译media_server \
+cd thirdparty/package/media_server \
+./build_x64.sh \
+返回根目录编译项目 \
+cd -
 
 ### 编译option
 WITH_ASAN 内存泄漏检测ASAN工具
