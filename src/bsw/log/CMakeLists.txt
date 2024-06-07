@@ -10,19 +10,14 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-# set(SPDLOG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/include)
-# set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib)
-
 #.a/so
 add_library(zc_log SHARED ${DIR_SOURCE_SRCS})
 #add_library(zc_log SHARED ${DIR_SOURCE_SRCS})
 
-#message("build log zc_log inc:${SPDLOG_INC}")
-target_include_directories(zc_log PUBLIC ${SPDLOG_INC}
-)
+message("build log zc_log inc:${SPDLOG_INC}")
+target_include_directories(zc_log PUBLIC ${SPDLOG_INC} )
 
-#link_directories(${SPDLOG_LIBPATH})
-#target_link_directories(zc_log PRIVATE ${SPDLOG_LIBPATH} )
+#target_link_directories(zc_log PRIVATE ${SPDLOG_LIBPATH})
 #target_link_libraries(zc_log PRIVATE spdlog)
 
 #target_link_directories(zc_log PUBLIC ${SPDLOG_LIBPATH})
