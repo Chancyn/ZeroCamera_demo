@@ -1,4 +1,4 @@
-prefix=/home/zhoucc/work/study/cmake/test/thirdparty/install/x64/spdlog
+prefix=/home/zhoucc/work/code/ZeroCamera_demo/thirdparty/install/x64/spdlog
 exec_prefix=${prefix}
 includedir=${prefix}/include
 libdir=${exec_prefix}/lib
