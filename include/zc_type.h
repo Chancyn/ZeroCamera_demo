@@ -21,7 +21,7 @@ typedef char ZC_CHAR;
 typedef void *ZC_HANDLE;
 
 #ifndef BOOL
-typedef int BOOL;
+typedef unsigned char BOOL;
 #define TRUE 1
 #define FALSE 0
 #endif

@@ -150,6 +150,7 @@ include/utils
 include/msgcomm
 include/mod
 include/media
+include/binmsg
 )
 
 add_subdirectory(src)

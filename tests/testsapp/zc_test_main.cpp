@@ -15,6 +15,7 @@
 #include "zc_test_shmfifo.hpp"
 #include "zc_test_shmfifoev.hpp"
 #include "zc_test_utilsxx.hpp"
+#include "zc_test_binmsg.hpp"
 
 #define ZC_LOG_PATH "./log"
 #define ZC_LOG_APP_NAME "zc_tests.log"
@@ -55,7 +56,7 @@ int main(int argc, char **argv) {
     }
 
     LOG_DEBUG("NODE type [%d]", nodetype);
-
+    zc_test_binmsg_start(fifotype);
     // zc_test_utilsxx();
     // zc_test_mod();
     // zc_test_msgcomm_start(nodetype);
@@ -89,7 +90,7 @@ int main(int argc, char **argv) {
 
     // zc_test_mod_stop(nodetype);
     //  zc_test_msgcomm_stop();
-
+    zc_test_binmsg_stop();
     zc_log_uninit();
     printf("main exit\n");
     return 0;
