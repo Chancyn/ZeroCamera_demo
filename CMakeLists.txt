@@ -31,6 +31,10 @@ elseif("${ZC_SOC}x" STREQUAL "rk3588x" )
 message("build rk3588 ####")
 set(COMPILER_PREFIX "aarch64-none-linux-gnu-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
+
+#ffmpge
+set(FFMPEG_INC include)
+set(FFMPEG_LIB lib)
 else()
 message("build ${ZC_SOC} ####")
 #build memoryleak detect tool ON
@@ -92,7 +96,9 @@ set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
+
 set(ZCRTSP_INC ${CMAKE_SOURCE_DIR}/src/media/zcrtsp)
+set(ZCCODEC_INC ${CMAKE_SOURCE_DIR}/src/media/zccodec)
 
 set(MEDIAINTALL ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server)
 set(MEDIARTSPAIO rtspaio)
@@ -153,16 +159,41 @@ include/media
 include/binmsg
 )
 
-add_subdirectory(src)
-add_subdirectory(tests)
-
-#add_subdirectory(tests)
 #option build if or not
 #option(WITH_BSW "bsw option"     ON)
 #if(WITH_BSW)
 #    TODO
 #    add_definitions(-DWITH_BSW)
 #endif()
+
+option(WITH_FFMPEG "ffmpeg option"     ON)
+if(WITH_FFMPEG)
+    add_definitions(-DWITH_FFMPEG)
+endif()
+
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(AVCODEC libavcodec)
+pkg_check_modules(AVFORMAT libavformat)
+pkg_check_modules(AVUTIL libavutil)
+pkg_check_modules(SWSCALE libswscale)
+pkg_check_modules(SWRESAMPLE libswresample)
+pkg_check_modules(AVDEVICE libavdevice)
+
+if(WITH_FFMPEG)
+# 包含ffmpeg头文件
+
+include_directories(zc_testv4l2 PRIVATE
+${AVDEVICE_INCLUDE_DIRS}
+${AVFORMAT_INCLUDE_DIRS}
+${AVCODEC_INCLUDE_DIRS}
+${SWSCALE_INCLUDE_DIRS}
+${SWRESAMPLE_INCLUDE_DIRS}
+${AVUTIL_INCLUDE_DIRS} )
+endif()
+
+add_subdirectory(src)
+add_subdirectory(tests)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
