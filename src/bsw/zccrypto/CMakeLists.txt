@@ -10,12 +10,6 @@ foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
     )
 endforeach()
 
-add_subdirectory(log)
-add_subdirectory(basic)
-add_subdirectory(zccrypto)
-add_subdirectory(binmsg)
-add_subdirectory(fifo)
-add_subdirectory(utils)
-add_subdirectory(utilsxx)
-add_subdirectory(msgcomm)
-
+#.a/so
+add_library(zccrypto STATIC ${DIR_SOURCE_SRCS})
+install(TARGETS zccrypto DESTINATION ${ZC_LIB_INSTALL})

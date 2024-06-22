@@ -33,6 +33,7 @@ static void InitSignals() {
     signal(SIGPIPE, SIG_IGN);
 }
 
+#if defined(WITH_FFMPEG)
 int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
@@ -99,3 +100,9 @@ int main(int argc, char **argv) {
     printf("main exit\n");
     return 0;
 }
+#else
+int main(int argc, char **argv) {
+    printf("main exit, not with ffmpeg\n");
+    return 0;
+}
+#endif
