@@ -49,7 +49,7 @@ static int zc_test_binmsg_unpack(const ZC_U8 *buf, ZC_U16 len) {
 
 static int zc_test_binmsg_parse() {}
 
-static int zc_test_binmsg_pack() {
+static int zc_test_binmsg_pack(bool border, bool bcrc32) {
     ZC_U16 cmd = rand() & 0xFFFF;
 
     char testdata[128] = {"testdata aaa bbxxjifajfmka\n"};
@@ -60,7 +60,7 @@ static int zc_test_binmsg_pack() {
     zc_binmsg_t *msg = (zc_binmsg_t *)msg_buf;
     generate_random_string(testdata, randlen);
     LOG_INFO("test_binmsg into cmd:0x%04X, %u[%s], seq:%u\n", cmd, randlen, testdata, g_seq);
-    zc_binmsg_packhdr(msg, false, false, 0, 1, ZC_BINMSG_TYPE_REQ_E, cmd, g_seq++);
+    zc_binmsg_packhdr(msg, border, bcrc32, 0, 1, ZC_BINMSG_TYPE_REQ_E, cmd, g_seq++);
     payloadlen = strlen(testdata) + 1;
     msglen = sizeof(zc_binmsg_t) + payloadlen;
     zc_binmsg_packdata(msg, (ZC_U8 *)testdata, payloadlen);
@@ -75,7 +75,10 @@ int zc_test_binmsg_start(int count) {
     LOG_INFO("test_binmsg into,count:%d\n", count);
     srand((unsigned int)time(NULL));
     for (int i = 0; i < count; i++) {
-        zc_test_binmsg_pack();
+        zc_test_binmsg_pack(false, false);
+        zc_test_binmsg_pack(false, true);
+        zc_test_binmsg_pack(true, false);
+        zc_test_binmsg_pack(true, true);
     }
     LOG_INFO("test_binmsg end\n");
     return 0;

@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
     }
 
     LOG_DEBUG("NODE type [%d]", nodetype);
-    zc_test_crypto(fifotype, nodetype, argv[3]);
-    // zc_test_binmsg_start(fifotype);
+    // zc_test_crypto(fifotype, nodetype, argv[3]);
+     zc_test_binmsg_start(fifotype);
     // zc_test_utilsxx();
     // zc_test_mod();
     // zc_test_msgcomm_start(nodetype);
