@@ -27,7 +27,6 @@ ${MEDIAHTTP_INC}
 ${MEDIARTSP_INC2}
 ${MEDIARTSP_INC}
 ${MEDIASDK_INC}
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}
@@ -68,6 +67,7 @@ ${MEDIAMKV}
 ${MEDIAHTTP}
 ${MEDIASDK}
 zcfifo
+zccrypto
 zc_log
 # plat_basic
 # bsw_basic

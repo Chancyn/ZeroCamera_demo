@@ -26,7 +26,6 @@ zc_test_utilsxx
 zc_test_mod
 zc_test_fifo
 zc_test_msgcomm
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}

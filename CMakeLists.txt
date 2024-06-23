@@ -92,7 +92,6 @@ set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib
 set(NNG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/include)
 set(NNG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/lib)
 
-set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
@@ -158,6 +157,7 @@ include/msgcomm
 include/mod
 include/media
 include/binmsg
+include/basic
 )
 
 #option build if or not

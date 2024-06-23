@@ -16,7 +16,6 @@ endforeach()
 #头文件包含
 target_include_directories(zc_testv4l2 PRIVATE
 ${ZCCODEC_INC}
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}
@@ -26,6 +25,7 @@ ${UTILS_INC}
 target_link_libraries(zc_testv4l2 PRIVATE
 zccodec
 zcfifo
+zccrypto
 zc_log
 
 # plat_basic

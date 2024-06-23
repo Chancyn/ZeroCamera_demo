@@ -19,7 +19,6 @@ add_library(zc_test_mod STATIC ${SUB_DIR_SOURCE_SRCS})
 
 #头文件包含
 target_include_directories(zc_test_mod PRIVATE
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}

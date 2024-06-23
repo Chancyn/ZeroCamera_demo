@@ -3,6 +3,7 @@
 // shm fifo
 
 #include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -17,6 +18,8 @@
 #include <unistd.h>
 
 #include "zc_frame.h"
+// #include "zc_h26x_sps_parse.h"
+#include "zc_basic_stream.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 
@@ -24,12 +27,27 @@
 #include "ZcShmStream.hpp"
 #include "ZcType.hpp"
 
+
 // userspace modify................
 
 // userspace modify................
 namespace zc {
 CShmStreamW::CShmStreamW(unsigned int size, const char *name, unsigned char chn, stream_puting_cb puting_cb, void *u)
-    : CShmFIFO(size, name, chn, true), m_puting_cb(puting_cb), m_u(u) {}
+    : CShmFIFO(size, name, chn, true), m_puting_cb(puting_cb), m_u(u) {
+    ZC_ASSERT(name != nullptr);
+    if (name[0] == 'v') {
+        m_type = ZC_STREAM_VIDEO;
+        m_magic = ZC_FRAME_VIDEO_MAGIC;
+    } else if (name[0] == 'a') {
+        m_type = ZC_STREAM_AUDIO;
+        m_magic = ZC_FRAME_AUDIO_MAGIC;
+    } else if (name[0] == 'm') {
+        m_type = ZC_STREAM_META;
+        m_magic = ZC_FRAME_META_MAGIC;
+    } else {
+        ZC_ASSERT(0);
+    }
+}
 
 CShmStreamW::~CShmStreamW() {}
 
@@ -60,7 +78,24 @@ unsigned int CShmStreamW::PutAppending(const unsigned char *buffer, unsigned int
     return _put(buffer, len);
 }
 
-CShmStreamR::CShmStreamR(unsigned int size, const char *name, unsigned char chn) : CShmFIFO(size, name, chn, false) {}
+CShmStreamR::CShmStreamR(unsigned int size, const char *name, unsigned char chn) : CShmFIFO(size, name, chn, false) {
+    ZC_ASSERT(name != nullptr);
+    if (name[0] == 'v') {
+        m_type = ZC_STREAM_VIDEO;
+        m_magic = ZC_FRAME_VIDEO_MAGIC;
+        m_maxframelen = ZC_STREAM_MAXFRAME_SIZE;
+    } else if (name[0] == 'a') {
+        m_type = ZC_STREAM_AUDIO;
+        m_magic = ZC_FRAME_AUDIO_MAGIC;
+        m_maxframelen = ZC_STREAM_MAXFRAME_SIZE_A;
+    } else if (name[0] == 'm') {
+        m_type = ZC_STREAM_META;
+        m_magic = ZC_FRAME_META_MAGIC;
+        m_maxframelen = ZC_STREAM_MAXFRAME_SIZE_M;
+    } else {
+        ZC_ASSERT(0);
+    }
+}
 
 CShmStreamR::~CShmStreamR() {}
 
@@ -73,6 +108,88 @@ unsigned int CShmStreamR::_getLatestFrameHdr(unsigned char *buffer, unsigned int
     unsigned int ret = _get(buffer, hdrlen);
     ZC_ASSERT(ret == hdrlen);
     LOG_WARN("get latest IDR frame hdr ret[%u]", ret);
+    return ret;
+}
+
+bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) {
+    bool flags = false;
+    unsigned char *pos = frame->data;
+    unsigned char nalutype = 0;
+    unsigned char prefixlen = 0x01 == frame->data[2] ? 3 : 4;
+
+    if (frame->video.encode == ZC_FRAME_ENC_H264) {
+        ZC_ASSERT(frame->keyflag);
+        //
+        if (frame->video.nalunum == 0) {
+            LOG_WARN("no naluinfo, prase frame->size:%d", frame->size);
+            zc_h26x_nalu_info_t tmp;
+            memset(&tmp, 0 , sizeof(zc_h26x_nalu_info_t));
+            frame->video.nalunum = zc_h26x_parse_nalu(frame->data, frame->size, &tmp);
+            for (unsigned int i = 0; i < frame->video.nalunum; i++) {
+                if (tmp.nalus[i].size > 0) {
+                    frame->video.nalu[i] = tmp.nalus[i].size;
+                }
+            }
+        }
+
+        info.vinfo.nalunum  = 0;
+        for (unsigned int i = 0; i < frame->video.nalunum; i++) {
+            pos += prefixlen;
+            nalutype = *pos & 0x1F;
+            LOG_WARN("IDR frameinfo i:%d,nalutype:%u,len:%u, prefixlen:%u", i, nalutype, frame->video.nalu[i],
+                     prefixlen);
+            if (frame->video.nalu[i] > 0 && frame->video.nalu[i] <= ZC_FRAME_NALU_BUFF_MAX_SIZE) {
+                info.vinfo.nalu[info.vinfo.nalunum].size = frame->video.nalu[i];
+                memcpy(info.vinfo.nalu[info.vinfo.nalunum].data, pos, frame->video.nalu[i]);
+                flags = true;
+                info.vinfo.nalunum++;
+            }
+            pos += frame->video.nalu[i];
+            if (pos >= frame->data + frame->size) {
+                break;
+            }
+        }
+    }
+
+    LOG_TRACE("prase frame len:%u, flags:%d", frame->size, flags);
+    return flags;
+}
+
+bool CShmStreamR::_getLatestFrameInfo(zc_frame_userinfo_t &info) {
+    bool ret = false;
+    unsigned int pos = 0;
+    unsigned int hdrlen = sizeof(zc_frame_t);
+    unsigned char buffer[hdrlen + m_maxframelen];
+    zc_frame_t *frame = (zc_frame_t *)buffer;
+    unsigned int framelen = 0;
+    ShareLock();
+    // 1.find latest key frame pos
+    pos = getLatestPos(true);
+    // 2.set out pos = latest frame pos
+    setLatestOutpos(pos);
+    unsigned int len = _get(buffer, hdrlen);
+    if (frame->magic != m_magic) {
+        LOG_ERROR("empty frame magic:0x%08x != 0x%08x", frame->magic, m_magic);
+        goto _err;
+    }
+    framelen = frame->size;
+    len = _get(buffer + hdrlen, framelen);
+    if (len != framelen) {
+        LOG_ERROR("get frame error len:%u != %u", len, framelen);
+        goto _err;
+    }
+
+    // get streaminfo by key frame
+    if (!_praseFrameInfo(info, frame)) {
+        LOG_ERROR("_praseFrameInfo error");
+        goto _err;
+    }
+    ret = true;
+_err:
+    // reset outpos to latest key frame pos
+    setLatestOutpos(pos);
+    ShareUnlock();
+    LOG_WARN("get latest IDR frameinfo ret[%u]", ret);
     return ret;
 }
 
@@ -95,7 +212,12 @@ unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsign
         // get latest frame
         LOG_ERROR("magic[0x%x]!=[0x%x], get latest IDR frame", (*magicb), magic);
         _getLatestFrameHdr(buffer, hdrlen, true);
-        ZC_ASSERT((*magicb) == magic);
+        // ZC_ASSERT((*magicb) == magic);
+        if ((*magicb) != magic) {
+            LOG_ERROR("empty frame", (*magicb), magic);
+            ShareUnlock();
+            return 0;
+        }
     }
 
     framelen = *(++magicb);
@@ -106,6 +228,23 @@ unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsign
     ShareUnlock();
 
     return ret + hdrlen;
+}
+
+bool CShmStreamR::GetStreamInfo(zc_frame_userinfo_t &info) {
+    unsigned int len = 0;
+    bool ret = false;
+    len = getUserData((unsigned char *)&info, sizeof(zc_frame_userinfo_t));
+    if (len != sizeof(zc_frame_userinfo_t)) {
+        ret = _getLatestFrameInfo(info);
+        if (!ret) {
+            LOG_ERROR("get userdata frameinfo error, try get latest ret:%d", ret);
+        }
+    } else {
+        LOG_WARN("get userdata frameinfo ok");
+        ret = true;
+    }
+
+    return ret;
 }
 
 }  // namespace zc

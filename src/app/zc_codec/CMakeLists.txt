@@ -15,7 +15,6 @@ add_executable(zc_codec ${DIR_SOURCE_SRCS})
 
 #头文件包含
 target_include_directories(zc_codec PRIVATE
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}

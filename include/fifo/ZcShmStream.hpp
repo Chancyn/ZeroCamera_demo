@@ -32,6 +32,8 @@ class CShmStreamW : public CShmFIFO{
     zc_frame_t *m_latest_idr;    // latest idr
     stream_puting_cb m_puting_cb;
     void *m_u;
+    unsigned int m_magic;
+    zc_stream_e m_type;
 };
 
 class CShmStreamR : public CShmFIFO{
@@ -42,9 +44,16 @@ class CShmStreamR : public CShmFIFO{
  public:
     // put for hi_venc_stream, 1.first put hdr, 2.stream data
     unsigned int Get(unsigned char *buffer, unsigned int buflen, unsigned int hdrlen, unsigned int magic);
+    bool GetStreamInfo(zc_frame_userinfo_t &info);
+
  private:
     unsigned int _getLatestFrameHdr(unsigned char *buffer, unsigned int hdrlen, bool keyflag);
+    bool _praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame);
+    bool _getLatestFrameInfo(zc_frame_userinfo_t &info);
 
+    unsigned int m_magic;
+    unsigned int m_maxframelen;
+    zc_stream_e m_type;
     zc_frame_t *m_latest_idr;    // latest idr
 };
 }  // namespace zc

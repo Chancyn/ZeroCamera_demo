@@ -17,30 +17,34 @@
 namespace zc {
 // fifo buf
 typedef struct _zcshmbuf_ {
-    pthread_mutex_t mutex;   /* process shared mutex*/
+    pthread_mutex_t mutex; /* process shared mutex*/
     pthread_mutexattr_t mutexattr;
     unsigned int size;       /* the size of the allocated buffer */
     unsigned int in;         /* data is added at offset (in % size) */
     unsigned int out;        /* data is extracted from off. (out % size) */
     unsigned int key;        /* key frame data at offset */
-    unsigned int rsv[4];     /* reserve */
+    unsigned int usersetflag;/* user data update flag */
+    unsigned int rsv[3];     /* reserve */
     unsigned char buffer[0]; /* must be end the buffer holding the data */
 } zcshmbuf_t;
 
-//
+// shmbuff == userbuf | zcshmbuf_t | fifobuffer
 typedef struct _zcshmfifo_ {
-    zcshmbuf_t *fifo;
-    int shmid;  // shmid
-    int evfd;   // for evevnt
+    void *shmbuff;             // shmbuff ptr
+    unsigned int usersize;     // userbuf size
+    zcshmbuf_t *fifo;          // fifo info
+    int shmid;                 // shmid
+    int evfd;                  // for evevnt
     unsigned int out;
 } zcshmfifo_t;
 // 性能说明 ThreadPutLock ret[1024000000],cos[108-120]ms;性能与c 语言版本一致
 class CShmFIFO : public NonCopyable {
  public:
-    CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool bwrite);
+    CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool bwrite, unsigned int usersize = 0);
     virtual ~CShmFIFO();
     bool ShmAlloc();
     void ShmFree();
+
  protected:
     void setKeyPos();
     unsigned int getLatestPos(bool key);
@@ -53,13 +57,20 @@ class CShmFIFO : public NonCopyable {
     //
     unsigned int put(const unsigned char *buffer, unsigned int len);
     unsigned int get(unsigned char *buffer, unsigned int len);
+
+    // userbuff get/set
+    unsigned int getUserData(unsigned char *buffer, unsigned int len);
+    unsigned int setUserData(unsigned char *buffer, unsigned int len);
+
     int ShareLock();
     int ShareUnlock();
+
  private:
     int share_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *mutexattr);
     int share_mutex_destroy(pthread_mutex_t *mutex, pthread_mutexattr_t *mutexattr);
     inline int share_mutex_lock(pthread_mutex_t *mutex);
     inline int share_mutex_unlock(pthread_mutex_t *mutex);
+
  public:
     // nolcok version unsafe be careful use, stop read/write and reset it
     void Reset();
@@ -93,6 +104,7 @@ class CShmFIFO : public NonCopyable {
     zcshmfifo_t m_pfifo;
     // pthread_mutex_t m_lock;
     // std::mutex m_mutex;
+    unsigned int m_usersize;
     unsigned int m_size;
     int m_shmkey;
     const bool m_bwrite;  // read/write flag

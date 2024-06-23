@@ -15,7 +15,6 @@ add_library(zc_test_crypto STATIC ${SUB_DIR_SOURCE_SRCS})
 
 #头文件包含
 target_include_directories(zc_test_crypto PRIVATE
-${BSW_BASIC_INC}
 )
 
 install(TARGETS zc_test_crypto DESTINATION ${ZC_LIB_INSTALL})

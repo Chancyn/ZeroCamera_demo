@@ -15,7 +15,6 @@ add_library(zc_test_binmsg STATIC ${SUB_DIR_SOURCE_SRCS})
 
 #头文件包含
 target_include_directories(zc_test_binmsg PRIVATE
-${BSW_BASIC_INC}
 )
 
 install(TARGETS zc_test_binmsg DESTINATION ${ZC_LIB_INSTALL})

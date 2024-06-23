@@ -14,7 +14,6 @@ add_executable(zc_sys ${DIR_SOURCE_SRCS})
 
 target_include_directories(zc_sys PRIVATE
 # ${NNG_INC}
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${MSGCOMM_INC}
 )
@@ -31,6 +30,7 @@ utilsxx
 utils
 plat_basic
 bsw_basic
+zccrypto
 zc_log
 nng
 #pthread

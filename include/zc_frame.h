@@ -11,16 +11,16 @@ extern "C" {
 #include "zc_type.h"
 
 // rtsp-server live shmfifo
-#define ZC_STREAM_VIDEO_SHM_PATH "video"
-#define ZC_STREAM_AUDIO_SHM_PATH "audio"
+#define ZC_STREAM_VIDEO_SHM_PATH "v_live"
+#define ZC_STREAM_AUDIO_SHM_PATH "a_live"
 
 // push-server -recv shmfifo
-#define ZC_STREAM_VIDEOPUSH_SHM_PATH "push_v"  // video push fifo / or client recv fifo
-#define ZC_STREAM_AUDIOPUSH_SHM_PATH "push_a"  // audio push fifo / or client recv fifo
+#define ZC_STREAM_VIDEOPUSH_SHM_PATH "v_push"  // video push fifo / or client recv fifo
+#define ZC_STREAM_AUDIOPUSH_SHM_PATH "a_push"  // audio push fifo / or client recv fifo
 
 // rtsp-cli pull recv shmfifo
-#define ZC_STREAM_VIDEOPULL_SHM_PATH "pull_v"   // video push fifo / or client recv fifo
-#define ZC_STREAM_AUDIOPULL_SHM_PATH "pull_a"  // audio push fifo / or client recv fifo
+#define ZC_STREAM_VIDEOPULL_SHM_PATH "v_pull"  // video push fifo / or client recv fifo
+#define ZC_STREAM_AUDIOPULL_SHM_PATH "a_pull"  // audio push fifo / or client recv fifo
 
 // stream fifo max size
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)
@@ -30,10 +30,12 @@ extern "C" {
 // frame max size
 #define ZC_STREAM_MAXFRAME_SIZE (1 * 1024 * 1024)  // video frame
 #define ZC_STREAM_MAXFRAME_SIZE_A (2 * 1024)       // audio frame
+#define ZC_STREAM_MAXFRAME_SIZE_M (2 * 1024)       // meta frame
 
 #define ZC_STREAM_TEST_CHN (1)       // test chns
 #define ZC_STREAM_VIDEO_MAX_CHN (2)  // video stream max chn
 #define ZC_FRAME_NALU_MAX_SIZE (6)   // max nalu size
+#define ZC_FRAME_NALU_BUFF_MAX_SIZE (256)   // sdp buffer max size
 
 #define ZC_FRAME_VIDEO_MAGIC (0x5A435645)  // "ZCVE"
 #define ZC_FRAME_AUDIO_MAGIC (0x5A434155)  // "ZCAU"
@@ -41,9 +43,9 @@ extern "C" {
 
 // shmstream type
 typedef enum {
-    ZC_SHMSTREAM_LIVE = 0,      // live shmstream,url /live/live.ch0
-    ZC_SHMSTREAM_PUSH,          // push shmstream,url /live/push.ch0
-    ZC_SHMSTREAM_PULL,          // rtspcli pull shmstream, server forwarding url /live/push.ch0
+    ZC_SHMSTREAM_LIVE = 0,  // live shmstream,url /live/live.ch0
+    ZC_SHMSTREAM_PUSH,      // push shmstream,url /live/push.ch0
+    ZC_SHMSTREAM_PULL,      // rtspcli pull shmstream, server forwarding url /live/push.ch0
 
     ZC_SHMSTREAM_BUTT,
 } zc_shmstream_e;
@@ -74,11 +76,40 @@ typedef enum {
     ZC_FRAME_BUTT,
 } zc_frame_e;
 
+// sdp info
+typedef enum {
+    ZC_NALU_IDX_SPS = 0,
+    ZC_NALU_IDX_PPS,
+    ZC_NALU_IDX_SEI,
+
+    ZC_NALU_IDX_BUTT,
+} zc_nalu_idx_e;
+
+typedef struct {
+    ZC_U32 size;        // size not contain 0x00, 0x00, 0x00, 0x01
+    ZC_U8 data[ZC_FRAME_NALU_BUFF_MAX_SIZE];  // nalu info for create sdp
+} zc_nalu_t;
+
+// video nalu for package sdp
+typedef struct {
+    ZC_U16 width;                         // picture width;
+    ZC_U16 height;                        // picture height;
+    ZC_U16 fps;
+    ZC_U16 nalunum;
+    zc_nalu_t nalu[ZC_FRAME_NALU_MAX_SIZE];  // res;
+} zc_video_naluinfo_t;
+
+// video nalu for package sdp
+typedef struct {
+    zc_nalu_t nalu[1];  // res;
+} zc_audio_naluinfo_t;
+
 // video frame info
 typedef struct {
     ZC_U8 encode;                         // zc_frame_enc_e
     ZC_U8 frame;                          // zc_frame_e
-    ZC_U8 res[2];                         // res;
+    ZC_U8 nalunum;                        // nalu number;
+    ZC_U8 res[1];                         // res;
     ZC_U16 width;                         // picture width;
     ZC_U16 height;                        // picture height;
     ZC_U32 nalu[ZC_FRAME_NALU_MAX_SIZE];  // nalu info for create sdp
@@ -119,6 +150,19 @@ typedef struct _zc_frame_ {
     };
     ZC_U8 data[0];  // frame raw data
 } zc_frame_t;
+
+// shmstream userbuf,
+typedef struct _zc_frame_userinfo_ {
+    ZC_U32 setflag;   // set flag
+    ZC_U8 type;       // zc_stream_e
+    ZC_U8 encode;     // zc_frame_enc_e
+    ZC_U8 rsv[2];     // rsv
+    ZC_U32 rsv1[4];   // rsv
+    union {
+        zc_video_naluinfo_t vinfo;
+        zc_audio_naluinfo_t ainfo;
+    };
+} zc_frame_userinfo_t;
 
 typedef unsigned int (*stream_puting_cb)(void *u, void *stream);
 typedef unsigned int (*stream_geting_cb)(void *u, void *stream);
