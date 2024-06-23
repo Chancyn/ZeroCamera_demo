@@ -168,7 +168,11 @@ int CMediaTrack::RTPPacket(void *param, const void *packet, int bytes, uint32_t 
 int CMediaTrack::GetData2Send() {
     int ret = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
+
+    #if 0   // for test frame write over read
+    // system_sleep(100);
     // if (!m_fiforeader->IsEmpty()) {
+    #endif
     while (m_fiforeader->Len() > sizeof(zc_frame_t)) {
         ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
         ZC_ASSERT(ret > sizeof(zc_frame_t));

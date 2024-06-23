@@ -22,6 +22,8 @@ typedef struct _zcshmbuf_ {
     unsigned int size;       /* the size of the allocated buffer */
     unsigned int in;         /* data is added at offset (in % size) */
     unsigned int out;        /* data is extracted from off. (out % size) */
+    unsigned int key;        /* key frame data at offset */
+    unsigned int rsv[4];     /* reserve */
     unsigned char buffer[0]; /* must be end the buffer holding the data */
 } zcshmbuf_t;
 
@@ -40,6 +42,10 @@ class CShmFIFO : public NonCopyable {
     bool ShmAlloc();
     void ShmFree();
  protected:
+    void setKeyPos();
+    unsigned int getLatestPos(bool key);
+    void setLatestOutpos(unsigned int pos);
+
     // no put event
     unsigned int _put(const unsigned char *buffer, unsigned int len);
     unsigned int _get(unsigned char *buffer, unsigned int len);

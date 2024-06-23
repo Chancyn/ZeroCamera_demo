@@ -151,12 +151,12 @@ inline int CShmFIFO::share_mutex_lock(pthread_mutex_t *mutex) {
     while (1) {
         ret = pthread_mutex_lock(mutex);
         if (ret == 0) {
-            // lock ok
-            #if ZC_DEBUG
+// lock ok
+#if ZC_DEBUG
             if (trycnt > 0) {
                 LOG_WARN("share_mutex_lock %p: ok trycnt[%d]", mutex, trycnt);
             }
-            #endif
+#endif
             return 0;
         } else if (ret == EOWNERDEAD) {
             LOG_ERROR("share_mutex_lock %p, [%d][%s]: lock:%u, count:%u, owner:%u\n", mutex, ret, strerror(EOWNERDEAD),
@@ -308,6 +308,21 @@ void CShmFIFO::_shmfree() {
 }
 void CShmFIFO::ShmFree() {
     return _shmfree();
+}
+
+void CShmFIFO::setKeyPos() {
+    m_pfifo.fifo->key = m_pfifo.fifo->in;
+    return;
+}
+
+unsigned int CShmFIFO::getLatestPos(bool key) {
+    return key ? m_pfifo.fifo->key : m_pfifo.fifo->in;
+}
+
+void CShmFIFO::setLatestOutpos(unsigned int pos) {
+    LOG_WARN("skip set Out pos:%u->%u, in:%u, key:%u", m_pfifo.out, pos,  m_pfifo.fifo->in,  m_pfifo.fifo->key);
+    m_pfifo.out = pos;
+    return;
 }
 /**
  * zcfifo_put - puts some data into the FIFO, no locking version

@@ -37,6 +37,11 @@ CShmStreamW::~CShmStreamW() {}
 unsigned int CShmStreamW::Put(const unsigned char *buffer, unsigned int len, void *stream) {
     unsigned int ret = 0;
     ShareLock();
+
+    zc_frame_t *frame = (zc_frame_t *)buffer;
+    if (frame->keyflag) {
+        setKeyPos();
+    }
     ret = _put(buffer, len);
 
     // callback function need call puting to put framedata append
@@ -59,6 +64,18 @@ CShmStreamR::CShmStreamR(unsigned int size, const char *name, unsigned char chn)
 
 CShmStreamR::~CShmStreamR() {}
 
+unsigned int CShmStreamR::_getLatestFrameHdr(unsigned char *buffer, unsigned int hdrlen, bool keyflag) {
+    unsigned int pos = 0;
+    // get latest frame pos
+    pos = getLatestPos(keyflag);
+    // set out pos = latest frame pos
+    setLatestOutpos(pos);
+    unsigned int ret = _get(buffer, hdrlen);
+    ZC_ASSERT(ret == hdrlen);
+    LOG_WARN("get latest IDR frame hdr ret[%u]", ret);
+    return ret;
+}
+
 // put for hi_venc_stream, 1.first put hdr, 2.stream data GetAppending by m_puting_cb
 unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsigned int hdrlen, unsigned int magic) {
     unsigned int framelen = 0;
@@ -72,7 +89,15 @@ unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsign
     //  if (frame->magic != magic) {
     //      LOG_ERROR("magic[0x%x]size[%u]pts[%u]utc[%u]", frame->magic, frame->size, frame->pts, frame->utc);
     //  }
-    ZC_ASSERT((*magicb) == magic);
+
+    // ZC_ASSERT((*magicb) == magic);
+    if ((*magicb) != magic) {
+        // get latest frame
+        LOG_ERROR("magic[0x%x]!=[0x%x], get latest IDR frame", (*magicb), magic);
+        _getLatestFrameHdr(buffer, hdrlen, true);
+        ZC_ASSERT((*magicb) == magic);
+    }
+
     framelen = *(++magicb);
     // LOG_ERROR("buflen[%u]hdrlen[%u]framelen[%u]ret[%u]", buflen, hdrlen, framelen, ret);
     ZC_ASSERT(buflen >= hdrlen + framelen);

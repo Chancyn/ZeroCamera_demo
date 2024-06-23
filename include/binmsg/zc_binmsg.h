@@ -18,7 +18,7 @@ extern "C" {
 #define ZC_BINMSG_MAGIC1 (0x4D)  // M
 
 #if ZC_DEBUG
-#define ZC_BINMSG_DEBUG 1 // 0, debug
+#define ZC_BINMSG_DEBUG 1  // 0, debug
 #endif
 
 typedef enum {
@@ -36,12 +36,12 @@ typedef enum {
 typedef struct {
     ZC_U8 magic[2];  // magic 0;
     struct _flags {
-        ZC_U8 order;  // order:0 host, 1 net;
-        ZC_U8 crc : 1;    // crc32 check:
+        ZC_U8 order;    // order:0 host, 1 net;
+        ZC_U8 crc : 1;  // crc32 check:
         ZC_U8 rsv : 7;
-    }flags;
+    } flags;
 
-    ZC_U32 crc32;   // crc32 checksum from[version->data]
+    ZC_U32 crc32;   // crc32 checksum from[version->data] : TODO crc32 after magic
     ZC_U8 version;  // version 1;
     ZC_U8 id;       // id src,
     ZC_U8 idto;     // id dst,
@@ -51,7 +51,7 @@ typedef struct {
     ZC_U16 cmd;     // cmd id
 
     ZC_U16 seq;
-    ZC_U16 size;    // msgsize
+    ZC_U16 size;  // msgsize
 
     ZC_U8 res[16];  // reserve
     ZC_U8 data[0];  // msgdata
