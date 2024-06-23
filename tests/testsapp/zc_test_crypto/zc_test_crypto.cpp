@@ -12,10 +12,11 @@
 #include <memory>
 #include <string>
 
-#include "zc_type.h"
+#include "zc_base64.h"
 #include "zc_crc32.h"
 #include "zc_log.h"
 #include "zc_md5.h"
+#include "zc_type.h"
 
 static int zc_test_crypto_md5_file(const char *file) {
     FILE *fp = fopen(file, "rb");
@@ -60,12 +61,12 @@ static int zc_test_crypto_md5_string(const unsigned char *data, size_t len) {
 
 // type 0: for test md5sum string/buffer;
 // type 1: for test md5sum file;
-static int zc_test_crypto_md5(int type, const char *pdata) {
+static int zc_test_crypto_md5(int type, const char *pdata, int datalen) {
     LOG_INFO("test_crypto into,type:%d, pdata:%s\n", type, pdata);
     if (type == 1) {
         zc_test_crypto_md5_file(pdata);
     } else {
-        zc_test_crypto_md5_string((const unsigned char *)pdata, strlen(pdata));
+        zc_test_crypto_md5_string((const unsigned char *)pdata, datalen);
     }
 
     LOG_INFO("test_crypto end\n");
@@ -98,24 +99,72 @@ static int zc_test_crypto_crc32_string(const unsigned char *data, size_t len) {
     return 0;
 }
 
-static int zc_test_crypto_crc32(int type, const char *pdata) {
+static int zc_test_crypto_crc32(int type, const char *pdata, int datalen) {
     LOG_INFO("test_crypto into,type:%d, pdata:%s\n", type, pdata);
     if (type == 1) {
         zc_test_crypto_crc32_file(pdata);
     } else {
-        zc_test_crypto_crc32_string((const unsigned char *)pdata, strlen(pdata));
+        zc_test_crypto_crc32_string((const unsigned char *)pdata, datalen);
     }
 
     LOG_INFO("test_crypto end\n");
     return 0;
 }
 
-int zc_test_crypto(int crypto, int type, const char *pdata) {
-    LOG_INFO("test_crypto:%d, into,type:%d, pdata:%s\n", crypto, type, pdata);
+static int zc_test_crypto_base64_encode(const char *data, size_t len) {
+    size_t ret = 0;
+    char dstbase64[ZC_BASE64_SIZE(len)];
+    ret = zc_base64_encode(dstbase64, data, len);
+    LOG_INFO("base64 encode [%zu][%s]->[%zu][%s]", len, data, ret, dstbase64);
+    return 0;
+}
+
+static int zc_test_crypto_base64_encode_url(const char *data, size_t len) {
+    size_t ret = 0;
+    char dstbase64[ZC_BASE64_SIZE(len)];
+    ret = zc_base64_encode_url(dstbase64, data, len);
+    LOG_INFO("base64 encode url [%zu][%s]->[%zu][%s]", len, data, ret, dstbase64);
+    return 0;
+}
+
+static int zc_test_crypto_base64_decode(const char *data, size_t len) {
+    size_t ret = 0;
+    char dst[ZC_BASE64_DECODE_SIZE(len)] = {0};
+    ret = zc_base64_decode(dst, (const char *)data, len);
+    LOG_INFO("base64 decode [%zu][%s]->[%zu][%s]", len, data, ret, dst);
+    return 0;
+}
+
+// 0:base64-encode 1:base64-encode-url, 2 base64-decode
+static int zc_test_crypto_base64(int type, const char *pdata, int datalen) {
+    LOG_INFO("test_crypto base64 into,type:%d, pdata:%s\n", type, pdata);
+    if (type == 0) {
+        zc_test_crypto_base64_encode(pdata, datalen);
+    } else if (type == 1) {
+        zc_test_crypto_base64_encode_url(pdata, datalen);
+    } else if (type == 2) {
+        zc_test_crypto_base64_decode(pdata, datalen);
+    } else if (type == 3) {
+        zc_base64_debug_test();
+    }
+
+    return 0;
+}
+
+int zc_test_crypto(int crypto, int type, const char *pdata, int datalen) {
+    if (pdata) {
+        datalen = strlen(pdata);
+    } else {
+        datalen = 0;
+    }
+    LOG_INFO("test_crypto:%d, into,type:%d, len:%d, pdata:%s\n", crypto, type, datalen, pdata);
+
     if (crypto == 0) {
-        zc_test_crypto_md5(type, pdata);
+        zc_test_crypto_md5(type, pdata, datalen);
     } else if (crypto == 1) {
-        zc_test_crypto_crc32(type, pdata);
+        zc_test_crypto_crc32(type, pdata, datalen);
+    } else if (crypto == 2) {
+        zc_test_crypto_base64(type, pdata, datalen);
     } else {
         LOG_INFO("unsupport crypto:%d end\n", crypto);
     }

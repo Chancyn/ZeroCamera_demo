@@ -6,22 +6,24 @@
 #include <string.h>
 
 #include "zc_binmsg.h"
+#include "zc_crc32.h"
 #include "zc_log.h"
 #include "zc_macros.h"
-#include "zc_crc32.h"
 #include "zc_type.h"
 
-#if ZC_BINMSG_DEBUG
 void zc_binmsg_debug_printhdr(const zc_binmsg_t *msg) {
     LOG_TRACE("binmsghdr hdrlen:%u,flags:[order:%d,crc:%d],id:%u,idto:%u,type:%u,\n \
     cmd:0x%04X,seq:%u,len:%u,crc32:0x%08X",
               sizeof(zc_binmsg_t), msg->flags.order, msg->flags.crc, msg->id, msg->idto, msg->msgtype, msg->cmd,
               msg->seq, msg->size, msg->crc32);
 
+#if ZC_BINMSG_DEBUG
     if (msg->size > 0) {
         LOG_TRACE("\n binmsghdr string:%s", msg->data);
     }
-    return 0;
+#endif
+
+    return;
 }
 
 void zc_binmsg_debug_dump(zc_binmsg_t *msg) {
@@ -43,6 +45,7 @@ void zc_binmsg_debug_dump(zc_binmsg_t *msg) {
         cmd:0x%04X,seq:%u,len:%u,crc32:0x%08X",
               sizeof(zc_binmsg_t), msg->flags.order, msg->flags.crc, msg->id, msg->idto, msg->msgtype, cmd, seq, size,
               crc);
+#if ZC_BINMSG_DEBUG
     for (int i = 0; i < sizeof(zc_binmsg_t) + size; i++) {
         printf("%02X ", buf[i]);
     }
@@ -50,9 +53,10 @@ void zc_binmsg_debug_dump(zc_binmsg_t *msg) {
     if (size > 0) {
         LOG_TRACE("\n dump binmsg string:%s", msg->data);
     }
+#endif
     return;
 }
-#endif
+
 void zc_binmsg_packhdr(zc_binmsg_t *msg, BOOL netorder, BOOL crc32, ZC_U8 id, ZC_U8 idto, ZC_U8 type, ZC_U16 cmd,
                        ZC_U16 seq) {
     ZC_ASSERT(msg != NULL);
@@ -98,7 +102,7 @@ void zc_binmsg_packdata(zc_binmsg_t *msg, const ZC_U8 *data, ZC_U16 len) {
         // TODO(zhoucc): crc32
         ZC_U32 crc = 0;
         // crc32 calcu start version->data
-        crc = crc32(crc, (const unsigned char *)msg+8, len+sizeof(zc_binmsg_t)-8);
+        crc = crc32(crc, (const unsigned char *)msg + 8, len + sizeof(zc_binmsg_t) - 8);
         msg->crc32 = crc;
         if (msg->flags.order) {
             msg->crc32 = htonl(crc);
@@ -187,7 +191,7 @@ int zc_binmsg_parse(zc_binmsg_t *msg, ZC_U8 *buf, ZC_U32 buflen, ZC_U16 readlen,
         // TODO(zhoucc): crc32
         ZC_U32 crc = 0;
         // crc32 calcu start version->data
-        crc = crc32(crc, buf + pos + 8, msglen+sizeof(zc_binmsg_t)-8);
+        crc = crc32(crc, buf + pos + 8, msglen + sizeof(zc_binmsg_t) - 8);
         if (msg->crc32 != crc) {
             LOG_ERROR("parse msg calcu crc:0x%08x != 0x%08x", crc, msg->crc32);
             return -1;
@@ -228,7 +232,7 @@ int zc_binmsg_unpackhdr(zc_binmsg_t *msg, const ZC_U8 *buf, ZC_U16 len) {
     if (msg->flags.crc) {
         ZC_U32 crc = 0;
         // crc32 calcu start version->data
-        crc = crc32(crc, buf+8, msg->size+sizeof(zc_binmsg_t)-8);
+        crc = crc32(crc, buf + 8, msg->size + sizeof(zc_binmsg_t) - 8);
         if (msg->crc32 != crc) {
             LOG_ERROR("parse msg calcu crc:0x%08x != 0x%08x", crc, msg->crc32);
             return -1;

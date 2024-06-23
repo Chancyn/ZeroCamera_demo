@@ -69,10 +69,8 @@ int zc_binmsg_unpackhdr(zc_binmsg_t *msg, const ZC_U8 *buf, ZC_U16 len);
 // return msgpos, >=0 parse ok, <0 parse error
 int zc_binmsg_parse(zc_binmsg_t *msg, ZC_U8 *buf, ZC_U32 buflen, ZC_U16 readlen, ReadCb readcb);
 
-#if ZC_BINMSG_DEBUG
 void zc_binmsg_debug_printhdr(const zc_binmsg_t *msg);
 void zc_binmsg_debug_dump(zc_binmsg_t *msg);
-#endif
 
 #ifdef __cplusplus
 }

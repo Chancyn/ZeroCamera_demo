@@ -16,4 +16,4 @@ such as:
 ./zc_tests 1 0 123456       // for crc 123456
 ./zc_tests 1 1 filename     // for crc filename = shell cmd "crc32 filename"
 */
-int zc_test_crypto(int crypto, int type, const char *pdata);
+int zc_test_crypto(int crypto, int type, const char *pdata, int datalen);
