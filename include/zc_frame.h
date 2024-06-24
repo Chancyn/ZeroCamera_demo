@@ -114,7 +114,7 @@ typedef struct {
     ZC_U8 res[1];                         // res;
     ZC_U16 width;                         // picture width;
     ZC_U16 height;                        // picture height;
-    ZC_U32 nalu[ZC_FRAME_NALU_MAXNUM];    // nalu info for create sdp
+    ZC_U32 nalu[ZC_FRAME_NALU_MAXNUM];    // size not contain 0x00, 0x00, 0x00, 0x01 nalu info for create sdp
 } zc_frame_video_t;
 
 // audio frame info

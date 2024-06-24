@@ -2365,8 +2365,11 @@ static hi_s32 zc_sample_comm_streamw_put(hi_s32 index, hi_venc_stream *stream, h
     zcframe.video.height = g_send_frame_param.size[index].height;
     zcframe.size = 0;
     hi_u32 i = 0;
+    zcframe.video.nalunum = stream->pack_cnt < ZC_FRAME_NALU_MAXNUM ? stream->pack_cnt : ZC_FRAME_NALU_MAXNUM;
     for (i = 0; i < stream->pack_cnt; i++) {
         zcframe.size += stream->pack[i].len - stream->pack[i].offset;
+        // nalu num, 00 00 00 01
+        zcframe.video.nalu[i] = stream->pack[i].len - stream->pack[i].offset - 4;
     }
     zc_shmstreamw_put(g_zctestfifow[index], &zcframe, sizeof(zcframe), stream);
 
