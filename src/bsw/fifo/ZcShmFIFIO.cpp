@@ -162,6 +162,7 @@ inline int CShmFIFO::share_mutex_lock(pthread_mutex_t *mutex) {
         if (ret == 0) {
 // lock ok
 #if ZC_DEBUG
+            // LOG_WARN("share_mutex_lock %p", mutex);
             if (trycnt > 0) {
                 LOG_WARN("share_mutex_lock %p: ok trycnt[%d]", mutex, trycnt);
             }
@@ -182,7 +183,7 @@ inline int CShmFIFO::share_mutex_lock(pthread_mutex_t *mutex) {
                 LOG_WARN("share_mutex_lock %p: consistent _unlock error[%d][%s]", mutex, ret, strerror(ret));
             }
         } else {
-            // LOG_ERROR("share_mutex_lock %p: error[%d][%s]", mutex, ret, strerror(ret));
+            LOG_ERROR("share_mutex_lock %p: error[%d][%s]", mutex, ret, strerror(ret));
         }
 
         trycnt++;
@@ -309,7 +310,8 @@ void CShmFIFO::_shmfree() {
         }
 
         if (m_bwrite) {
-            share_mutex_destroy(&m_pfifo.fifo->mutex, &m_pfifo.fifo->mutexattr);
+            // don't destory mutex, destory
+            // share_mutex_destroy(&m_pfifo.fifo->mutex, &m_pfifo.fifo->mutexattr);
             shmdt(m_pfifo.shmbuff);
             m_pfifo.shmbuff = nullptr;
             m_pfifo.usersize = 0;
