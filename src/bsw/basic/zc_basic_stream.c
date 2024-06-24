@@ -7,6 +7,16 @@
 #include "zc_h26x_sps_parse.h"
 #include "zc_log.h"
 
+#ifdef ZC_DUMP_STREAM
+void zc_debug_dump_stream(const char *fun, int type, const uint8_t *data, uint32_t len) {
+    printf("[%s] type:%d, dump stream len:%u [", fun, type);
+    for (unsigned int i = 0; i < len; i++) {
+        printf("%02x ", data[i]);
+    }
+    printf("]\n");
+}
+#endif
+
 static inline const uint8_t *search_start_code(const uint8_t *ptr, const uint8_t *end) {
     for (const uint8_t *p = ptr; p + 3 < end; p++) {
         if (0x00 == p[0] && 0x00 == p[1] && (0x01 == p[2] || (0x00 == p[2] && 0x01 == p[3])))
@@ -64,11 +74,8 @@ uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
     const uint8_t *p = start;
     uint32_t prefixlen = 0x01 == p[2] ? 3 : 4;
     uint32_t nalunum = 0;
-#if 1  // dump
-    for (int i = 0; i < 64; i++) {
-        printf("%02x ", p[i]);
-    }
-    printf("\n");
+#if ZC_DUMP_STREAM  // dump
+    zc_debug_dump_stream(__FUNCTION__, ZC_FRAME_ENC_H264, p, 64);
 #endif
     while (p < end) {
         const unsigned char *pn = search_start_code(p + prefixlen, end);
@@ -100,12 +107,11 @@ uint32_t zc_h265_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
     const uint8_t *p = start;
     uint32_t prefixlen = 0x01 == p[2] ? 3 : 4;
     uint32_t nalunum = 0;
-#if 1  // dump
-    for (int i = 0; i < 64; i++) {
-        printf("%02x ", p[i]);
-    }
-    printf("\n");
+
+#if ZC_DUMP_STREAM  // dump
+    zc_debug_dump_stream(__FUNCTION__, ZC_FRAME_ENC_H265, p, 64);
 #endif
+
     while (p < end) {
         const unsigned char *pn = search_start_code(p + prefixlen, end);
         if (nalunum >= ZC_FRAME_NALU_MAXNUM) {
@@ -137,5 +143,3 @@ uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
 
     return 0;
 }
-
-
