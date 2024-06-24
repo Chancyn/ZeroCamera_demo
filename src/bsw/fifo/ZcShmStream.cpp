@@ -114,17 +114,17 @@ unsigned int CShmStreamR::_getLatestFrameHdr(unsigned char *buffer, unsigned int
 bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) {
     bool flags = false;
     unsigned char *pos = frame->data;
-    unsigned char nalutype = 0;
+    unsigned char naluval = 0;
     unsigned char prefixlen = 0x01 == frame->data[2] ? 3 : 4;
 
-    if (frame->video.encode == ZC_FRAME_ENC_H264) {
+    if (frame->video.encode == ZC_FRAME_ENC_H264 || frame->video.encode == ZC_FRAME_ENC_H265) {
         ZC_ASSERT(frame->keyflag);
         //
         if (frame->video.nalunum == 0) {
             LOG_WARN("no naluinfo, prase frame->size:%d", frame->size);
             zc_h26x_nalu_info_t tmp;
             memset(&tmp, 0 , sizeof(zc_h26x_nalu_info_t));
-            frame->video.nalunum = zc_h26x_parse_nalu(frame->data, frame->size, &tmp);
+            frame->video.nalunum = zc_h26x_parse_nalu(frame->data, frame->size, &tmp, frame->video.encode);
             for (unsigned int i = 0; i < frame->video.nalunum; i++) {
                 if (tmp.nalus[i].size > 0) {
                     frame->video.nalu[i] = tmp.nalus[i].size;
@@ -135,10 +135,11 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
         info.vinfo.nalunum  = 0;
         for (unsigned int i = 0; i < frame->video.nalunum; i++) {
             pos += prefixlen;
-            nalutype = *pos & 0x1F;
-            LOG_WARN("IDR frameinfo i:%d,nalutype:%u,len:%u, prefixlen:%u", i, nalutype, frame->video.nalu[i],
+            naluval = *pos;
+            LOG_WARN("IDR frameinfo i:%d,naluval:%u,len:%u, prefixlen:%u", i, naluval, frame->video.nalu[i],
                      prefixlen);
             if (frame->video.nalu[i] > 0 && frame->video.nalu[i] <= ZC_FRAME_NALU_BUFF_MAX_SIZE) {
+                info.vinfo.nalu[info.vinfo.nalunum].type = zc_h26x_nalu_val2type(naluval, frame->video.encode);
                 info.vinfo.nalu[info.vinfo.nalunum].size = frame->video.nalu[i];
                 memcpy(info.vinfo.nalu[info.vinfo.nalunum].data, pos, frame->video.nalu[i]);
                 flags = true;
@@ -151,7 +152,7 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
         }
     }
 
-    LOG_TRACE("prase frame len:%u, flags:%d", frame->size, flags);
+    LOG_TRACE("prase frame len:%u, num:%d, flags:%d", frame->size, info.vinfo.nalunum, flags);
     return flags;
 }
 

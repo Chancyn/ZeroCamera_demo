@@ -18,7 +18,6 @@
 #include "ZcShmStream.hpp"
 #include "ZcLiveTestWriter.hpp"
 
-
 class CMediaTrack;
 namespace zc {
 class CLiveTestWriterH265 : public Thread, public ILiveTestWriter{
@@ -36,6 +35,7 @@ class CLiveTestWriterH265 : public Thread, public ILiveTestWriter{
     virtual int process();
     static unsigned int putingCb(void *u, void *stream);
     unsigned int _putingCb(void *stream);
+    int fillnaluInfo(zc_video_naluinfo_t &sdpinfo);
 
  private:
     int m_status;
@@ -47,6 +47,7 @@ class CLiveTestWriterH265 : public Thread, public ILiveTestWriter{
     uint64_t m_rtp_clock;
     uint64_t m_rtcp_clock;
     int64_t m_pos;
+    zc_video_naluinfo_t m_naluinfo;
 };
 
 }  // namespace zc

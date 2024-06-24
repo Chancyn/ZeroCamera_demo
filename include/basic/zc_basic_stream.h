@@ -12,16 +12,21 @@ extern "C" {
 #endif /*__cplusplus*/
 
 typedef struct _zc_h26x_nalu {
-    uint32_t type;
+    uint32_t type;          // zc_nalu_type_e
     uint32_t offset;        // start code offset
     uint32_t size;          // size not contain 0x00, 0x00, 0x00, 0x01
 } zc_h26x_nalu_t;
 
 typedef struct _zc_h26x_nalu_info {
-    zc_h26x_nalu_t nalus[ZC_FRAME_NALU_MAX_SIZE];
+    zc_h26x_nalu_t nalus[ZC_FRAME_NALU_MAXNUM];
 } zc_h26x_nalu_info_t;
+uint32_t zc_h264_nalu_val2type(uint8_t naluval);
+uint32_t zc_h265_nalu_val2type(uint8_t naluval);
+uint32_t zc_h26x_nalu_val2type(uint8_t naluval, int type);
 
-uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *info);
+uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *nalus);
+uint32_t zc_h265_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *nalus);
+uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *info, int type);
 
 #ifdef __cplusplus
 }

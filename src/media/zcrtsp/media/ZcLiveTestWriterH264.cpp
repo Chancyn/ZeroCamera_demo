@@ -125,42 +125,44 @@ int CLiveTestWriterH264::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
     const std::list<std::pair<const uint8_t *, size_t>> &sps = m_reader->GetParameterSets();
     std::list<std::pair<const uint8_t *, size_t>>::const_iterator it;
     zc_video_naluinfo_t tmp = {0};
-    int naluidx = 0;
 
-    bool fill = false;
+    unsigned int type = 0;
+    tmp.nalunum = 0;
     for (it = sps.begin(); it != sps.end(); ++it) {
-        unsigned char naltype = (*(it->first)) & 0x1F;
+        unsigned int naltype = (*(it->first)) & 0x1F;
         size_t bytes = it->second;
-        LOG_WARN("naluinfo %p, type:0x%02X, size:%d", it->first, naltype, bytes);
+        LOG_WARN("naluinfo %p, type:%d, size:%d", it->first, naltype, bytes);
         if (naltype == NAL_SPS) {
-            naluidx = ZC_NALU_IDX_SPS;
+            type = ZC_NALU_TYPE_SPS;
         } else if (naltype == NAL_PPS) {
-            naluidx = ZC_NALU_IDX_PPS;
+            type = ZC_NALU_TYPE_PPS;
         } else if (naltype == NAL_SEI) {
-            naluidx = ZC_NALU_IDX_SEI;
+            type = ZC_NALU_TYPE_SEI;
         } else {
-            LOG_ERROR("unsupport naluinfo %p, type:0x%02X, size:%d", it->first, naltype, bytes);
+            LOG_ERROR("unsupport naluinfo %p, type:%d, size:%d", it->first, naltype, bytes);
             continue;
         }
 
-        zc_nalu_t *nalu = &tmp.nalu[naluidx];
+        zc_nalu_t *nalu = &tmp.nalu[tmp.nalunum];
         if (bytes > 0 && bytes <= sizeof(nalu->data)) {
             memcpy(nalu->data, it->first, bytes);
             nalu->size = bytes;
-            fill = true;
-            LOG_WARN("fillSdpInfo idx:%d, size:%d", naluidx, nalu->size);
+            nalu->type = type;
+            LOG_WARN("fillSdpInfo num:%d, type:%d, size:%d", tmp.nalunum, type, nalu->size);
 #if 1  // dump
             for (int i = 0; i < nalu->size; i++) {
                 printf("%02x ", nalu->data[i]);
             }
             printf("\n");
 #endif
+            tmp.nalunum++;
+            if (tmp.nalunum >= ZC_FRAME_NALU_MAXNUM) {
+                break;
+            }
         }
     }
 
-    if (fill) {
-        memcpy(&sdpinfo, &tmp, sizeof(zc_video_naluinfo_t));
-    }
+    memcpy(&sdpinfo, &tmp, sizeof(zc_video_naluinfo_t));
 
     return 0;
 }

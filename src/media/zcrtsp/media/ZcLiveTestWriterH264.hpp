@@ -22,7 +22,7 @@ class CMediaTrack;
 namespace zc {
 class CLiveTestWriterH264 : public Thread, public ILiveTestWriter {
  public:
-    CLiveTestWriterH264(const live_test_info_t &info);
+    explicit CLiveTestWriterH264(const live_test_info_t &info);
     virtual ~CLiveTestWriterH264();
 
  public:

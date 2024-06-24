@@ -83,11 +83,12 @@ bool CMediaTrackH264::Init(void *pinfo) {
     }
 
     if (m_fiforeader->GetStreamInfo(frameinfo)) {
-        LOG_ERROR("GetStreamInfo ok");
+        LOG_ERROR("GetStreamInfo ok nalunum:%d", frameinfo.vinfo.nalunum);
         // goto _err;
         for (int i = 0; i < frameinfo.vinfo.nalunum; i++) {
-            if (frameinfo.vinfo.nalu[i].size > 0) {
-                // sps
+            // sps pps
+            if (frameinfo.vinfo.nalu[i].type >= ZC_NALU_TYPE_SPS && frameinfo.vinfo.nalu[i].type <= ZC_NALU_TYPE_PPS) {
+                // sps - pfofileid
                 if (i == 0) {
                     profileid[0] = frameinfo.vinfo.nalu[0].data[1];
                     profileid[1] = frameinfo.vinfo.nalu[0].data[2];

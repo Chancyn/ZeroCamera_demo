@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "zc_basic_stream.h"
+#include "zc_h26x_sps_parse.h"
 #include "zc_log.h"
 
 static inline const uint8_t *search_start_code(const uint8_t *ptr, const uint8_t *end) {
@@ -14,7 +15,46 @@ static inline const uint8_t *search_start_code(const uint8_t *ptr, const uint8_t
     return end;
 }
 
-static uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *nalus) {
+uint32_t zc_h264_nalu_val2type(uint8_t naluval) {
+    uint32_t typeval = naluval & 0x1F;
+    uint32_t type = ZC_NALU_TYPE_UNKNOWN;
+    if (H264_NAL_UNIT_TYPE_SPS == typeval) {
+        type = ZC_NALU_TYPE_SPS;
+    } else if (H264_NAL_UNIT_TYPE_PPS == typeval) {
+        type = ZC_NALU_TYPE_PPS;
+    } else if (H264_NAL_UNIT_TYPE_SEI == typeval) {
+        type = ZC_NALU_TYPE_SEI;
+    }
+
+    return type;
+}
+
+uint32_t zc_h265_nalu_val2type(uint8_t naluval) {
+    uint32_t typeval = (naluval & 0x7E) >> 1;
+    uint32_t type = ZC_NALU_TYPE_UNKNOWN;
+    if (H265_NAL_UNIT_VPS == typeval) {
+        type = ZC_NALU_TYPE_VPS;
+    } else if (H265_NAL_UNIT_SPS == typeval) {
+        type = ZC_NALU_TYPE_SPS;
+    } else if (H265_NAL_UNIT_PPS == typeval) {
+        type = ZC_NALU_TYPE_PPS;
+    } else if (H265_NAL_UNIT_PREFIX_SEI == typeval || H265_NAL_UNIT_SUFFIX_SEI == typeval) {
+        type = ZC_NALU_TYPE_SEI;
+    }
+
+    return type;
+}
+
+uint32_t zc_h26x_nalu_val2type(uint8_t naluval, int type) {
+    if (type == ZC_FRAME_ENC_H264)
+        return zc_h264_nalu_val2type(naluval);
+    else if (type == ZC_FRAME_ENC_H265)
+        return zc_h265_nalu_val2type(naluval);
+
+    return ZC_NALU_TYPE_UNKNOWN;
+}
+
+uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *nalus) {
     const uint8_t *end = data + dataSize;
     const uint8_t *start = search_start_code(data, end);
     if (start >= end) {
@@ -22,25 +62,27 @@ static uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h2
     }
 
     const uint8_t *p = start;
-    uint32_t prefixlen =  0x01 == p[2] ? 3 : 4;
+    uint32_t prefixlen = 0x01 == p[2] ? 3 : 4;
     uint32_t nalunum = 0;
-    #if 1 // dump
+#if 1  // dump
     for (int i = 0; i < 64; i++) {
         printf("%02x ", p[i]);
     }
     printf("\n");
-    #endif
+#endif
     while (p < end) {
         const unsigned char *pn = search_start_code(p + prefixlen, end);
-        if (nalunum >= ZC_FRAME_NALU_MAX_SIZE) {
-            LOG_WARN("nalu num:%d over%d", nalunum, ZC_FRAME_NALU_MAX_SIZE);
+        if (nalunum >= ZC_FRAME_NALU_MAXNUM) {
+            LOG_WARN("nalu num:%d over%d", nalunum, ZC_FRAME_NALU_MAXNUM);
             break;
         }
-        nalus->nalus[nalunum].type = p[prefixlen] & 0x1F;
+
+        nalus->nalus[nalunum].type = zc_h264_nalu_val2type(p[prefixlen]);
         nalus->nalus[nalunum].size = pn - p - prefixlen;
         nalus->nalus[nalunum].offset = p - data;
-        LOG_TRACE("find idx:%d, type:%d, size:%u, offset:%u", nalunum, nalus->nalus[nalunum].type, nalus->nalus[nalunum].size,
-        nalus->nalus[nalunum].offset);
+
+        LOG_TRACE("h264 find idx:%d, type:%d, size:%u, offset:%u", nalunum, nalus->nalus[nalunum].type,
+                  nalus->nalus[nalunum].size, nalus->nalus[nalunum].offset);
         nalunum++;
         p = pn;
     }
@@ -48,10 +90,52 @@ static uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h2
     return nalunum;
 }
 
-uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *info) {
+uint32_t zc_h265_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *nalus) {
+    const uint8_t *end = data + dataSize;
+    const uint8_t *start = search_start_code(data, end);
+    if (start >= end) {
+        return 0;
+    }
+
+    const uint8_t *p = start;
+    uint32_t prefixlen = 0x01 == p[2] ? 3 : 4;
+    uint32_t nalunum = 0;
+#if 1  // dump
+    for (int i = 0; i < 64; i++) {
+        printf("%02x ", p[i]);
+    }
+    printf("\n");
+#endif
+    while (p < end) {
+        const unsigned char *pn = search_start_code(p + prefixlen, end);
+        if (nalunum >= ZC_FRAME_NALU_MAXNUM) {
+            LOG_WARN("nalu num:%d over%d", nalunum, ZC_FRAME_NALU_MAXNUM);
+            break;
+        }
+
+        nalus->nalus[nalunum].type = zc_h265_nalu_val2type(p[prefixlen]);
+        nalus->nalus[nalunum].size = pn - p - prefixlen;
+        nalus->nalus[nalunum].offset = p - data;
+        LOG_TRACE("h265 find idx:%d, type:%d, size:%u, offset:%u", nalunum, nalus->nalus[nalunum].type,
+                  nalus->nalus[nalunum].size, nalus->nalus[nalunum].offset);
+        nalunum++;
+        p = pn;
+    }
+
+    return nalunum;
+}
+
+uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *info, int type) {
     if (data == NULL || dataSize == 0 || info == NULL) {
         return 0;
     }
 
-    return zc_h264_parse_nalu(data, dataSize, info);
+    if (type == ZC_FRAME_ENC_H264)
+        return zc_h264_parse_nalu(data, dataSize, info);
+    else if (type == ZC_FRAME_ENC_H265)
+        return zc_h265_parse_nalu(data, dataSize, info);
+
+    return 0;
 }
+
+

@@ -34,7 +34,7 @@ extern "C" {
 
 #define ZC_STREAM_TEST_CHN (1)       // test chns
 #define ZC_STREAM_VIDEO_MAX_CHN (2)  // video stream max chn
-#define ZC_FRAME_NALU_MAX_SIZE (6)   // max nalu size
+#define ZC_FRAME_NALU_MAXNUM (6)   // max nalu size
 #define ZC_FRAME_NALU_BUFF_MAX_SIZE (256)   // sdp buffer max size
 
 #define ZC_FRAME_VIDEO_MAGIC (0x5A435645)  // "ZCVE"
@@ -76,18 +76,20 @@ typedef enum {
     ZC_FRAME_BUTT,
 } zc_frame_e;
 
-// sdp info
+// zc h26x nalu type
 typedef enum {
-    ZC_NALU_IDX_SPS = 0,
-    ZC_NALU_IDX_PPS,
-    ZC_NALU_IDX_SEI,
+    ZC_NALU_TYPE_VPS = 0,
+    ZC_NALU_TYPE_SPS,
+    ZC_NALU_TYPE_PPS,
+    ZC_NALU_TYPE_SEI,
 
-    ZC_NALU_IDX_BUTT,
-} zc_nalu_idx_e;
+    ZC_NALU_TYPE_UNKNOWN = 0xFF,     // unknown, no need
+} zc_nalu_type_e;
 
 typedef struct {
-    ZC_U32 size;        // size not contain 0x00, 0x00, 0x00, 0x01
-    ZC_U8 data[ZC_FRAME_NALU_BUFF_MAX_SIZE];  // nalu info for create sdp
+    ZC_U32 type;                                // zc_nalu_type_e
+    ZC_U32 size;                                // size not contain 0x00, 0x00, 0x00, 0x01
+    ZC_U8 data[ZC_FRAME_NALU_BUFF_MAX_SIZE];    // nalu info for create sdp
 } zc_nalu_t;
 
 // video nalu for package sdp
@@ -96,7 +98,7 @@ typedef struct {
     ZC_U16 height;                        // picture height;
     ZC_U16 fps;
     ZC_U16 nalunum;
-    zc_nalu_t nalu[ZC_FRAME_NALU_MAX_SIZE];  // res;
+    zc_nalu_t nalu[ZC_FRAME_NALU_MAXNUM];  // res;
 } zc_video_naluinfo_t;
 
 // video nalu for package sdp
@@ -112,7 +114,7 @@ typedef struct {
     ZC_U8 res[1];                         // res;
     ZC_U16 width;                         // picture width;
     ZC_U16 height;                        // picture height;
-    ZC_U32 nalu[ZC_FRAME_NALU_MAX_SIZE];  // nalu info for create sdp
+    ZC_U32 nalu[ZC_FRAME_NALU_MAXNUM];    // nalu info for create sdp
 } zc_frame_video_t;
 
 // audio frame info
