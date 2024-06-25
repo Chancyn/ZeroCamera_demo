@@ -26,13 +26,13 @@ CModSys::~CModSys() {
     ZC_SAFE_DELETE(m_pMsgProc);
 }
 
-bool CModSys::Init() {
+bool CModSys::Init(void *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
     }
 
-    if (!m_pMsgProc->Init()) {
+    if (!m_pMsgProc->Init(cbinfo)) {
         LOG_TRACE("m_pMsgProc Init error");
         goto _err;
     }

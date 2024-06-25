@@ -13,14 +13,17 @@ extern "C" {
 // rtsp-server live shmfifo
 #define ZC_STREAM_VIDEO_SHM_PATH "v_live"
 #define ZC_STREAM_AUDIO_SHM_PATH "a_live"
+#define ZC_STREAM_META_SHM_PATH "m_live"
 
 // push-server -recv shmfifo
-#define ZC_STREAM_VIDEOPUSH_SHM_PATH "v_push"  // video push fifo / or client recv fifo
-#define ZC_STREAM_AUDIOPUSH_SHM_PATH "a_push"  // audio push fifo / or client recv fifo
+#define ZC_STREAM_VIDEOPUSH_SHM_PATH "v_pushs"  // video push fifo / or client recv fifo
+#define ZC_STREAM_AUDIOPUSH_SHM_PATH "a_pushs"  // audio push fifo / or client recv fifo
+#define ZC_STREAM_METAPUSH_SHM_PATH "m_pushs"
 
 // rtsp-cli pull recv shmfifo
 #define ZC_STREAM_VIDEOPULL_SHM_PATH "v_pull"  // video push fifo / or client recv fifo
 #define ZC_STREAM_AUDIOPULL_SHM_PATH "a_pull"  // audio push fifo / or client recv fifo
+#define ZC_STREAM_METAPULL_SHM_PATH "m_pull"
 
 // stream fifo max size
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)
@@ -65,6 +68,7 @@ typedef enum {
     ZC_FRAME_ENC_H265,
     ZC_FRAME_ENC_AAC,
 
+    ZC_FRAME_ENC_META_BIN,  // user data binary data
     ZC_FRAME_ENC_BUTT,
 } zc_frame_enc_e;
 

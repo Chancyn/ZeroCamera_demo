@@ -31,6 +31,7 @@ utils
 plat_basic
 bsw_basic
 zccrypto
+zcfifo
 zc_log
 nng
 #pthread

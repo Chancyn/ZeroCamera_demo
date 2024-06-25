@@ -75,8 +75,7 @@ ZC_S32 CMsgProcModSys::_handleRepSysManShutdown(zc_msg_t *rep, int size) {
 ZC_S32 CMsgProcModSys::_handleReqSysManKeepalive(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     LOG_TRACE("handle _handleReqSysManKeepalive,iqsize[%d]", iqsize);
     zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(req->data);
-    LOG_TRACE("handle keepalive mid[%u] seqno[%u] status[%d]", pkeepalive->mid, pkeepalive->seqno,
-              pkeepalive->status);
+    LOG_TRACE("handle keepalive mid[%u] seqno[%u] status[%d]", pkeepalive->mid, pkeepalive->seqno, pkeepalive->status);
 
     return 0;
 }
@@ -84,8 +83,84 @@ ZC_S32 CMsgProcModSys::_handleReqSysManKeepalive(zc_msg_t *req, int iqsize, zc_m
 ZC_S32 CMsgProcModSys::_handleRepSysManKeepalive(zc_msg_t *rep, int size) {
     LOG_TRACE("handle _handleRepSysManKeepalive,size[%d]", size);
     zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(rep->data);
-    LOG_TRACE("handle keepalive mid[%u] seqno[%u] status[%d]", pkeepalive->mid, pkeepalive->seqno,
-              pkeepalive->status);
+    LOG_TRACE("handle keepalive mid[%u] seqno[%u] status[%d]", pkeepalive->mid, pkeepalive->seqno, pkeepalive->status);
+
+    return 0;
+}
+
+// streamMgr
+ZC_S32 CMsgProcModSys::_handleReqSysSMgrRegister(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    LOG_TRACE("handle ReqSysSMgrRegister,iqsize[%d]", iqsize);
+    zc_mod_smgr_reg_t *pReg = reinterpret_cast<zc_mod_smgr_reg_t *>(req->data);
+    LOG_TRACE("handle Register mid[%u], pname[%s], pid[%u] status[%d]", pReg->mid, pReg->pname, pReg->pid,
+              pReg->status);
+
+    if (m_cbinfo.streamMgrHandleCb) {
+        m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, 0, nullptr, nullptr);
+    }
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleRepSysSMgrRegister(zc_msg_t *rep, int size) {
+    LOG_TRACE("handle RepSMgrRegister,size[%d]", size);
+    zc_mod_smgr_reg_t *pReg = reinterpret_cast<zc_mod_smgr_reg_t *>(rep->data);
+    LOG_TRACE("handle Register mid[%u], pname[%s], pid[%u] status[%d]", pReg->mid, pReg->pname, pReg->pid,
+              pReg->status);
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleReqSysSMgrUnRegister(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    LOG_TRACE("handle ReqSMgrUnRegister,iqsize[%d]", iqsize);
+    zc_mod_smgr_unreg_t *pReg = reinterpret_cast<zc_mod_smgr_unreg_t *>(req->data);
+    LOG_TRACE("handle UnRegister mid[%u], pname[%s], pid[%u] status[%d]", pReg->mid, pReg->pname, pReg->pid,
+              pReg->status);
+
+    if (m_cbinfo.streamMgrHandleCb) {
+        m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, 0, nullptr, nullptr);
+    }
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleRepSysSMgrUnRegister(zc_msg_t *rep, int size) {
+    LOG_TRACE("handle RepSMgrUnRegister,size[%d]", size);
+    zc_mod_smgr_unreg_t *pReg = reinterpret_cast<zc_mod_smgr_unreg_t *>(rep->data);
+    LOG_TRACE("handle UnRegister mid[%u], pname[%s], pid[%u] status[%d]", pReg->mid, pReg->pname, pReg->pid,
+              pReg->status);
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleReqSysSMgrGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    LOG_TRACE("handle ReqSysSMgrGet,iqsize[%d]", iqsize);
+    zc_mod_smgr_get_t *pGet = reinterpret_cast<zc_mod_smgr_get_t *>(req->data);
+    LOG_TRACE("handle Get");
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleRepSysSMgrGet(zc_msg_t *rep, int size) {
+    LOG_TRACE("handle RepSMgrGet,size[%d]", size);
+    zc_mod_smgr_get_t *pGet = reinterpret_cast<zc_mod_smgr_get_t *>(rep->data);
+    LOG_TRACE("handle Get");
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleReqSysSMgrSet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    LOG_TRACE("handle ReqSMgrSet,iqsize[%d]", iqsize);
+    zc_mod_smgr_set_t *pSet = reinterpret_cast<zc_mod_smgr_set_t *>(req->data);
+    LOG_TRACE("handle Set");
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModSys::_handleRepSysSMgrSet(zc_msg_t *rep, int size) {
+    LOG_TRACE("handle RepStreamMgSet,size[%d]", size);
+    zc_mod_smgr_set_t *pSet = reinterpret_cast<zc_mod_smgr_set_t *>(rep->data);
+    LOG_TRACE("handle Set");
 
     return 0;
 }
@@ -190,7 +265,7 @@ ZC_S32 CMsgProcModSys::_handleRepSysUpgStop(zc_msg_t *rep, int size) {
     return 0;
 }
 
-bool CMsgProcModSys::Init() {
+bool CMsgProcModSys::Init(void *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
@@ -208,6 +283,16 @@ bool CMsgProcModSys::Init() {
                  &CMsgProcModSys::_handleRepSysManShutdown);
     REGISTER_MSG(m_modid, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_KEEPALIVE_E, &CMsgProcModSys::_handleReqSysManKeepalive,
                  &CMsgProcModSys::_handleRepSysManKeepalive);
+
+    // ZC_MID_SYS_SMGR_E
+    REGISTER_MSG(m_modid, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_REGISTER_E,
+                 &CMsgProcModSys::_handleReqSysSMgrRegister, &CMsgProcModSys::_handleRepSysSMgrRegister);
+    REGISTER_MSG(m_modid, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_UNREGISTER_E,
+                 &CMsgProcModSys::_handleReqSysSMgrUnRegister, &CMsgProcModSys::_handleRepSysSMgrUnRegister);
+    REGISTER_MSG(m_modid, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_GET_E, &CMsgProcModSys::_handleReqSysSMgrGet,
+                 &CMsgProcModSys::_handleRepSysSMgrGet);
+    REGISTER_MSG(m_modid, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_SET_E, &CMsgProcModSys::_handleReqSysSMgrSet,
+                 &CMsgProcModSys::_handleRepSysSMgrSet);
 
     // ZC_MID_SYS_TIME_E
     REGISTER_MSG(m_modid, ZC_MID_SYS_TIME_E, ZC_MSID_SYS_TIME_GET_E, &CMsgProcModSys::_handleReqSysTimeGet,
@@ -233,6 +318,11 @@ bool CMsgProcModSys::Init() {
     REGISTER_MSG(m_modid, ZC_MID_SYS_UPG_E, ZC_MSID_SYS_UPG_STOP_E, &CMsgProcModSys::_handleReqSysUpgStop,
                  &CMsgProcModSys::_handleRepSysUpgStop);
     init();
+
+    if (cbinfo) {
+        memcpy(&m_cbinfo, cbinfo, sizeof(m_cbinfo));
+    }
+
     m_init = true;
 
     LOG_TRACE("Init ok");

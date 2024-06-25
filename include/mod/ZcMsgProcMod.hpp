@@ -13,7 +13,7 @@ class CMsgProcMod {
  public:
     CMsgProcMod(ZC_U8 modid, ZC_U16 idmax);
     virtual ~CMsgProcMod();
-    virtual bool Init() = 0;
+    virtual bool Init(void *cbinfo) = 0;
     virtual bool UnInit() = 0;
     ZC_S32 MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 MsgRepProc(zc_msg_t *rep, int size);

@@ -16,13 +16,13 @@ CRtspManager::~CRtspManager() {
     UnInit();
 }
 
-bool CRtspManager::Init() {
+bool CRtspManager::Init(rtsp_callback_info_t *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
     }
 
-    if (!CModRtsp::Init()) {
+    if (!CModRtsp::Init(cbinfo)) {
         LOG_TRACE("CModRtsp Init error");
         goto _err;
     }

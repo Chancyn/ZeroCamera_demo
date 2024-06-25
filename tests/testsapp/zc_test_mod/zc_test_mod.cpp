@@ -45,7 +45,7 @@ int zc_test_mod_start(int modid) {
         LOG_ERROR("test_mod modid[%d] Create error\n", modid);
         return false;
     }
-    g_ModTab[modid]->Init();
+    g_ModTab[modid]->Init(nullptr);
 
     if (modid != 0) {
         LOG_ERROR("zc_test_mod_sendreg modid[%d] \n", modid);

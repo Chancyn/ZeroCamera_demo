@@ -17,11 +17,13 @@ extern "C" {
 
 // module system, msg main id
 typedef enum {
-    ZC_MID_SYS_MAN_E = 0,  // manager other module
-    ZC_MID_SYS_TIME_E,     // time
-    ZC_MID_SYS_BASE_E,     // base
-    ZC_MID_SYS_USER_E,     // user
-    ZC_MID_SYS_UPG_E,      // upg
+    ZC_MID_SYS_MAN_E = 0,    // manager other module
+    ZC_MID_SYS_SMGR_E,  // streamMgr ctrl
+
+    ZC_MID_SYS_TIME_E,  // time
+    ZC_MID_SYS_BASE_E,  // base
+    ZC_MID_SYS_USER_E,  // user
+    ZC_MID_SYS_UPG_E,   // upg
 
     ZC_MID_SYS_BUTT,  // end
 } zc_mid_sys_e;
@@ -32,10 +34,20 @@ typedef enum {
     ZC_MSID_SYS_MAN_VERSION_E,       // version  submsg
     ZC_MSID_SYS_MAN_RESTART_E,       // restart submsg
     ZC_MSID_SYS_MAN_SHUTDOWN_E,      // shutdown submsg
-    ZC_MSID_SYS_MAN_KEEPALIVE_E,      // keepalive
+    ZC_MSID_SYS_MAN_KEEPALIVE_E,     // keepalive
 
     ZC_MSID_SYS_MAN_BUTT,  // end
 } zc_msid_sys_man_e;
+
+// msg sub id for streamMgr ZC_MID_SYS_STREAM_E
+typedef enum {
+    ZC_MSID_SMGR_REGISTER_E = 0,    // register , streamMgrCli send register to streamMgr
+    ZC_MSID_SMGR_UNREGISTER_E,  // unregister
+    ZC_MSID_SMGR_GET_E,             // set cfg
+    ZC_MSID_SMGR_SET_E,             // set cfg
+
+    ZC_MSID_SMGR_BUTT,  // end
+} zc_msid_sys_streammgr_e;
 
 // module system, msg sub id ZC_MID_SYS_TIME_E
 typedef enum {
@@ -78,13 +90,45 @@ typedef struct {
     ZC_U8 date[ZC_DATETIME_STR_SIZE];  // build time
 } zc_mod_reg_t;
 
-// register ZC_MSID_SYS_MAN_KEEPALIVE_E
+// keepalive ZC_MSID_SYS_MAN_KEEPALIVE_E
 typedef struct {
     ZC_U8 mid;      // mod id
     ZC_U8 rsv[3];   // mod rsv
     ZC_U32 seqno;   // mod version
     ZC_S32 status;  // mod status
 } zc_mod_keepalive_t;
+
+// register ZC_MSID_SMGR_REGISTER_E
+typedef struct {
+    ZC_U8 mid;        // mod id
+    ZC_U8 pid;        // pid
+    ZC_U8 rsv[2];     // rsv
+    ZC_S32 status;    // status
+    ZC_U32 rsv1[16];  // rsv
+    ZC_U8 pname[32];  // process name
+} zc_mod_smgr_reg_t;
+
+// register ZC_MSID_SMGR_UNREGISTER_E
+typedef struct {
+    ZC_U8 mid;        // mod id
+    ZC_U8 pid;        // pid
+    ZC_U8 rsv[2];     // rsv
+    ZC_S32 status;    // status
+    ZC_U32 rsv1[16];  // rsv
+    ZC_U8 pname[32];  // process name
+} zc_mod_smgr_unreg_t;
+
+// register ZC_MSID_SMGR_GET_E
+typedef struct {
+    // TODO(zhoucc): something
+    ZC_U8 data[1024];
+} zc_mod_smgr_get_t;
+
+// register ZC_MSID_SMGR_SET_E
+typedef struct {
+    // TODO(zhoucc): something
+    ZC_U8 data[1024];
+} zc_mod_smgr_set_t;
 
 // pub/sub
 typedef enum {

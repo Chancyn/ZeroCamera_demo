@@ -61,6 +61,22 @@ ZC_S32 CMsgProcModRtsp::_handleRepRtspManShutdown(zc_msg_t *rep, int size) {
     return 0;
 }
 
+ZC_S32 CMsgProcModRtsp::_handleReqRtspSMgrNotify(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    LOG_TRACE("handle ReqRtspSMgrNotify,iqsize[%d]", iqsize);
+
+    if (m_cbinfo.streamMgrHandleCb) {
+        m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, 0, nullptr, nullptr);
+    }
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModRtsp::_handleRepRtspSMgrNotify(zc_msg_t *rep, int size) {
+    LOG_TRACE("handle RepRtspSMgrNotify,size[%d]", size);
+
+    return 0;
+}
+
 // Cfg
 ZC_S32 CMsgProcModRtsp::_handleReqRtspCfgGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     LOG_TRACE("handle ReqRtspCfgGet,iqsize[%d]", iqsize);
@@ -98,7 +114,7 @@ ZC_S32 CMsgProcModRtsp::_handleRepRtspCtrlReqIDR(zc_msg_t *rep, int size) {
     return 0;
 }
 
-bool CMsgProcModRtsp::Init() {
+bool CMsgProcModRtsp::Init(void *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
@@ -116,6 +132,10 @@ bool CMsgProcModRtsp::Init() {
     REGISTER_MSG(m_modid, ZC_MID_RTSP_MAN_E, ZC_MSID_RTSP_MAN_SHUTDOWN_E, &CMsgProcModRtsp::_handleReqRtspManShutdown,
                  &CMsgProcModRtsp::_handleRepRtspManShutdown);
 
+    // ZC_MID_RTSP_STREAMMGR_E
+    REGISTER_MSG(m_modid, ZC_MID_RTSP_SMGR_E, ZC_MSID_RTSP_SMGR_NOTIFY_E, &CMsgProcModRtsp::_handleReqRtspSMgrNotify,
+                 &CMsgProcModRtsp::_handleRepRtspSMgrNotify);
+
     // ZC_MID_RTSP_CFG_E
     REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MSID_RTSP_CFG_GET_E, &CMsgProcModRtsp::_handleReqRtspCfgGet,
                  &CMsgProcModRtsp::_handleRepRtspCfgGet);
@@ -127,6 +147,10 @@ bool CMsgProcModRtsp::Init() {
                  &CMsgProcModRtsp::_handleRepRtspCtrlReqIDR);
 
     init();
+
+    if (cbinfo) {
+        memcpy(&m_cbinfo, cbinfo, sizeof(m_cbinfo));
+    }
 
     m_init = true;
 

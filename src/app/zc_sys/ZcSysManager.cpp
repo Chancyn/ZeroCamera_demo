@@ -15,13 +15,13 @@ CSysManager::~CSysManager() {
     _unInit();
 }
 
-bool CSysManager::Init() {
+bool CSysManager::Init(sys_callback_info_t *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
     }
 
-    if (!CModSys::Init()) {
+    if (!CModSys::Init(cbinfo)) {
         LOG_TRACE("CModRtsp Init error");
         goto _err;
     }

@@ -17,7 +17,7 @@ class CModBase : public CModComm, public Thread {
  public:
     explicit CModBase(ZC_U8 modid);
     virtual ~CModBase();
-    virtual bool Init() = 0;
+    virtual bool Init(void *cbinfo) = 0;
     virtual bool UnInit() = 0;
     bool BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modid, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size);
     bool MsgSendTo(zc_msg_t *pmsg, const char *urlto);

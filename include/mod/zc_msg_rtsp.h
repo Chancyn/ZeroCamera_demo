@@ -18,6 +18,8 @@ extern "C" {
 // module rtsp, msg main id
 typedef enum {
     ZC_MID_RTSP_MAN_E = 0,  // manager other module
+    ZC_MID_RTSP_SMGR_E,   // StreamMgrCli
+
     ZC_MID_RTSP_CFG_E,      // cfg
     ZC_MID_RTSP_CTRL_E,     // ctrl
 
@@ -32,6 +34,13 @@ typedef enum {
 
     ZC_MSID_MAN_RTSP_BUTT,  // end
 } zc_msid_rtsp_man_e;
+
+// module system, msg sub id
+typedef enum {
+    ZC_MSID_RTSP_SMGR_NOTIFY_E = 0,
+
+    ZC_MSID_RTSP_SMGR_BUTT,  // end
+} zc_msid_rtsp_smgr_e;
 
 // module system, msg sub id
 typedef enum {

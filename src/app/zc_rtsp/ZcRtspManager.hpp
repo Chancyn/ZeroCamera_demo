@@ -4,8 +4,8 @@
 #pragma once
 #include "zc_type.h"
 
-#include "rtsp/ZcModRtsp.hpp"
 #include "ZcRtspServer.hpp"
+#include "rtsp/ZcModRtsp.hpp"
 
 namespace zc {
 class CRtspManager : public CModRtsp, public CRtspServer {
@@ -14,7 +14,7 @@ class CRtspManager : public CModRtsp, public CRtspServer {
     virtual ~CRtspManager();
 
  public:
-    bool Init();
+    bool Init(rtsp_callback_info_t *cbinfo);
     bool UnInit();
     bool Start();
     bool Stop();
@@ -25,5 +25,7 @@ class CRtspManager : public CModRtsp, public CRtspServer {
  private:
     bool m_init;
     int m_running;
+
+    rtsp_callback_info_t m_cbinfo;
 };
 }  // namespace zc

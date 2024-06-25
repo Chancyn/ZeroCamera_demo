@@ -10,13 +10,25 @@
 #include "ZcModComm.hpp"
 
 namespace zc {
+// streamMgr handle mod msg callback
+typedef int (*StreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
+// RtspManager handle mod msg callback
+typedef int (*RtspMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
+
+typedef struct {
+    StreamMgrHandleMsgCb streamMgrHandleCb;
+    void *streamMgrContext;
+    RtspMgrHandleMsgCb MgrHandleCb;
+    void *MgrContext;
+} rtsp_callback_info_t;
+
 class CMsgProcModRtsp : public CMsgProcMod{
  public:
     CMsgProcModRtsp();
     virtual ~CMsgProcModRtsp();
 
  public:
-    virtual bool Init();
+    virtual bool Init(void *cbinfo);
     virtual bool UnInit();
 
  private:
@@ -30,6 +42,11 @@ class CMsgProcModRtsp : public CMsgProcMod{
     ZC_S32 _handleRepRtspManRestart(zc_msg_t *rep, int size);
     ZC_S32 _handleReqRtspManShutdown(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepRtspManShutdown(zc_msg_t *rep, int size);
+
+    // SMgr
+    ZC_S32 _handleReqRtspSMgrNotify(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    ZC_S32 _handleRepRtspSMgrNotify(zc_msg_t *rep, int size);
+
     // Cfg
     ZC_S32 _handleReqRtspCfgGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepRtspCfgGet(zc_msg_t *rep, int size);
@@ -42,5 +59,6 @@ class CMsgProcModRtsp : public CMsgProcMod{
 
  private:
     int m_init;
+    rtsp_callback_info_t m_cbinfo;
 };
 }  // namespace zc
