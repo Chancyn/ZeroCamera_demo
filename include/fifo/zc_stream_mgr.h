@@ -92,8 +92,8 @@ typedef struct zc_shmstream_info {
 
 // streammgr client info
 typedef struct _zc_streamcli {
-    int mod;
-    int pid;
+    ZC_U32 mod;
+    ZC_S32 pid;               // pid_t
     unsigned int lasttime;    // recv last msg time, for keepalive
 
     char pname[64];           // process name

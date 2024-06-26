@@ -2,20 +2,49 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-
 #include "zc_mod_base.h"
+#include "zc_type.h"
+#include <list>
 
 #include "ZcMsg.hpp"
 #include "ZcMsgProcMod.hpp"
 
 namespace zc {
+// handle callback enum
+typedef enum {
+    SYS_SMGR_HDL_REGISTER_E = 0,  // register
+    SYS_SMGR_HDL_UNREGISTER_E,    // unregister
+    SYS_SMGR_HDL_GETINFO_E,
+    SYS_SMGR_HDL_SETINFO_E,  // setmgrinfo
+
+    SYS_SMGR_HDL_BUTT_E,
+} sys_smgr_handle_e;
+
+// TODO(zhoucc): handle cmd type
+typedef enum {
+    SYS_MGR_HDL_RESTART_E = 0,
+    SYS_MGR_HDL_REGISTER_E,
+    SYS_MGR_HDL_UNREGISTER_E,
+
+    SYS_MGR_HDL_BUTT_E,
+} sys_mgr_handle_e;
+
+// register ZC_MSID_SMGR_REGISTER_E
+typedef struct {
+    ZC_S32 pid;                   // pid
+    ZC_U32 modid;                 // mod id
+    ZC_S32 status;                // status
+    ZC_CHAR pname[ZC_MAX_PNAME];  // process name
+} zc_sys_smgr_reg_t;
+
 // streamMgr handle mod msg callback
-typedef int (*StreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
+typedef int (*SysStreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
 // RtspManager handle mod msg callback
 typedef int (*SysMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
+// TODO(zhoucc): handle cmd type
 
 typedef struct {
-    StreamMgrHandleMsgCb streamMgrHandleCb;
+    SysStreamMgrHandleMsgCb streamMgrHandleCb;
     void *streamMgrContext;
     SysMgrHandleMsgCb MgrHandleCb;
     void *MgrContext;

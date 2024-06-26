@@ -46,6 +46,10 @@ ZC_S32 CMsgProcModRtsp::_handleReqRtspManRestart(zc_msg_t *req, int iqsize, zc_m
 ZC_S32 CMsgProcModRtsp::_handleRepRtspManRestart(zc_msg_t *rep, int size) {
     LOG_TRACE("handle RepRtspManRestart,size[%d]", size);
 
+    if (m_cbinfo.MgrHandleCb) {
+        m_cbinfo.MgrHandleCb(m_cbinfo.MgrContext, RTSP_MGR_HDL_RESTART_E, nullptr, nullptr);
+    }
+
     return 0;
 }
 
@@ -61,17 +65,17 @@ ZC_S32 CMsgProcModRtsp::_handleRepRtspManShutdown(zc_msg_t *rep, int size) {
     return 0;
 }
 
-ZC_S32 CMsgProcModRtsp::_handleReqRtspSMgrNotify(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
-    LOG_TRACE("handle ReqRtspSMgrNotify,iqsize[%d]", iqsize);
-
+ZC_S32 CMsgProcModRtsp::_handleReqRtspSMgrChgNotify(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    zc_mod_smgrcli_chgnotify_t *pReqMsg = reinterpret_cast<zc_mod_smgrcli_chgnotify_t *>(req->data);
+    LOG_TRACE("handle ReqRtspSMgrNotify,iqsize:%d,modid:%d ", iqsize, pReqMsg->modid);
     if (m_cbinfo.streamMgrHandleCb) {
-        m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, 0, nullptr, nullptr);
+        m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, RTSP_SMGR_HDL_CHG_NOTIFY_E, nullptr, nullptr);
     }
 
     return 0;
 }
 
-ZC_S32 CMsgProcModRtsp::_handleRepRtspSMgrNotify(zc_msg_t *rep, int size) {
+ZC_S32 CMsgProcModRtsp::_handleRepRtspSMgrChgNotify(zc_msg_t *rep, int size) {
     LOG_TRACE("handle RepRtspSMgrNotify,size[%d]", size);
 
     return 0;
@@ -133,8 +137,8 @@ bool CMsgProcModRtsp::Init(void *cbinfo) {
                  &CMsgProcModRtsp::_handleRepRtspManShutdown);
 
     // ZC_MID_RTSP_STREAMMGR_E
-    REGISTER_MSG(m_modid, ZC_MID_RTSP_SMGR_E, ZC_MSID_RTSP_SMGR_NOTIFY_E, &CMsgProcModRtsp::_handleReqRtspSMgrNotify,
-                 &CMsgProcModRtsp::_handleRepRtspSMgrNotify);
+    REGISTER_MSG(m_modid, ZC_MID_RTSP_SMGRCLI_E, ZC_MSID_SMGRCLI_CHGNOTIFY_E, &CMsgProcModRtsp::_handleReqRtspSMgrChgNotify,
+                 &CMsgProcModRtsp::_handleRepRtspSMgrChgNotify);
 
     // ZC_MID_RTSP_CFG_E
     REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MSID_RTSP_CFG_GET_E, &CMsgProcModRtsp::_handleReqRtspCfgGet,

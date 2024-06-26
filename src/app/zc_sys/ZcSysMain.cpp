@@ -42,7 +42,7 @@ static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *
 
 // SysManager handle mod msg callback
 static int SysMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
-    LOG_ERROR("SysMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    LOG_ERROR("SysMgrCb ptr:%p, type:%d", ptr, type);
     if (type == 0) {
         // TODO(zhoucc):
     }

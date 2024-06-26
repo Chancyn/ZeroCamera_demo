@@ -13,7 +13,21 @@ extern "C" {
 #define ZC_MSG_VERSION (1)  // version 1
 #define ZC_MODNAME_SIZE 32
 #define ZC_URL_SIZE 128
-#define ZC_DATETIME_STR_SIZE 128  // 2024-04-30 00:00:00
+#define ZC_DATETIME_STR_SIZE 32   // 2024-04-30 00:00:00
+#define ZC_MSG_ERRDETAIL_SIZE 64  // err detail
+
+typedef enum {
+    ZC_MSG_ERR_RIGHT_E = -6,       // msglen right error
+    ZC_MSG_ERR_PARAM_E = -5,       // msglen param error
+    ZC_MSG_ERR_LEN_E = -4,         // msglen error
+    ZC_MSG_ERR_LICENSE_E = -3,     // register error
+    ZC_MSG_ERR_UNREGISTER_E = -2,  // unregister error
+    ZC_MSG_ERR_E = -1,             // err
+    ZC_MSG_SUCCESS_E = 0,          // handle success < 0: not handle;
+    ZC_MSG_WARN_PARAM_E,           // Handle warning PARAM error
+
+    ZC_MSG_ERR_BUTT,  // end
+} zc_msg_errcode_e;
 
 // modid
 typedef enum {
@@ -52,25 +66,40 @@ typedef enum {
 
 // msg def
 typedef struct {
-    ZC_U8 ver;        // version;
-    ZC_U8 modid;      // modid,msg send moduleid zc_modid_e
-    ZC_U8 modidto;      // modid,msg send moduleid zc_modid_e
-    ZC_U8 msgtype;    // req/rep pub; zc_msg_type_e
-    ZC_U8 cmd;        // get/set/ctrl; zc_msgcmd_type_e
-    ZC_S8 chn;        // chn reserve data
-    ZC_U8 rsv[2];     // reserve data
-    ZC_U32 seq;       // seqno;
-    ZC_U16 id;        // msgid;
-    ZC_U16 sid;       // msgsubid;
-    ZC_U32 ts;        // timestamp
-    ZC_U32 ts1;       // timestamp1 for replay time
-    ZC_S32 err;       // errorno
-    ZC_U32 size;      // msgsize
-    ZC_U8 data[0];    // msgdata
+    ZC_S32 pid;     // pid
+    ZC_U32 modid;   // modid,msg send moduleid zc_modid_e
+    ZC_U8 modidto;  // modid,msg send moduleid zc_modid_e
+    ZC_U8 ver;      // version;
+    ZC_U8 msgtype;  // req/rep pub; zc_msg_type_e
+    ZC_U8 cmd;      // get/set/ctrl; zc_msgcmd_type_e
+    ZC_S8 chn;      // chn reserve data
+    ZC_U8 rsv[3];   // reserve data
+    ZC_U32 seq;     // seqno;
+    ZC_U16 id;      // msgid;
+    ZC_U16 sid;     // msgsubid;
+    ZC_U32 ts;      // timestamp
+    ZC_U32 ts1;     // timestamp1 for replay time
+    ZC_S32 err;     // errorno errcode
+    ZC_U32 size;    // msgsize
+    ZC_U8 data[0];  // msgdata
 } zc_msg_t;
 
 // typedef void(zc_msg_func_t)(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
 
+/***********************all moudle common msg ************************************************* */
+// streammgr, msg sub id
+typedef enum {
+    ZC_MSID_SMGRCLI_CHGNOTIFY_E = 0,  // info change notify
+
+    ZC_MSID_SMGRCLI_BUTT,  // end
+} zc_msid_smgrcli_e;
+
+//  ZC_MSID_SMGRCLI_CHGNOTIFY_E
+typedef struct {
+    ZC_U8 modid;  // moudleid
+    ZC_U8 rsv[3];
+    ZC_U8 rsv1[4];
+} zc_mod_smgrcli_chgnotify_t;
 
 #ifdef __cplusplus
 }

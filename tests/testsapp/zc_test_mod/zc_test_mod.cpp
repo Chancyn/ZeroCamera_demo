@@ -25,11 +25,12 @@ zc::CModBase *g_ModTab[ZC_MODID_BUTT] = {};
 static int zc_test_mod_sendreg(int modid, int modidto) {
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
     zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
+    zc_msg_t rmsg = {0};
+    size_t rlen = sizeof(rmsg);
 
     g_ModTab[modid]->BuildReqMsgHdr(pmsg, modidto, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_REGISTER_E, 0,
                                     sizeof(zc_mod_reg_t));
-    g_ModTab[modid]->MsgSendTo(pmsg, ZC_SYS_URL_IPC);
-    // g_ModTab[modid]->MsgSendTo(pmsg);
+    g_ModTab[modid]->MsgSendTo(pmsg, ZC_SYS_URL_IPC, &rmsg, &rlen);
 
     return 0;
 }

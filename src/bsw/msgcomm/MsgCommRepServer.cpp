@@ -16,8 +16,8 @@
 #include "ZcType.hpp"
 
 namespace zc {
-#define ZC_NNGREPMSG_SIZE (4096)
-#define ZC_NNGREPMSG_RECVFLAG (0)  // NNG_FLAG_ALLOC|NNG_FLAG_NONBLOCK
+#define ZC_NNGREPMSG_SIZE (4096)   // TODO(zhoucc):
+#define ZC_NNGREPMSG_RECVFLAG (0)  // block , NNG_FLAG_ALLOC|NNG_FLAG_NONBLOCK
 #define ZC_NNGREPMSG_SENDFLAG (0)
 
 CMsgCommRepServer::CMsgCommRepServer() : m_psock(new nng_socket()), m_handle(nullptr), m_running(0), m_tid(0) {}

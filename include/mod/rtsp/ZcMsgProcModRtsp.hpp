@@ -5,24 +5,40 @@
 
 #include "zc_mod_base.h"
 
+#include "ZcModComm.hpp"
 #include "ZcMsg.hpp"
 #include "ZcMsgProcMod.hpp"
-#include "ZcModComm.hpp"
 
 namespace zc {
+// TODO(zhoucc): handle cmd type
+typedef enum {
+    RTSP_SMGR_HDL_CHG_NOTIFY_E = 0,    // chg notify
+    RTSP_SMGR_HDL_GETINFO_E,
+    RTSP_SMGR_HDL_SETINFO_E,           // setmgrinfo
+
+    RTSP_SMGR_HDL_BUTT_E,
+} rtsp_smgr_handle_e;
+
+// TODO(zhoucc): handle cmd type
+typedef enum {
+    RTSP_MGR_HDL_RESTART_E = 0,
+
+    RTSP_MGR_HDL_BUTT_E,
+} rtsp_mgr_handle_e;
+
 // streamMgr handle mod msg callback
-typedef int (*StreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
+typedef int (*RtspStreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
 // RtspManager handle mod msg callback
 typedef int (*RtspMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
 
 typedef struct {
-    StreamMgrHandleMsgCb streamMgrHandleCb;
+    RtspStreamMgrHandleMsgCb streamMgrHandleCb;
     void *streamMgrContext;
     RtspMgrHandleMsgCb MgrHandleCb;
     void *MgrContext;
 } rtsp_callback_info_t;
 
-class CMsgProcModRtsp : public CMsgProcMod{
+class CMsgProcModRtsp : public CMsgProcMod {
  public:
     CMsgProcModRtsp();
     virtual ~CMsgProcModRtsp();
@@ -44,8 +60,8 @@ class CMsgProcModRtsp : public CMsgProcMod{
     ZC_S32 _handleRepRtspManShutdown(zc_msg_t *rep, int size);
 
     // SMgr
-    ZC_S32 _handleReqRtspSMgrNotify(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
-    ZC_S32 _handleRepRtspSMgrNotify(zc_msg_t *rep, int size);
+    ZC_S32 _handleReqRtspSMgrChgNotify(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    ZC_S32 _handleRepRtspSMgrChgNotify(zc_msg_t *rep, int size);
 
     // Cfg
     ZC_S32 _handleReqRtspCfgGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);

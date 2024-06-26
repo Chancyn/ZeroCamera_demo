@@ -101,6 +101,7 @@ typedef unsigned char BOOL;
 
 
 #define ZC_MAX_PATH 256
+#define ZC_MAX_PNAME 32
 
 #ifdef __cplusplus
 }

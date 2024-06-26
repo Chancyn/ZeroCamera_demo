@@ -11,17 +11,19 @@ extern "C" {
 #include "zc_msg.h"
 #include "zc_type.h"
 
-#define ZC_RTSP_MODNAME "modrtsp"     // modname
+#define ZC_RTSP_MODVERSION (0x01)              // modname
+#define ZC_RTSP_MODNAME "modrtsp"              // modname
 #define ZC_RTSP_URL_IPC "ipc:///tmp/rtsp_rep"  // req/rep url
 #define ZC_RTSP_URL_PUB "ipc:///tmp/rtsp_pub"  // pub/sub url
 
 // module rtsp, msg main id
 typedef enum {
+    // fixed man/smgrcli
     ZC_MID_RTSP_MAN_E = 0,  // manager other module
-    ZC_MID_RTSP_SMGR_E,   // StreamMgrCli
+    ZC_MID_RTSP_SMGRCLI_E,  // StreamMgrCli zc_msid_smgrcli_e
 
-    ZC_MID_RTSP_CFG_E,      // cfg
-    ZC_MID_RTSP_CTRL_E,     // ctrl
+    ZC_MID_RTSP_CFG_E,   // cfg
+    ZC_MID_RTSP_CTRL_E,  // ctrl
 
     ZC_MID_RTSP_BUTT,  // end
 } zc_mid_rtsp_e;
@@ -34,13 +36,6 @@ typedef enum {
 
     ZC_MSID_MAN_RTSP_BUTT,  // end
 } zc_msid_rtsp_man_e;
-
-// module system, msg sub id
-typedef enum {
-    ZC_MSID_RTSP_SMGR_NOTIFY_E = 0,
-
-    ZC_MSID_RTSP_SMGR_BUTT,  // end
-} zc_msid_rtsp_smgr_e;
 
 // module system, msg sub id
 typedef enum {

@@ -25,7 +25,7 @@ ZC_S32 CMsgBase::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsiz
 }
 
 ZC_S32 CMsgBase::MsgRepProc(zc_msg_t *rep, int size) {
-    LOG_TRACE("RepProc into, modid[%u], id[%hu],id[%hu]", m_modid, m_id, m_sid);
+    // LOG_TRACE("RepProc into, modid[%u], id[%hu],id[%hu]", m_modid, m_id, m_sid);
     ZC_ASSERT(rep->id == m_id);
     ZC_ASSERT(rep->sid == m_sid);
     if (m_repcb)

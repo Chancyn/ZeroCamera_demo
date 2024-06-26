@@ -97,4 +97,47 @@ bool CMsgCommReqClient::Recv(void *buf, size_t *len, int flags) {
     return false;
 }
 
+// block Sendto
+bool CMsgCommReqClient::SendTo(void *buf, size_t len, void *rbuf, size_t *rlen) {
+    nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+    if (psock->id != 0) {
+        int rv;
+        // LOG_TRACE("into send msg %d %s", psock->id, buf);
+        if ((rv = nng_send(*psock, buf, len, 0)) != 0) {
+            LOG_ERROR("send msg error %d %s", rv, nng_strerror(rv));
+            return false;
+        }
+
+        if ((rv = nng_recv(*psock, rbuf, rlen, 0)) != 0) {
+            LOG_ERROR("recv msg error %d %s", rv, nng_strerror(rv));
+            return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool CMsgCommReqClient::SendToNonBlock(void *buf, size_t len, void *rbuf, size_t *rlen) {
+    nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
+    if (psock->id != 0) {
+        int rv;
+        // LOG_TRACE("into send msg %d %s", psock->id, buf);
+        if ((rv = nng_send(*psock, buf, len, NNG_FLAG_NONBLOCK)) != 0) {
+            LOG_ERROR("send msg error %d %s", rv, nng_strerror(rv));
+            return false;
+        }
+
+        if ((rv = nng_recv(*psock, rbuf, rlen, NNG_FLAG_NONBLOCK)) != 0) {
+            LOG_ERROR("recv msg error %d %s", rv, nng_strerror(rv));
+            return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 }  // namespace zc

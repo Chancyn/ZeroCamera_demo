@@ -9,6 +9,19 @@
 #include "zc_mod_base.h"
 
 namespace zc {
+#define ZC_MOD_LIC_EXPIRE_TIME (24 * 3600)  // temporary license expired time
+
+// license status
+typedef enum {
+    SYS_LIC_STATUS_EXPIRED_LIC_E = -2,  // expired license
+    SYS_LIC_STATUS_ERR_E = -1,          // license error assert
+    SYS_LIC_STATUS_INIT_E = 0,          // unload license
+    SYS_LIC_STATUS_TEMP_LIC_E,          // temporary license, for debug test
+    SYS_LIC_STATUS_SUC_E,               // success perpetual register
+
+    SYS_LIC_STATUS_BUTT_E,
+} sys_lic_status_e;
+
 class CMsgProcMod {
  public:
     CMsgProcMod(ZC_U8 modid, ZC_U16 idmax);
@@ -23,6 +36,11 @@ class CMsgProcMod {
     bool init();
     bool uninit();
 
+ private:
+    // first init license
+    void _initlicense();
+    int _checklicense();
+
  protected:
     ZC_U8 m_modid;
     ZC_U16 m_idmax;
@@ -30,5 +48,8 @@ class CMsgProcMod {
 
  private:
     int m_init;
+    ZC_U32 m_expire;                  // license expire time
+    ZC_U32 m_inittime;                // license load time
+    sys_lic_status_e m_syslicstatus;  // license status
 };
 }  // namespace zc
