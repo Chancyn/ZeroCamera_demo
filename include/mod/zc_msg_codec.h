@@ -11,10 +11,8 @@ extern "C" {
 #include "zc_msg.h"
 #include "zc_type.h"
 
+#
 #define ZC_CODEC_MODNAME "modcodec"     // modname
-#define ZC_CODEC_URL_IPC "ipc:///tmp/codec_rep"  // req/rep url
-#define ZC_CODEC_URL_PUB "ipc:///tmp/codec_pub"  // pub/sub url
-
 // module codec, msg main id
 typedef enum {
     ZC_MID_CODEC_MAN_E = 0,  // manager other module

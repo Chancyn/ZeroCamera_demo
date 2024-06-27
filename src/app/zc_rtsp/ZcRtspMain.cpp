@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "zc_log.h"
+#include "zc_proc.h"
 
 #include "ZcRtspManager.hpp"
 #include "ZcStreamMgrCli.hpp"
@@ -17,7 +18,7 @@
 #endif
 
 #define ZC_LOG_PATH "./log"
-#define ZC_APP_NAME "zc_rtsp.log"
+#define ZC_APP_NAME "zc_rtsp"
 #define ZC_LOG_APP_NAME "zc_rtsp.log"
 
 static BOOL bExitFlag = FALSE;
@@ -37,7 +38,7 @@ static void InitSignals() {
 
 // streamMgr handle mod msg callback
 static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
-    LOG_ERROR("StreamMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    // LOG_TRACE("StreamMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
     if (type == 0) {
         // TODO(zhoucc):
     }
@@ -47,7 +48,7 @@ static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *
 
 // RtspManager handle mod msg callback
 static int RtspMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
-    LOG_ERROR("RtspMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    // LOG_TRACE("RtspMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
     if (type == 0) {
         // TODO(zhoucc):
     }
@@ -56,9 +57,13 @@ static int RtspMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *ou
 }
 
 int main(int argc, char **argv) {
-    printf("main into\n");
+    ZC_PROC_SETNAME(ZC_APP_NAME);
+    char pname[ZC_MAX_PNAME] = {0};
+    ZC_PROC_GETNAME(pname, ZC_MAX_PNAME);
+
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
+    LOG_INFO("process[%s,%s], build:[%s]\n",argv[0], pname, g_buildDateTime);
 #if (ZC_LIVE_TEST && DZC_LIVE_TEST_THREADSHARED)
 #warning "zhoucc not process share testwrite"
     g_ZCLiveTestWriterInstance.Init();
@@ -67,7 +72,7 @@ int main(int argc, char **argv) {
     cli.mod = ZC_MODID_RTSP_E;
     cli.pid = getpid();
 
-    strncpy(cli.pname, ZC_APP_NAME, sizeof(cli.pname) - 1);
+    strncpy(cli.pname, pname, sizeof(cli.pname) - 1);
     g_ZCStreamMgrCliInstance.Init(&cli);
     zc::CRtspManager rtsp;
 

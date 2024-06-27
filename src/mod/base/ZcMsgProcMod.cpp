@@ -25,17 +25,14 @@ CMsgProcMod::~CMsgProcMod() {
 }
 
 ZC_S32 CMsgProcMod::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
-    if (unlikely(_checklicense() < 0)) {
-        return -1;
-    }
-    LOG_TRACE("MsgReqProc into, pid:%d,modid:%u, id[%hu],id[%hu]", req->pid, req->modid, req->id, req->sid);
+    // LOG_TRACE("MsgReqProc into, pid:%d,modid:%u, id[%hu],id[%hu]", req->pid, req->modid, req->id, req->sid);
     ZC_U32 key = (req->id << 16) | req->sid;
     auto it = m_msgmap.find(key);
     if (it != m_msgmap.end()) {
-        it->second->MsgReqProc(req, iqsize, rep, opsize);
+        return it->second->MsgReqProc(req, iqsize, rep, opsize);
     }
 
-    return 0;
+    return ZC_MSG_ERR_CMDID_E;
 }
 
 ZC_S32 CMsgProcMod::MsgRepProc(zc_msg_t *rep, int size) {
@@ -43,11 +40,11 @@ ZC_S32 CMsgProcMod::MsgRepProc(zc_msg_t *rep, int size) {
         return -1;
     }
 
-    LOG_TRACE("RepProc into, modid[%u], id[%hu],id[%hu]", m_modid, rep->id, rep->sid);
+    // LOG_TRACE("RepProc into, modid[%u], id[%hu],id[%hu]", m_modid, rep->id, rep->sid);
     ZC_U32 key = (rep->id << 16) | rep->sid;
     auto it = m_msgmap.find(key);
     if (it != m_msgmap.end()) {
-        it->second->MsgRepProc(rep, size);
+        return it->second->MsgRepProc(rep, size);
     }
 
     return 0;
@@ -67,9 +64,6 @@ bool CMsgProcMod::init() {
     if (m_init) {
         return false;
     }
-
-    // init license
-    _initlicense();
 
     // check map
     if (m_msgmap.size() <= 0) {
@@ -95,27 +89,5 @@ bool CMsgProcMod::uninit() {
     m_init = false;
     LOG_TRACE("uninit ok");
     return true;
-}
-
-int CMsgProcMod::_checklicense() {
-    if (unlikely(m_syslicstatus == SYS_LIC_STATUS_TEMP_LIC_E)) {
-        time_t now = time(NULL);
-        if (now > m_expire) {
-            m_syslicstatus = SYS_LIC_STATUS_EXPIRED_LIC_E;
-            LOG_ERROR("license timeout now:%u > %u", now, m_expire);
-        }
-    }
-
-    return m_syslicstatus;
-}
-void CMsgProcMod::_initlicense() {
-    // TODO(zhoucc): load license
-    m_inittime = time(NULL);
-    m_syslicstatus = SYS_LIC_STATUS_SUC_E;
-    m_expire = m_inittime + ZC_MOD_LIC_EXPIRE_TIME;
-    LOG_TRACE("modid:%d init license:%d", m_modid, m_syslicstatus);
-    ZC_ASSERT(m_syslicstatus != SYS_LIC_STATUS_ERR_E);
-
-    return;
 }
 }  // namespace zc

@@ -19,9 +19,9 @@ ZC_S32 CMsgBase::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsiz
     ZC_ASSERT(req->id == m_id);
     ZC_ASSERT(req->sid == m_sid);
     if (m_reqcb)
-        m_reqcb(req, iqsize, rep, opsize);
+        return m_reqcb(req, iqsize, rep, opsize);
 
-    return 0;
+    return -1;
 }
 
 ZC_S32 CMsgBase::MsgRepProc(zc_msg_t *rep, int size) {
@@ -29,9 +29,9 @@ ZC_S32 CMsgBase::MsgRepProc(zc_msg_t *rep, int size) {
     ZC_ASSERT(rep->id == m_id);
     ZC_ASSERT(rep->sid == m_sid);
     if (m_repcb)
-        m_repcb(rep, size);
+        return m_repcb(rep, size);
 
-    return 0;
+    return -1;
 }
 
 }  // namespace zc

@@ -58,11 +58,16 @@ class CModBase : public CModComm, public Thread {
     bool unInit();
 
  private:
+    // first init license
+    void _initlicense();
+    int _checklicense();
     bool registerInsert(zc_msg_t *msg);
     bool unregisterRemove(zc_msg_t *msg);
     bool updateStatus(zc_msg_t *msg);
-    ZC_S32 _svrSysRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
-    ZC_S32 _svrRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
+    zc_msg_errcode_e _svrSysRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    ZC_S32 svrSysRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
+    zc_msg_errcode_e _svrRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    ZC_S32 svrRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
     ZC_S32 _cliRecvRepProc(char *rep, int size);
 
     int updateStatus(ZC_S32 pid);
@@ -75,6 +80,10 @@ class CModBase : public CModComm, public Thread {
  private:
     bool m_init;
     int m_status;
+    ZC_U32 m_expire;                  // license expire time
+    ZC_U32 m_inittime;                // license load time
+    sys_lic_status_e m_syslicstatus;  // license status
+
     ZC_S32 m_pid;
     ZC_U8 m_modid;
     ZC_U32 m_seqno;

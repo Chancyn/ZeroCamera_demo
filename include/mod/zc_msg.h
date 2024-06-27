@@ -10,6 +10,33 @@ extern "C" {
 
 #include "zc_type.h"
 
+#define ZC_MSG_TRANSPORT_IPC 0
+#define ZC_MSG_TRANSPORT_TCP 1
+#define ZC_MSG_TRANSPORT_UDP 0
+
+#if ZC_MSG_TRANSPORT_IPC
+#define ZC_SYS_URL_IPC "ipc:///tmp/sys_rep"      // req/rep url
+#define ZC_SYS_URL_PUB "ipc:///tmp/sys_pub"      // pub/sub url
+#define ZC_CODEC_URL_IPC "ipc:///tmp/codec_rep"  // req/rep url
+#define ZC_CODEC_URL_PUB "ipc:///tmp/codec_pub"  // pub/sub url
+#define ZC_RTSP_URL_IPC "ipc:///tmp/rtsp_rep"    // req/rep url
+#define ZC_RTSP_URL_PUB "ipc:///tmp/rtsp_pub"    // pub/sub url
+#elif ZC_MSG_TRANSPORT_TCP
+#define ZC_SYS_URL_IPC "tcp://127.0.0.1:8880"    // req/rep url
+#define ZC_SYS_URL_PUB "tcp://127.0.0.1:8881"    // pub/sub url
+#define ZC_CODEC_URL_IPC "tcp://127.0.0.1:8882"  // req/rep url
+#define ZC_CODEC_URL_PUB "tcp://127.0.0.1:8883"  // pub/sub url
+#define ZC_RTSP_URL_IPC "tcp://127.0.0.1:8884"   // req/rep url
+#define ZC_RTSP_URL_PUB "tcp://127.0.0.1:8885"   // pub/sub url
+#elif ZC_MSG_TRANSPORT_UDP
+#define ZC_SYS_URL_IPC "udp://127.0.0.1:8880"    // req/rep url
+#define ZC_SYS_URL_PUB "udp://127.0.0.1:8881"    // pub/sub url
+#define ZC_CODEC_URL_IPC "udp://127.0.0.1:8882"  // req/rep url
+#define ZC_CODEC_URL_PUB "udp://127.0.0.1:8883"  // pub/sub url
+#define ZC_RTSP_URL_IPC "udp://127.0.0.1:8884"   // req/rep url
+#define ZC_RTSP_URL_PUB "udp://127.0.0.1:8885"   // pub/sub url
+#endif
+
 #define ZC_MSG_VERSION (1)  // version 1
 #define ZC_MODNAME_SIZE 32
 #define ZC_URL_SIZE 128
@@ -17,10 +44,11 @@ extern "C" {
 #define ZC_MSG_ERRDETAIL_SIZE 64  // err detail
 
 typedef enum {
-    ZC_MSG_ERR_RIGHT_E = -6,       // msglen right error
-    ZC_MSG_ERR_PARAM_E = -5,       // msglen param error
+    ZC_MSG_ERR_RIGHT_E = -7,       // msglen right error
+    ZC_MSG_ERR_PARAM_E = -6,       // msglen param error
+    ZC_MSG_ERR_CMDID_E = -5,       // error cmdid
     ZC_MSG_ERR_LEN_E = -4,         // msglen error
-    ZC_MSG_ERR_LICENSE_E = -3,     // register error
+    ZC_MSG_ERR_LICENSE_E = -3,     // license error
     ZC_MSG_ERR_UNREGISTER_E = -2,  // unregister error
     ZC_MSG_ERR_E = -1,             // err
     ZC_MSG_SUCCESS_E = 0,          // handle success < 0: not handle;

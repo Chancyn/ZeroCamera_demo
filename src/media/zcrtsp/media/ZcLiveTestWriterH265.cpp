@@ -24,6 +24,12 @@
 #include "ZcType.hpp"
 #include "zc_basic_stream.h"
 
+// for debug dump
+#define ZC_DEBUG_DUMP 0
+#if ZC_DEBUG_DUMP
+#include "zc_basic_fun.h"
+#endif
+
 extern "C" uint32_t rtp_ssrc(void);
 
 #if ZC_LIVE_TEST
@@ -109,9 +115,9 @@ int CLiveTestWriterH265::_putData2FIFO() {
             frame.utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
             frame.pts = frame.utc;  // m_pos;
 
-#if ZC_DUMP_STREAM  // dump
+#if ZC_DUMP_BINSTREAM  // dump
             if (frame.keyflag)
-                zc_debug_dump_stream(__FUNCTION__, ZC_FRAME_ENC_H265, ptr, 64);
+                zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, ptr, 64);
 #endif
 
             test_raw_frame_t raw;
@@ -138,7 +144,6 @@ int CLiveTestWriterH265::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
     tmp.nalunum = 0;
     for (it = sps.begin(); it != sps.end(); ++it) {
         unsigned int naltype = ((*(it->first)) & 0x7E) >> 1;
-        ;
         size_t bytes = it->second;
         LOG_WARN("naluinfo %p, type:0x%d, size:%d", it->first, naltype, bytes);
 
@@ -162,8 +167,8 @@ int CLiveTestWriterH265::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
             nalu->type = type;
             LOG_WARN("fillSdpInfo num:%d, type:%d, size:%d", tmp.nalunum, type, nalu->size);
 
-#if ZC_DUMP_STREAM  // dump
-            zc_debug_dump_stream("dump nalu", ZC_FRAME_ENC_H265, nalu->data, nalu->size);
+#if ZC_DUMP_BINSTREAM  // dump
+            zc_debug_dump_binstream("dump nalu", ZC_FRAME_ENC_H265, nalu->data, nalu->size);
 #endif
             tmp.nalunum++;
             if (tmp.nalunum >= ZC_FRAME_NALU_MAXNUM) {

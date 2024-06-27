@@ -13,8 +13,6 @@ extern "C" {
 
 #define ZC_RTSP_MODVERSION (0x01)              // modname
 #define ZC_RTSP_MODNAME "modrtsp"              // modname
-#define ZC_RTSP_URL_IPC "ipc:///tmp/rtsp_rep"  // req/rep url
-#define ZC_RTSP_URL_PUB "ipc:///tmp/rtsp_pub"  // pub/sub url
 
 // module rtsp, msg main id
 typedef enum {

@@ -43,10 +43,7 @@ ZC_S32 CMsgProcModSys::_handleReqSysManRegister(zc_msg_t *req, int iqsize, zc_ms
 
     zc_mod_reg_t *msgreq = reinterpret_cast<zc_mod_reg_t *>(req->data);
 
-    // copy hdr
-    memcpy(rep, req, sizeof(zc_msg_t));
     *opsize = sizeof(zc_msg_t);
-    rep->msgtype = ZC_MSG_TYPE_REP_E;
     int ret = 0;
     if (m_cbinfo.MgrHandleCb) {
         m_cbinfo.MgrHandleCb(m_cbinfo.MgrContext, 0, nullptr, nullptr);
@@ -96,11 +93,7 @@ ZC_S32 CMsgProcModSys::_handleReqSysManKeepalive(zc_msg_t *req, int iqsize, zc_m
     zc_mod_keepalive_t *msgreq = reinterpret_cast<zc_mod_keepalive_t *>(req->data);
     zc_mod_keepalive_rep_t *msgrep = reinterpret_cast<zc_mod_keepalive_rep_t *>(rep->data);
 
-    // copy hdr
-    memcpy(rep, req, sizeof(zc_msg_t));
     *opsize = sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_rep_t);
-    rep->msgtype = ZC_MSG_TYPE_REP_E;
-    rep->err = 0;
     msgrep->seqno = msgrep->seqno;
     msgrep->status = 0;
     strncpy(msgrep->date, msgreq->date, sizeof(msgrep->date) - 1);

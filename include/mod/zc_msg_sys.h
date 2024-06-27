@@ -11,9 +11,7 @@ extern "C" {
 #include "zc_msg.h"
 #include "zc_type.h"
 
-#define ZC_SYS_MODNAME "modsys"              // modname
-#define ZC_SYS_URL_IPC "ipc:///tmp/sys_rep"  // req/rep url
-#define ZC_SYS_URL_PUB "ipc:///tmp/sys_pub"  // pub/sub url
+#define ZC_SYS_MODNAME "modsys"  // modname
 
 // module system, msg main id
 typedef enum {

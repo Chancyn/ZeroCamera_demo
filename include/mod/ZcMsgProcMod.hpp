@@ -36,11 +36,6 @@ class CMsgProcMod {
     bool init();
     bool uninit();
 
- private:
-    // first init license
-    void _initlicense();
-    int _checklicense();
-
  protected:
     ZC_U8 m_modid;
     ZC_U16 m_idmax;
@@ -48,8 +43,5 @@ class CMsgProcMod {
 
  private:
     int m_init;
-    ZC_U32 m_expire;                  // license expire time
-    ZC_U32 m_inittime;                // license load time
-    sys_lic_status_e m_syslicstatus;  // license status
 };
 }  // namespace zc

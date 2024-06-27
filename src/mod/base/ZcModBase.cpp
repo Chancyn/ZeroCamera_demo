@@ -1,6 +1,7 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
+#include <cstdint>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,20 +10,20 @@
 
 #include <functional>
 
+#include "zc_basic_fun.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_mod_base.h"
 #include "zc_msg_codec.h"
 #include "zc_msg_rtsp.h"
 #include "zc_msg_sys.h"
+#include "zc_proc.h"
 #include "zc_type.h"
 
 #include "ZcModBase.hpp"
 #include "ZcType.hpp"
 
 namespace zc {
-const char *g_buildDateTime = __DATE__ "-" __TIME__;
-
 const char *g_Modurltab[ZC_MODID_BUTT] = {
     ZC_SYS_URL_IPC,
     ZC_CODEC_URL_IPC,
@@ -49,6 +50,13 @@ static inline const char *get_name_bymodid(ZC_U8 modid) {
     return g_Modnametab[modid];
 }
 
+static inline void BuildRepMsgHdr(zc_msg_t *rep, zc_msg_t *req) {
+    memcpy(rep, req, sizeof(zc_msg_t));
+    rep->msgtype = ZC_MSG_TYPE_REP_E;
+    rep->ts1 = zc_system_time();
+    return;
+}
+
 const char *CModBase::GetUrlbymodid(ZC_U8 modid) {
     return get_url_bymodid(modid);
 }
@@ -59,10 +67,34 @@ CModBase::CModBase(ZC_U8 modid, ZC_U32 version)
     m_pid = getpid();
     strncpy(m_url, get_url_bymodid(modid), sizeof(m_url) - 1);
     strncpy(m_name, get_name_bymodid(modid), sizeof(m_name) - 1);
+    ZC_PROC_GETNAME(m_pname, sizeof(m_pname));
 }
 
 CModBase::~CModBase() {
     unInit();
+}
+
+int CModBase::_checklicense() {
+    if (unlikely(m_syslicstatus == SYS_LIC_STATUS_TEMP_LIC_E)) {
+        time_t now = time(NULL);
+        if (now > m_expire) {
+            m_syslicstatus = SYS_LIC_STATUS_EXPIRED_LIC_E;
+            LOG_ERROR("license timeout now:%u > %u", now, m_expire);
+        }
+    }
+
+    return m_syslicstatus;
+}
+
+void CModBase::_initlicense() {
+    // TODO(zhoucc): load license
+    m_inittime = time(NULL);
+    m_syslicstatus = SYS_LIC_STATUS_SUC_E;
+    m_expire = m_inittime + ZC_MOD_LIC_EXPIRE_TIME;
+    LOG_TRACE("modid:%d init license:%d", m_modid, m_syslicstatus);
+    ZC_ASSERT(m_syslicstatus != SYS_LIC_STATUS_ERR_E);
+
+    return;
 }
 
 bool CModBase::init() {
@@ -70,13 +102,16 @@ bool CModBase::init() {
         LOG_ERROR("already init");
         return false;
     }
+
+    // init license
+    _initlicense();
+
     MsgCommReqSerHandleCb svrreq = nullptr;
     if (m_modid == ZC_MODID_SYS_E) {
-        // _svrSysRecvReqProc
-        svrreq = std::bind(&CModBase::_svrRecvReqProc, this, std::placeholders::_1, std::placeholders::_2,
+        svrreq = std::bind(&CModBase::svrSysRecvReqProc, this, std::placeholders::_1, std::placeholders::_2,
                            std::placeholders::_3, std::placeholders::_4);
     } else {
-        svrreq = std::bind(&CModBase::_svrRecvReqProc, this, std::placeholders::_1, std::placeholders::_2,
+        svrreq = std::bind(&CModBase::svrRecvReqProc, this, std::placeholders::_1, std::placeholders::_2,
                            std::placeholders::_3, std::placeholders::_4);
     }
 
@@ -128,42 +163,82 @@ bool CModBase::unregisterMsgProcMod(CMsgProcMod *msgprocmod) {
 }
 
 // sys mod
-ZC_S32 CModBase::_svrSysRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
+zc_msg_errcode_e CModBase::_svrSysRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    if (unlikely(_checklicense() < 0)) {
+        LOG_TRACE("mod license error pid:%d,modid:%u", req->pid, req->modid);
+        return ZC_MSG_ERR_LICENSE_E;
+    }
+
+    int ret = ZC_MSG_ERR_E;
     static ZC_U32 registerkey = (ZC_MID_SYS_MAN_E << 16) | ZC_MSID_SYS_MAN_REGISTER_E;
     // TODO(zhoucc) find msg procss mod
     if (m_pmsgmodproc) {
-        zc_msg_t *reqmsg = reinterpret_cast<zc_msg_t *>(req);
-        ZC_U32 key = (reqmsg->id << 16) | reqmsg->sid;
-
+        ZC_U32 key = (req->id << 16) | req->sid;
         if (likely(key != registerkey)) {
-            if (updateStatus(reqmsg)) {
-                return m_pmsgmodproc->MsgReqProc(reqmsg, iqsize, reinterpret_cast<zc_msg_t *>(rep), opsize);
+            if (updateStatus(req)) {
+                ret = m_pmsgmodproc->MsgReqProc(req, iqsize, rep, opsize);
             } else {
-                LOG_ERROR("mod unregister donot handle pid:%d,modid:%u", reqmsg->pid, reqmsg->modid);
-                return 0;
+                ret = ZC_MSG_ERR_UNREGISTER_E;
             }
         } else {
-            zc_msg_t *repmsg = reinterpret_cast<zc_msg_t *>(rep);
-            zc_mod_reg_t *reqreg = reinterpret_cast<zc_mod_reg_t *>(reqmsg->data);
-            m_pmsgmodproc->MsgReqProc(reqmsg, iqsize, repmsg, opsize);
-            if (reqreg->regcmd == ZC_SYS_REGISTER_E || repmsg->err >= 0) {
-                registerInsert(reqmsg);
-            } else if (reqreg->regcmd == ZC_SYS_UNREGISTER_E) {
-                // handle error or unregister
-                unregisterRemove(reqmsg);
+            zc_mod_reg_t *reqreg = reinterpret_cast<zc_mod_reg_t *>(req->data);
+            ret = m_pmsgmodproc->MsgReqProc(req, iqsize, rep, opsize);
+            if (ret >= 0) {
+                if (reqreg->regcmd == ZC_SYS_REGISTER_E) {
+                    registerInsert(req);
+                } else if (reqreg->regcmd == ZC_SYS_UNREGISTER_E) {
+                    // handle error or unregister
+                    unregisterRemove(req);
+                }
             }
         }
     }
 
-    return 0;
+    return (zc_msg_errcode_e)ret;
 }
 
-ZC_S32 CModBase::_svrRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
+ZC_S32 CModBase::svrSysRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
+    int ret = 0;
+    zc_msg_t *reqmsg = reinterpret_cast<zc_msg_t *>(req);
+    zc_msg_t *repmsg = reinterpret_cast<zc_msg_t *>(rep);
+    ret = _svrSysRecvReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, repmsg, opsize);
+    BuildRepMsgHdr(repmsg, reqmsg);
+    repmsg->err = ret;
+    if (ret < 0) {
+        // error just replay hdr
+        *opsize = sizeof(zc_msg_t);
+        LOG_ERROR("proc error ret:%d, id:%hu,%hu, pid:%d,modid:%u", ret, reqmsg->id, reqmsg->sid, reqmsg->pid,
+                  reqmsg->modid);
+    }
+    LOG_TRACE("proc ret:%d, id:%hu,%hu, pid:%d,modid:%u", ret, reqmsg->id, reqmsg->sid, reqmsg->pid, reqmsg->modid);
+
+    return ret;
+}
+
+zc_msg_errcode_e CModBase::_svrRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     // TODO(zhoucc) find msg procss mod
     if (m_pmsgmodproc) {
-        return m_pmsgmodproc->MsgReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, reinterpret_cast<zc_msg_t *>(rep),
-                                         opsize);
+        return (zc_msg_errcode_e)m_pmsgmodproc->MsgReqProc(req, iqsize, rep, opsize);
     }
+
+    return ZC_MSG_ERR_E;
+}
+
+int CModBase::svrRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
+    int ret = 0;
+    zc_msg_t *reqmsg = reinterpret_cast<zc_msg_t *>(req);
+    zc_msg_t *repmsg = reinterpret_cast<zc_msg_t *>(rep);
+    ret = _svrRecvReqProc(reqmsg, iqsize, repmsg, opsize);
+    BuildRepMsgHdr(repmsg, reqmsg);
+    repmsg->err = ret;
+    if (ret < 0) {
+        // error just replay hdr
+        *opsize = sizeof(zc_msg_t);
+        LOG_ERROR("proc error ret:%d, id:%hu,%hu, pid:%d,modid:%u", ret, reqmsg->id, reqmsg->sid, reqmsg->pid,
+                  reqmsg->modid);
+        return 0;
+    }
+    LOG_TRACE("proc ret:%d, id:%hu,%hu, pid:%d,modid:%u", ret, reqmsg->id, reqmsg->sid, reqmsg->pid, reqmsg->modid);
 
     return 0;
 }
@@ -188,6 +263,7 @@ bool CModBase::BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modidto, ZC_U16 id, ZC_U16 s
     pmsg->sid = sid;
     pmsg->size = size;
     pmsg->err = 0;
+    pmsg->ts = zc_system_time();
 
     return true;
 }
@@ -220,16 +296,17 @@ int CModBase::_sendRegisterMsg(int cmd) {
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
     zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
     zc_mod_reg_t *preg = reinterpret_cast<zc_mod_reg_t *>(pmsg->data);
-    zc_msg_t rmsg = {0};
-    size_t rlen = sizeof(rmsg);
     BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_REGISTER_E, 0, sizeof(zc_mod_reg_t));
     preg->regcmd = cmd;
     preg->ver = m_version;
     strncpy(preg->date, g_buildDateTime, sizeof(preg->date) - 1);
     strncpy(preg->pname, m_pname, sizeof(preg->pname) - 1);
-
     LOG_TRACE("send register:%d pid:%d,modid:%d, pname:%s,mod:%s,date:%s", preg->regcmd, pmsg->pid, pmsg->modid,
               preg->pname, m_name, preg->date);
+
+    // recv
+    zc_msg_t rmsg = {0};
+    size_t rlen = sizeof(rmsg);
     if (MsgSendTo(pmsg, ZC_SYS_URL_IPC, &rmsg, &rlen)) {
         if (rmsg.err != 0) {
             LOG_ERROR("recv register rep err:%d \n", rmsg.err);
@@ -248,27 +325,30 @@ int CModBase::_sendRegisterMsg(int cmd) {
     static ZC_U32 s_seqno = 0;
     // LOG_TRACE("send register msg into[%s] into", m_name);
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
-    zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
-    zc_mod_reg_t *req = reinterpret_cast<zc_mod_reg_t *>(pmsg->data);
-    req->regcmd = cmd;
-    req->ver = m_version;
-    strncpy(req->date, g_buildDateTime, sizeof(req->date) - 1);
-    strncpy(req->pname, m_pname, sizeof(req->pname) - 1);
+    zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);
+    BuildReqMsgHdr(req, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_REGISTER_E, 0, sizeof(zc_mod_reg_t));
+    zc_mod_reg_t *reqreg = reinterpret_cast<zc_mod_reg_t *>(req->data);
+    reqreg->regcmd = cmd;
+    reqreg->ver = m_version;
+    strncpy(reqreg->date, g_buildDateTime, sizeof(reqreg->date) - 1);
+    strncpy(reqreg->pname, m_pname, sizeof(reqreg->pname) - 1);
+    strncpy(reqreg->url, m_url, sizeof(reqreg->url) - 1);
 
+    // recv
     char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
-    zc_msg_t *prmsg = reinterpret_cast<zc_msg_t *>(rmsg_buf);
+    zc_msg_t *rep = reinterpret_cast<zc_msg_t *>(rmsg_buf);
     size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_reg_t);
-    zc_mod_reg_t *rep = reinterpret_cast<zc_mod_reg_t *>(pmsg->data);
-    BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_REGISTER_E, 0, sizeof(zc_mod_reg_t));
-    if (MsgSendTo(pmsg, ZC_SYS_URL_IPC, prmsg, &rlen)) {
-        if (prmsg->err != 0) {
-            LOG_ERROR("recv register rep err:%d \n", prmsg->err);
+    zc_mod_reg_t *repreg = reinterpret_cast<zc_mod_reg_t *>(rep->data);
+    if (MsgSendTo(req, ZC_SYS_URL_IPC, rep, &rlen)) {
+        if (rep->err != 0) {
+            LOG_ERROR("recv register rep err:%d \n", rep->err);
         }
     }
-
-    LOG_TRACE("send register:%d pid:%d,modid:%d, pname:%s,mod:%s,date:%s", req->regcmd, pmsg->pid, pmsg->modid,
-              req->pname, m_name, req->date);
-
+#if ZC_DEBUG
+    uint64_t now = zc_system_time();
+    LOG_TRACE("send register:%d pid:%d,modid:%d, pname:%s,mod:%s,date:%s, cos1:%llu,%llu", reqreg->regcmd, req->pid,
+              req->modid, reqreg->pname, m_name, reqreg->date, (rep->ts - rep->ts1), (now - rep->ts));
+#endif
     return 0;
 }
 #endif
@@ -282,6 +362,7 @@ int CModBase::_sendKeepaliveMsg() {
     // LOG_TRACE("send keepalive msg into[%s] into", m_name);
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_t)] = {0};
     zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
+    BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_KEEPALIVE_E, 0, sizeof(zc_mod_keepalive_t));
     zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(pmsg->data);
     pkeepalive->seqno = s_seqno++;
     pkeepalive->status = m_status;
@@ -291,7 +372,6 @@ int CModBase::_sendKeepaliveMsg() {
     zc_msg_t *prmsg = reinterpret_cast<zc_msg_t *>(rmsg_buf);
     size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_rep_t);
     zc_mod_keepalive_rep_t *prkeepalive = reinterpret_cast<zc_mod_keepalive_rep_t *>(pmsg->data);
-    BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_KEEPALIVE_E, 0, sizeof(zc_mod_keepalive_t));
     if (MsgSendTo(pmsg, ZC_SYS_URL_IPC, prmsg, &rlen)) {
         if (prmsg->err != 0) {
             LOG_ERROR("recv keepalive rep err:%d \n", prmsg->err);
@@ -324,8 +404,8 @@ bool CModBase::registerInsert(zc_msg_t *msg) {
         cli->pid = msg->pid;
         strncpy(cli->pname, reg->pname, sizeof(cli->pname) - 1);
         strncpy(cli->url, reg->url, sizeof(cli->url) - 1);
-        LOG_INFO("mod register, [%s]pid:%d,modid:%u,regtime:%u,last:%u", cli->pname, cli->pid, cli->modid, cli->regtime,
-                 cli->lasttime);
+        LOG_INFO("mod register, [%s]pid:%d,modid:%u,regtime:%u,last:%u, url:%s", cli->pname, cli->pid, cli->modid,
+                 cli->regtime, cli->lasttime, cli->url);
         m_modmap.insert(std::make_pair(key, cli));
     }
 

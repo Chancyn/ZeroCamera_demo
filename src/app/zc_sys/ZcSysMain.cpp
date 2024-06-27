@@ -8,9 +8,10 @@
 #include <unistd.h>
 
 #include "zc_log.h"
+#include "zc_proc.h"
 
-#include "ZcSysManager.hpp"
 #include "ZcStreamMgr.hpp"
+#include "ZcSysManager.hpp"
 
 #define ZC_LOG_PATH "./log"
 #define ZC_LOG_APP_NAME "zc_sys.log"
@@ -32,7 +33,7 @@ static void InitSignals() {
 
 // streamMgr handle mod msg callback
 static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
-    LOG_ERROR("StreamMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    // LOG_TRACE("StreamMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
     if (type == 0) {
         // TODO(zhoucc):
     }
@@ -42,7 +43,7 @@ static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *
 
 // SysManager handle mod msg callback
 static int SysMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
-    LOG_ERROR("SysMgrCb ptr:%p, type:%d", ptr, type);
+    // LOG_TRACE("SysMgrCb ptr:%p, type:%d", ptr, type);
     if (type == 0) {
         // TODO(zhoucc):
     }
@@ -52,10 +53,14 @@ static int SysMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *out
 
 int main(int argc, char **argv) {
     printf("main into\n");
+    // ZC_PROC_SETNAME(ZC_APP_NAME);
+    char pname[ZC_MAX_PNAME] = {0};
+    ZC_PROC_GETNAME(pname, ZC_MAX_PNAME);
+
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-    LOG_DEBUG("sizeof(void*)=%zu", sizeof(void *));
-    zc_stream_mgr_cfg_t cfg;    // TODO(zhoucc): config
+    LOG_INFO("process[%s,%s], build:[%s]\n", argv[0], pname, g_buildDateTime);
+    zc_stream_mgr_cfg_t cfg;  // TODO(zhoucc): config
     g_ZCStreamMgrInstance.Init(NULL);
     zc::CSysManager sys;
     zc::sys_callback_info_t cbinfo = {
@@ -68,7 +73,7 @@ int main(int argc, char **argv) {
     sys.Init(&cbinfo);
     sys.Start();
     while (!bExitFlag) {
-        usleep(100*1000);
+        usleep(100 * 1000);
         // LOG_TRACE("sleep ");
     }
 
