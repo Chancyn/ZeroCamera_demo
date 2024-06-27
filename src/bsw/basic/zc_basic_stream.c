@@ -7,7 +7,7 @@
 #include "zc_h26x_sps_parse.h"
 #include "zc_log.h"
 
-#define ZC_DEBUG_DUMP 0
+#define ZC_DEBUG_DUMP 0    // debug dump
 #if ZC_DEBUG_DUMP
 #include "zc_basic_fun.h"
 #endif

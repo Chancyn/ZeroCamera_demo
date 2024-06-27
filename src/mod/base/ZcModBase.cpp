@@ -1,7 +1,7 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
-#include <cstdint>
+#include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -269,9 +269,7 @@ bool CModBase::BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modidto, ZC_U16 id, ZC_U16 s
 }
 
 bool CModBase::MsgSendTo(zc_msg_t *pmsg, const char *urlto, zc_msg_t *prmsg, size_t *buflen) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    pmsg->ts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    pmsg->ts = zc_system_time();
     pmsg->seq = m_seqno++;
     CMsgCommReqClient cli;
     cli.Open(urlto);
@@ -279,9 +277,7 @@ bool CModBase::MsgSendTo(zc_msg_t *pmsg, const char *urlto, zc_msg_t *prmsg, siz
 }
 
 bool CModBase::MsgSendTo(zc_msg_t *pmsg, zc_msg_t *prmsg, size_t *buflen) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    pmsg->ts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    pmsg->ts = zc_system_time();
     pmsg->seq = m_seqno++;
     CMsgCommReqClient cli;
     cli.Open(GetUrlbymodid(pmsg->modidto));
@@ -346,8 +342,9 @@ int CModBase::_sendRegisterMsg(int cmd) {
     }
 #if ZC_DEBUG
     uint64_t now = zc_system_time();
+    LOG_ERROR("recv rep ts:%llu,%llu,now:%llu \n", rep->ts, rep->ts1, now);
     LOG_TRACE("send register:%d pid:%d,modid:%d, pname:%s,mod:%s,date:%s, cos1:%llu,%llu", reqreg->regcmd, req->pid,
-              req->modid, reqreg->pname, m_name, reqreg->date, (rep->ts - rep->ts1), (now - rep->ts));
+              req->modid, reqreg->pname, m_name, reqreg->date, (rep->ts1 - rep->ts), (now - rep->ts));
 #endif
     return 0;
 }

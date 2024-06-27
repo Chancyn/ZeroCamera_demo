@@ -10,31 +10,29 @@ extern "C" {
 
 #include "zc_type.h"
 
-#define ZC_MSG_TRANSPORT_IPC 0
-#define ZC_MSG_TRANSPORT_TCP 1
-#define ZC_MSG_TRANSPORT_UDP 0
+/*
+reqrep just support IPC/TCP
+IPC cli registermsg req->rsp cos:2ms, cos1:1ms
+TCP cli registermsg req->rsp cos:2ms, cos1:2ms
+tcp for test:tcpdump, for debug capture msg
+*/
+#define ZC_MSG_REPREQ_TRANSPORT_IPC 1
+#define ZC_MSG_REPREQ_TRANSPORT_TCP 0
 
-#if ZC_MSG_TRANSPORT_IPC
+#if ZC_MSG_REPREQ_TRANSPORT_IPC
 #define ZC_SYS_URL_IPC "ipc:///tmp/sys_rep"      // req/rep url
 #define ZC_SYS_URL_PUB "ipc:///tmp/sys_pub"      // pub/sub url
 #define ZC_CODEC_URL_IPC "ipc:///tmp/codec_rep"  // req/rep url
 #define ZC_CODEC_URL_PUB "ipc:///tmp/codec_pub"  // pub/sub url
 #define ZC_RTSP_URL_IPC "ipc:///tmp/rtsp_rep"    // req/rep url
 #define ZC_RTSP_URL_PUB "ipc:///tmp/rtsp_pub"    // pub/sub url
-#elif ZC_MSG_TRANSPORT_TCP
+#elif ZC_MSG_TRANSPORT_TCP      // cli registermsg req->rsp cos:3ms, cos1:2ms
 #define ZC_SYS_URL_IPC "tcp://127.0.0.1:8880"    // req/rep url
 #define ZC_SYS_URL_PUB "tcp://127.0.0.1:8881"    // pub/sub url
 #define ZC_CODEC_URL_IPC "tcp://127.0.0.1:8882"  // req/rep url
 #define ZC_CODEC_URL_PUB "tcp://127.0.0.1:8883"  // pub/sub url
 #define ZC_RTSP_URL_IPC "tcp://127.0.0.1:8884"   // req/rep url
 #define ZC_RTSP_URL_PUB "tcp://127.0.0.1:8885"   // pub/sub url
-#elif ZC_MSG_TRANSPORT_UDP
-#define ZC_SYS_URL_IPC "udp://127.0.0.1:8880"    // req/rep url
-#define ZC_SYS_URL_PUB "udp://127.0.0.1:8881"    // pub/sub url
-#define ZC_CODEC_URL_IPC "udp://127.0.0.1:8882"  // req/rep url
-#define ZC_CODEC_URL_PUB "udp://127.0.0.1:8883"  // pub/sub url
-#define ZC_RTSP_URL_IPC "udp://127.0.0.1:8884"   // req/rep url
-#define ZC_RTSP_URL_PUB "udp://127.0.0.1:8885"   // pub/sub url
 #endif
 
 #define ZC_MSG_VERSION (1)  // version 1
@@ -96,6 +94,7 @@ typedef enum {
 typedef struct {
     ZC_S32 pid;     // pid
     ZC_U32 modid;   // modid,msg send moduleid zc_modid_e
+
     ZC_U8 modidto;  // modid,msg send moduleid zc_modid_e
     ZC_U8 ver;      // version;
     ZC_U8 msgtype;  // req/rep pub; zc_msg_type_e
@@ -105,8 +104,8 @@ typedef struct {
     ZC_U32 seq;     // seqno;
     ZC_U16 id;      // msgid;
     ZC_U16 sid;     // msgsubid;
-    ZC_U32 ts;      // timestamp
-    ZC_U32 ts1;     // timestamp1 for replay time
+    ZC_U64 ts;      // timestamp
+    ZC_U64 ts1;     // timestamp1 for replay time
     ZC_S32 err;     // errorno errcode
     ZC_U32 size;    // msgsize
     ZC_U8 data[0];  // msgdata

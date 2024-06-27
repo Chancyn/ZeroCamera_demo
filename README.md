@@ -34,6 +34,17 @@ c.C++11编程规范，大部分代码采用C with class基本语法。对程序�
 单个业务模块崩溃，不影响其他的业务模块，以及整个系统的稳定行
 
 TODO:nng客户端加锁
+#### 3.1 mod模块设计
+register注册机制
+1.其他子模块sysmodule启动后主动注册到sysmodule;
+2.子模块sysmodule注册/注销上之后，sysmodule广播到其他各个模块
+3.sysmodule提供获取已经注册上的子模块sysmodule的获取列表
+
+TODO:
+1.sysmodule负责看护注册上的子模块sysmodule(注册时提供参数可选)
+2.提供注册证书校验/机制;注册有效期配置...
+3.push-pull通信机制实现
+4.streammgr流fifo管理机制接口实现
 
 ### 4.跨进程音视频fifo设计
 1.跨进程共享buf,如何减少拷贝？ \
@@ -133,23 +144,23 @@ cd ZeroCamera_demo;
 
 ## 编译第三方库
 ```
-cd thirdparty/nng; 
-./build_x64.sh 
-cd thirdparty/spdlog; 
-./build_x64.sh 
+cd thirdparty/nng;
+./build_x64.sh
+cd thirdparty/spdlog;
+./build_x64.sh
 ```
 
-如需自行编译media-server 
+如需自行编译media-server
 ```
-git clone git@github.com:Chancyn/ZeroCamera_demo.git; #编译 
-git submodule init thirdparty/package/media_server/media-server 
-git submodule update 
-#进入media_server目录编译media_server 
-cd thirdparty/package/media_server 
-./build_x64.sh 
-返回根目录编译项目 
+git clone git@github.com:Chancyn/ZeroCamera_demo.git; #编译
+git submodule init thirdparty/package/media_server/media-server
+git submodule update
+#进入media_server目录编译media_server
+cd thirdparty/package/media_server
+./build_x64.sh
+返回根目录编译项目
 cd -
-./build_x64.sh 
+./build_x64.sh
 ```
 
 

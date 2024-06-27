@@ -14,7 +14,11 @@
 
 #include "MsgCommRepServer.hpp"
 #include "ZcType.hpp"
+
+#define ZC_DEBUG_DUMP 0    // debug dump
+#if ZC_DEBUG_DUMP
 #include "zc_basic_fun.h"
+#endif
 
 namespace zc {
 #define ZC_NNGREPMSG_SIZE (4096)   // TODO(zhoucc):

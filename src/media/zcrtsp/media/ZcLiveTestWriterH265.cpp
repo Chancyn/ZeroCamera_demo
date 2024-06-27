@@ -24,8 +24,7 @@
 #include "ZcType.hpp"
 #include "zc_basic_stream.h"
 
-// for debug dump
-#define ZC_DEBUG_DUMP 0
+#define ZC_DEBUG_DUMP 0    // debug dump
 #if ZC_DEBUG_DUMP
 #include "zc_basic_fun.h"
 #endif
