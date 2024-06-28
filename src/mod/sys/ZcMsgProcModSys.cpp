@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "zc_log.h"
+#include "zc_macros.h"
 #include "zc_msg.h"
 #include "zc_msg_sys.h"
 #include "zc_type.h"
@@ -21,6 +22,11 @@ CMsgProcModSys::CMsgProcModSys() : CMsgProcMod(ZC_MODID_SYS_E, ZC_MID_SYS_BUTT),
 CMsgProcModSys::~CMsgProcModSys() {
     LOG_TRACE("Destructor into");
     UnInit();
+}
+
+ZC_S32 CMsgProcModSys::_handleRepNull(zc_msg_t *rep, int size) {
+    // do noting
+    return 0;
 }
 
 // Manager
@@ -48,7 +54,6 @@ ZC_S32 CMsgProcModSys::_handleReqSysManRegister(zc_msg_t *req, int iqsize, zc_ms
     if (m_cbinfo.MgrHandleCb) {
         m_cbinfo.MgrHandleCb(m_cbinfo.MgrContext, 0, nullptr, nullptr);
     }
-    rep->err = ret;
     LOG_TRACE("222 handle ReqSysManRegister,iqsize[%d], pid:%d,modid:%u", iqsize, req->pid, req->modid);
     LOG_TRACE("handle ReqSysManRegister,ret:%d, cmd:%d, url:%s,date:%s ", rep->err, msgreq->regcmd, msgreq->url,
               msgreq->date);
@@ -97,8 +102,8 @@ ZC_S32 CMsgProcModSys::_handleReqSysManKeepalive(zc_msg_t *req, int iqsize, zc_m
     msgrep->seqno = msgrep->seqno;
     msgrep->status = 0;
     strncpy(msgrep->date, msgreq->date, sizeof(msgrep->date) - 1);
-    LOG_TRACE("handle keepalive pid[%d] seqno[%u] status[%d] date:%s->%s", req->pid, req->modid, msgreq->seqno, msgreq->status,
-              msgreq->date, msgreq->date);
+    LOG_TRACE("handle keepalive pid[%d] seqno[%u] status[%d] date:%s->%s", req->pid, req->modid, msgreq->seqno,
+              msgreq->status, msgreq->date, msgreq->date);
 
     return 0;
 }
@@ -124,6 +129,7 @@ ZC_S32 CMsgProcModSys::_handleReqSysSMgrRegister(zc_msg_t *req, int iqsize, zc_m
         hmsg.status = msg->status;
         strncpy(hmsg.pname, msg->pname, sizeof(hmsg.pname));
         ret = m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, 0, &hmsg, nullptr);
+        *opsize = sizeof(zc_msg_t);
     }
 
     return 0;
@@ -144,6 +150,7 @@ ZC_S32 CMsgProcModSys::_handleReqSysSMgrUnRegister(zc_msg_t *req, int iqsize, zc
 
     if (m_cbinfo.streamMgrHandleCb) {
         m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, 0, nullptr, nullptr);
+        *opsize = sizeof(zc_msg_t);
     }
 
     return 0;
@@ -157,12 +164,99 @@ ZC_S32 CMsgProcModSys::_handleRepSysSMgrUnRegister(zc_msg_t *rep, int size) {
     return 0;
 }
 
+static inline void _smgr_iteminfo_trans(zc_mod_smgr_iteminfo_t *modinfo, const zc_shmstream_info_t *info) {
+    modinfo->shmstreamtype = info->shmstreamtype;
+    modinfo->chn = info->chn;
+    modinfo->idx = info->idx;
+    modinfo->tracknum = info->tracknum;
+    modinfo->status = info->status;
+
+    for (unsigned int i = 0; i < info->tracknum && i < ZC_MSG_TRACK_MAX_NUM; i++) {
+        modinfo->tracks[i].chn = info->tracks[i].chn;
+        modinfo->tracks[i].tracktype = info->tracks[i].tracktype;
+        modinfo->tracks[i].encode = info->tracks[i].encode;
+        modinfo->tracks[i].enable = info->tracks[i].enable;
+        modinfo->tracks[i].fifosize = info->tracks[i].fifosize;
+        modinfo->tracks[i].status = info->tracks[i].status;
+        strncpy(modinfo->tracks[i].name, info->tracks[i].name, sizeof(modinfo->tracks[i].name) - 1);
+    }
+    // _dumpStreamInfo("user", modinfo);
+    return;
+}
+
 ZC_S32 CMsgProcModSys::_handleReqSysSMgrGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     LOG_TRACE("handle ReqSysSMgrGet,iqsize[%d]", iqsize);
-    zc_mod_smgr_get_t *pGet = reinterpret_cast<zc_mod_smgr_get_t *>(req->data);
-    LOG_TRACE("handle Get");
+    ZC_ASSERT(iqsize = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t));
+    ZC_ASSERT(*opsize >= sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t));
+    zc_mod_smgr_get_t *reqmsg = reinterpret_cast<zc_mod_smgr_get_t *>(req->data);
+    if (m_cbinfo.streamMgrHandleCb) {
+        zc_sys_smgr_getinfo_in_t stin = {0};
+        zc_sys_smgr_getinfo_out_t stout = {0};
+        stin.type = reqmsg->type;
+        stin.chn = reqmsg->chn;
+        if (m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, SYS_SMGR_HDL_GETINFO_E, &stin, &stout) < 0) {
+            return ZC_MSG_ERR_HADNLE_E;
+        }
+        zc_mod_smgr_get_rep_t *repmsg = reinterpret_cast<zc_mod_smgr_get_rep_t *>(rep->data);
+        _smgr_iteminfo_trans(&repmsg->info, &stout.info);
+        *opsize = sizeof(zc_msg_t)+ sizeof(zc_mod_smgr_get_rep_t);
+        return ZC_MSG_SUCCESS_E;
+    }
 
-    return 0;
+    return ZC_MSG_ERR_E;
+}
+
+ZC_S32 CMsgProcModSys::_handleReqSysSMgrGetAll(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    LOG_TRACE("handle ReqSysSMgrGet,iqsize[%d]", iqsize);
+    ZC_ASSERT(iqsize = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_getall_t));
+    ZC_ASSERT(*opsize >= sizeof(zc_msg_t) + sizeof(zc_mod_smgr_getall_rep_t));
+    int ret = ZC_MSG_ERR_E;
+    int size = sizeof(zc_msg_t)+ sizeof(zc_mod_smgr_getall_rep_t);
+    zc_mod_smgr_getall_t *reqmsg = reinterpret_cast<zc_mod_smgr_getall_t *>(req->data);
+    if (m_cbinfo.streamMgrHandleCb) {
+        zc_sys_smgr_getcount_in_t stcountin = {0};
+        zc_sys_smgr_getcount_out_t stcountout = {0};
+        stcountin.type = reqmsg->type;
+        if (m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, SYS_SMGR_HDL_GECOUNT_E, &stcountin, &stcountout) <
+            0) {
+            LOG_ERROR("SYS_SMGR_HDL_GETCOUNT_E error");
+            return ZC_MSG_ERR_HADNLE_E;
+        }
+
+        // calcu max count
+        int count = ((*opsize) - sizeof(zc_msg_t) - sizeof(zc_mod_smgr_getall_rep_t)) / sizeof(zc_mod_smgr_iteminfo_t);
+        if (count < stcountout.count) {
+            stcountout.count = count;
+            LOG_WARN("count %d < %u", count, stcountout.count);
+        }
+        LOG_WARN("count %u", stcountout.count);
+        zc_mod_smgr_getall_rep_t *repmsg = reinterpret_cast<zc_mod_smgr_getall_rep_t *>(rep->data);
+        repmsg->itemcount = stcountout.count;
+        repmsg->itemsize = sizeof(zc_mod_smgr_iteminfo_t);
+        size += repmsg->itemsize *  repmsg->itemcount;
+        *opsize = size;
+        if (stcountout.count > 0) {
+            zc_sys_smgr_getallinfo_in_t stin = {0};
+            zc_sys_smgr_getallinfo_out_t stout = {0};
+            stout.pinfo = new zc_shmstream_info_t[stcountout.count]();
+            ZC_ASSERT(stout.pinfo != nullptr);
+            stin.type = reqmsg->type;
+            stin.count = stcountout.count;
+            if (m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, SYS_SMGR_HDL_GETALLINFO_E, &stin, &stout) < 0) {
+                ret = ZC_MSG_ERR_HADNLE_E;
+            } else {
+                zc_mod_smgr_iteminfo_t *item =
+                    reinterpret_cast<zc_mod_smgr_iteminfo_t *>(rep->data + sizeof(zc_mod_smgr_getall_rep_t));
+                for (unsigned int i = 0; i < stcountout.count; i++) {
+                    _smgr_iteminfo_trans(item + i, stout.pinfo + i);
+                }
+                ret = ZC_MSG_SUCCESS_E;
+            }
+            delete[](stout.pinfo);
+        }
+    }
+
+    return ret;
 }
 
 ZC_S32 CMsgProcModSys::_handleRepSysSMgrGet(zc_msg_t *rep, int size) {
@@ -317,6 +411,8 @@ bool CMsgProcModSys::Init(void *cbinfo) {
                  &CMsgProcModSys::_handleRepSysSMgrGet);
     REGISTER_MSG(m_modid, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_SET_E, &CMsgProcModSys::_handleReqSysSMgrSet,
                  &CMsgProcModSys::_handleRepSysSMgrSet);
+    REGISTER_MSG(m_modid, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_GETALL_E, &CMsgProcModSys::_handleReqSysSMgrGetAll,
+                 &CMsgProcModSys::_handleRepNull);
 
     // ZC_MID_SYS_TIME_E
     REGISTER_MSG(m_modid, ZC_MID_SYS_TIME_E, ZC_MSID_SYS_TIME_GET_E, &CMsgProcModSys::_handleReqSysTimeGet,

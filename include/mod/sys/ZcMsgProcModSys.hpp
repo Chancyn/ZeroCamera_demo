@@ -2,46 +2,16 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
+#include <list>
 #include "zc_mod_base.h"
 #include "zc_type.h"
-#include <list>
+#include "zc_sys_mgr_handle.h"
+#include "zc_sys_smgr_handle.h"
 
 #include "ZcMsg.hpp"
 #include "ZcMsgProcMod.hpp"
 
 namespace zc {
-// handle callback enum
-typedef enum {
-    SYS_SMGR_HDL_REGISTER_E = 0,  // register
-    SYS_SMGR_HDL_UNREGISTER_E,    // unregister
-    SYS_SMGR_HDL_GETINFO_E,
-    SYS_SMGR_HDL_SETINFO_E,  // setmgrinfo
-
-    SYS_SMGR_HDL_BUTT_E,
-} sys_smgr_handle_e;
-
-// TODO(zhoucc): handle cmd type
-typedef enum {
-    SYS_MGR_HDL_RESTART_E = 0,
-    SYS_MGR_HDL_REGISTER_E,
-    SYS_MGR_HDL_UNREGISTER_E,
-
-    SYS_MGR_HDL_BUTT_E,
-} sys_mgr_handle_e;
-
-// register ZC_MSID_SMGR_REGISTER_E
-typedef struct {
-    ZC_S32 pid;                   // pid
-    ZC_U32 modid;                 // mod id
-    ZC_S32 status;                // status
-    ZC_CHAR pname[ZC_MAX_PNAME];  // process name
-} zc_sys_smgr_reg_t;
-
-// streamMgr handle mod msg callback
-typedef int (*SysStreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
-// RtspManager handle mod msg callback
-typedef int (*SysMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
-// TODO(zhoucc): handle cmd type
 
 typedef struct {
     SysStreamMgrHandleMsgCb streamMgrHandleCb;
@@ -63,6 +33,7 @@ class CMsgProcModSys : public CMsgProcMod {
     ZC_S32 MsgRepProc(zc_msg_t *rep, int size);
 
  private:
+    ZC_S32 _handleRepNull(zc_msg_t *rep, int size);
     // Manager
     ZC_S32 _handleReqSysManVersion(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepSysManVersion(zc_msg_t *rep, int size);
@@ -84,6 +55,7 @@ class CMsgProcModSys : public CMsgProcMod {
     ZC_S32 _handleRepSysSMgrGet(zc_msg_t *rep, int size);
     ZC_S32 _handleReqSysSMgrSet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepSysSMgrSet(zc_msg_t *rep, int size);
+    ZC_S32 _handleReqSysSMgrGetAll(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
 
     // Time
     ZC_S32 _handleReqSysTimeGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);

@@ -12,9 +12,9 @@ extern "C" {
 
 /*
 reqrep just support IPC/TCP
-IPC cli registermsg req->rsp cos:2ms, cos1:1ms
-TCP cli registermsg req->rsp cos:2ms, cos1:2ms
-tcp for test:tcpdump, for debug capture msg
+IPC cli registermsg(len244) req->rsp cos:2ms, cos1:2ms
+TCP cli registermsg(len244) req->rsp cos:3ms, cos1:2ms
+tcp for test:for debug use tcpdump capture msg; tcpdump -i lo port 8880 port-s0 -w msg.cap
 */
 #define ZC_MSG_REPREQ_TRANSPORT_IPC 1
 #define ZC_MSG_REPREQ_TRANSPORT_TCP 0
@@ -40,14 +40,16 @@ tcp for test:tcpdump, for debug capture msg
 #define ZC_URL_SIZE 128
 #define ZC_DATETIME_STR_SIZE 32   // 2024-04-30 00:00:00
 #define ZC_MSG_ERRDETAIL_SIZE 64  // err detail
+#define ZC_MSG_TRACK_MAX_NUM 4   // ZC_STREAMMGR_TRACK_MAX_NUM
 
 typedef enum {
-    ZC_MSG_ERR_RIGHT_E = -7,       // msglen right error
-    ZC_MSG_ERR_PARAM_E = -6,       // msglen param error
-    ZC_MSG_ERR_CMDID_E = -5,       // error cmdid
-    ZC_MSG_ERR_LEN_E = -4,         // msglen error
-    ZC_MSG_ERR_LICENSE_E = -3,     // license error
-    ZC_MSG_ERR_UNREGISTER_E = -2,  // unregister error
+    ZC_MSG_ERR_RIGHT_E = -8,       // msglen right error
+    ZC_MSG_ERR_PARAM_E = -7,       // msglen param error
+    ZC_MSG_ERR_CMDID_E = -6,       // error cmdid
+    ZC_MSG_ERR_LEN_E = -5,         // msglen error
+    ZC_MSG_ERR_LICENSE_E = -4,     // license error
+    ZC_MSG_ERR_UNREGISTER_E = -3,  // unregister error
+    ZC_MSG_ERR_HADNLE_E = -2,      // handle err
     ZC_MSG_ERR_E = -1,             // err
     ZC_MSG_SUCCESS_E = 0,          // handle success < 0: not handle;
     ZC_MSG_WARN_PARAM_E,           // Handle warning PARAM error

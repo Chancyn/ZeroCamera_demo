@@ -4,33 +4,14 @@
 #pragma once
 
 #include "zc_mod_base.h"
+#include "zc_rtsp_mgr_handle.h"
+#include "zc_rtsp_smgr_handle.h"
 
 #include "ZcModComm.hpp"
 #include "ZcMsg.hpp"
 #include "ZcMsgProcMod.hpp"
 
 namespace zc {
-// TODO(zhoucc): handle cmd type
-typedef enum {
-    RTSP_SMGR_HDL_CHG_NOTIFY_E = 0,    // chg notify
-    RTSP_SMGR_HDL_GETINFO_E,
-    RTSP_SMGR_HDL_SETINFO_E,           // setmgrinfo
-
-    RTSP_SMGR_HDL_BUTT_E,
-} rtsp_smgr_handle_e;
-
-// TODO(zhoucc): handle cmd type
-typedef enum {
-    RTSP_MGR_HDL_RESTART_E = 0,
-
-    RTSP_MGR_HDL_BUTT_E,
-} rtsp_mgr_handle_e;
-
-// streamMgr handle mod msg callback
-typedef int (*RtspStreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
-// RtspManager handle mod msg callback
-typedef int (*RtspMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
-
 typedef struct {
     RtspStreamMgrHandleMsgCb streamMgrHandleCb;
     void *streamMgrContext;

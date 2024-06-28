@@ -29,6 +29,8 @@ extern "C" {
 // stream with track num, video+audio, ZC_STREAM_BUTT
 #define ZC_STREAMMGR_TRACK_MAX_NUM ZC_STREAM_BUTT  //
 
+#define ZC_SHMSTREAM_TYPE_ALL (0xFFFF)
+
 // video
 typedef enum {
     // video
@@ -60,14 +62,14 @@ typedef enum {
     ZC_SHMSTREAM_TYPE_BUTT,
 } zc_shmstream_type_e;
 
-typedef struct zc_stream_mgr_cfg {
+typedef struct _zc_stream_mgr_cfg {
     unsigned char maxchn[ZC_SHMSTREAM_TYPE_BUTT];
 
     unsigned char decode_maxchn;  // decode support max chn
 } zc_stream_mgr_cfg_t;
 
 // shmstreamcfg
-typedef struct zc_shmstream_track_cfg {
+typedef struct _zc_shmstream_track {
     unsigned char chn;        // chnno
     unsigned char tracktype;  // tracktype zc_stream_e
     unsigned char encode;     // encode zc_frame_enc_e
@@ -80,7 +82,7 @@ typedef struct zc_shmstream_track_cfg {
 } zc_shmstream_track_t;
 
 // shmstreamcfg
-typedef struct zc_shmstream_info {
+typedef struct _zc_shmstream_info {
     unsigned char shmstreamtype;  // live push pull zc_shmstream_type_e
     unsigned char idx;            // idx
     unsigned char chn;            // chn num

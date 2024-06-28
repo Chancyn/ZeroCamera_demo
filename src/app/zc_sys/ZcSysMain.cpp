@@ -33,20 +33,15 @@ static void InitSignals() {
 
 // streamMgr handle mod msg callback
 static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
-    // LOG_TRACE("StreamMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
-    if (type == 0) {
-        // TODO(zhoucc):
-    }
-
-    return -1;
+    // LOG_TRAE("StreamMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    return  g_ZCStreamMgrInstance.HandleCtrl(type, indata, outdata);
 }
 
 // SysManager handle mod msg callback
 static int SysMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
     // LOG_TRACE("SysMgrCb ptr:%p, type:%d", ptr, type);
-    if (type == 0) {
-        // TODO(zhoucc):
-    }
+    if (type >= SYS_SMGR_HDL_BUTT_E)
+        return -1;
 
     return -1;
 }
@@ -62,6 +57,7 @@ int main(int argc, char **argv) {
     LOG_INFO("process[%s,%s], build:[%s]\n", argv[0], pname, g_buildDateTime);
     zc_stream_mgr_cfg_t cfg;  // TODO(zhoucc): config
     g_ZCStreamMgrInstance.Init(NULL);
+    g_ZCStreamMgrInstance.Start();
     zc::CSysManager sys;
     zc::sys_callback_info_t cbinfo = {
         .streamMgrHandleCb = StreamMgrHandleMsg,
@@ -80,6 +76,7 @@ int main(int argc, char **argv) {
     LOG_ERROR("app loop exit");
     sys.Stop();
     sys.UnInit();
+    g_ZCStreamMgrInstance.Stop();
     g_ZCStreamMgrInstance.UnInit();
     zc_log_uninit();
     printf("main exit\n");

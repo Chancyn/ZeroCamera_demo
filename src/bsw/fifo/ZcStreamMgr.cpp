@@ -17,11 +17,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "Thread.hpp"
+#include "mod/sys/zc_sys_smgr_handle.h"
 #include "zc_frame.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 
+#include "Thread.hpp"
 #include "ZcShmStream.hpp"
 #include "ZcStreamMgr.hpp"
 #include "ZcType.hpp"
@@ -164,7 +165,7 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
             info->chn = chn;
             info->idx = idx;
             info->status = ZC_STREAM_STATUS_INIT;
-            info->tracknum = 0;
+            info->tracknum = ZC_STREAMMGR_TRACK_MAX_NUM;
             info->shmstreamtype = type;
 
             // TODO(zhoucc): chn0 H265/ ch1 H264
@@ -229,32 +230,66 @@ int CStreamMgr::_findIdx(zc_shmstream_type_e type, unsigned int nchn) {
     return idx;
 }
 
-int CStreamMgr::_getShmStreamInfo(zc_shmstream_info_t *info, int idx) {
-    ZC_ASSERT(idx < m_total);
-    memcpy(info, &m_infoTab[idx], sizeof(zc_shmstream_info_t));
+int CStreamMgr::getCount(unsigned int type) {
+    if (type == ZC_SHMSTREAM_TYPE_ALL) {
+        return m_total;
+    } else if (type >= 0 || type < ZC_SHMSTREAM_TYPE_BUTT) {
+        return m_cfg.maxchn[type];
+    }
 
     return 0;
 }
 
-int CStreamMgr::GetShmStreamInfo(zc_shmstream_info_t *info, zc_shmstream_type_e type, unsigned int nchn) {
-    if (m_running) {
-        return -1;
+inline int CStreamMgr::_getShmStreamInfo(zc_shmstream_info_t *info, int idx, unsigned int count) {
+    ZC_ASSERT(count > 0);
+    ZC_ASSERT(idx + count <= m_total);
+    memcpy(info, &m_infoTab[idx], sizeof(zc_shmstream_info_t) * count);
+
+    return 0;
+}
+
+int CStreamMgr::getALLShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int count) {
+    int tmpc = getCount(type);
+    count = count <= tmpc ? count : tmpc;
+    if (count > 0) {
+        int idx = 0;
+        if (type != ZC_SHMSTREAM_TYPE_ALL)
+            _findIdx((zc_shmstream_type_e)type, 0);
+
+        std::lock_guard<std::mutex> locker(m_mutex);
+        _getShmStreamInfo(info, idx, count);
     }
 
-    if (m_running) {
-        return -1;
-    }
+    return 0;
+}
 
-    int idx = _findIdx(type, nchn);
+int CStreamMgr::getShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int nchn) {
+    int idx = _findIdx((zc_shmstream_type_e)type, nchn);
     if (idx < 0) {
         return -1;
     }
-
     std::lock_guard<std::mutex> locker(m_mutex);
 
-    return _getShmStreamInfo(info, idx);
+    return _getShmStreamInfo(info, idx, 1);
 }
 
+int CStreamMgr::_setShmStreamInfo(zc_shmstream_info_t *info, int idx) {
+    ZC_ASSERT(idx < m_total);
+    // TODO(zhoucc): check param
+    memcpy(&m_infoTab[idx], info, sizeof(zc_shmstream_info_t));
+
+    return 0;
+}
+
+int CStreamMgr::setShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int nchn) {
+    int idx = _findIdx((zc_shmstream_type_e)type, nchn);
+    if (idx < 0) {
+        return -1;
+    }
+    std::lock_guard<std::mutex> locker(m_mutex);
+
+    return _setShmStreamInfo(info, idx);
+}
 #if 0
 int CStreamMgr::_createStreamW(int idx) {
     ZC_ASSERT(idx < m_total);
@@ -280,7 +315,7 @@ _err:
 }
 
 int CStreamMgr::CreateStreamW(zc_shmstream_type_e type, unsigned int nchn) {
-    if (m_running) {
+    if (!m_running) {
         return -1;
     }
 
@@ -321,7 +356,7 @@ _err:
 }
 
 int CStreamMgr::CreateStreamR(zc_shmstream_type_e type, unsigned int nchn) {
-    if (m_running) {
+    if (!m_running) {
         return -1;
     }
 
@@ -336,7 +371,7 @@ int CStreamMgr::CreateStreamR(zc_shmstream_type_e type, unsigned int nchn) {
 }
 
 int CStreamMgr::DestoryStream(int idx) {
-    if (m_running) {
+    if (!m_running) {
         return -1;
     }
 
@@ -373,7 +408,6 @@ bool CStreamMgr::Stop() {
 int CStreamMgr::process() {
     LOG_WARN("process into\n");
     int ret = 0;
-    int64_t dts = 0;
 
     while (State() == Running) {
         // TODO(zhoucc): do something
@@ -383,4 +417,52 @@ _err:
     LOG_WARN("process exit\n");
     return ret;
 }
+
+int CStreamMgr::HandleCtrl(unsigned int type, void *indata, void *outdata) {
+    LOG_WARN("HandleCtrl %u", type);
+    if (!m_running) {
+        return -1;
+    }
+    int ret = 0;
+    switch (type) {
+    case SYS_SMGR_HDL_REGISTER_E:
+        break;
+    case SYS_SMGR_HDL_UNREGISTER_E:
+        break;
+    case SYS_SMGR_HDL_GECOUNT_E: {
+        zc_sys_smgr_getcount_in_t *in = reinterpret_cast<zc_sys_smgr_getcount_in_t *>(indata);
+        zc_sys_smgr_getcount_out_t *out = reinterpret_cast<zc_sys_smgr_getcount_out_t *>(outdata);
+        out->count = getCount(in->type);
+        break;
+    }
+    case SYS_SMGR_HDL_GETALLINFO_E: {
+        zc_sys_smgr_getallinfo_in_t *in = reinterpret_cast<zc_sys_smgr_getallinfo_in_t *>(indata);
+        zc_sys_smgr_getallinfo_out_t *out = reinterpret_cast<zc_sys_smgr_getallinfo_out_t *>(outdata);
+        ret = getALLShmStreamInfo(out->pinfo, in->type, in->count);
+        break;
+    }
+    case SYS_SMGR_HDL_GETINFO_E: {
+        zc_sys_smgr_getinfo_in_t *in = reinterpret_cast<zc_sys_smgr_getinfo_in_t *>(indata);
+        zc_sys_smgr_getinfo_out_t *out = reinterpret_cast<zc_sys_smgr_getinfo_out_t *>(outdata);
+        ret = getShmStreamInfo(&out->info, in->type, in->chn);
+        _dumpStreamInfo("getstream", &out->info);
+        LOG_WARN("SYS_SMGR_HDL_GETINFO_E type:%u, chn:%u, ret:%u", in->type, in->chn, ret);
+        break;
+    }
+    case SYS_SMGR_HDL_SETINFO_E: {
+        zc_sys_smgr_setinfo_in_t *in = reinterpret_cast<zc_sys_smgr_setinfo_in_t *>(indata);
+        zc_sys_smgr_setinfo_out_t *out = reinterpret_cast<zc_sys_smgr_setinfo_out_t *>(outdata);
+        // copy to out;set and update out info
+        memcpy(&out->info, &in->info, sizeof(zc_shmstream_info_t));
+        ret = setShmStreamInfo(&out->info, in->type, in->chn);
+        break;
+    }
+    default:
+        ret = -1;
+        break;
+    }
+
+    return ret;
+}
+
 }  // namespace zc

@@ -1,8 +1,8 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
@@ -10,6 +10,7 @@
 
 #include <functional>
 
+#include "rtsp/zc_rtsp_smgr_handle.h"
 #include "zc_basic_fun.h"
 #include "zc_log.h"
 #include "zc_macros.h"
@@ -283,42 +284,13 @@ bool CModBase::MsgSendTo(zc_msg_t *pmsg, zc_msg_t *prmsg, size_t *buflen) {
     cli.Open(GetUrlbymodid(pmsg->modidto));
     return cli.SendTo(pmsg, sizeof(zc_msg_t) + pmsg->size, prmsg, buflen);
 }
-#if 0
-int CModBase::_sendRegisterMsg(int cmd) {
-    if (m_modid == ZC_MODID_SYS_E) {
-        return -1;
-    }
 
-    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
-    zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
-    zc_mod_reg_t *preg = reinterpret_cast<zc_mod_reg_t *>(pmsg->data);
-    BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_REGISTER_E, 0, sizeof(zc_mod_reg_t));
-    preg->regcmd = cmd;
-    preg->ver = m_version;
-    strncpy(preg->date, g_buildDateTime, sizeof(preg->date) - 1);
-    strncpy(preg->pname, m_pname, sizeof(preg->pname) - 1);
-    LOG_TRACE("send register:%d pid:%d,modid:%d, pname:%s,mod:%s,date:%s", preg->regcmd, pmsg->pid, pmsg->modid,
-              preg->pname, m_name, preg->date);
-
-    // recv
-    zc_msg_t rmsg = {0};
-    size_t rlen = sizeof(rmsg);
-    if (MsgSendTo(pmsg, ZC_SYS_URL_IPC, &rmsg, &rlen)) {
-        if (rmsg.err != 0) {
-            LOG_ERROR("recv register rep err:%d \n", rmsg.err);
-        }
-        LOG_TRACE("recv register rep success\n");
-    }
-
-    return 0;
-}
-#else
 // send keepalive
 int CModBase::_sendRegisterMsg(int cmd) {
     if (m_modid == ZC_MODID_SYS_E) {
         return -1;
     }
-    static ZC_U32 s_seqno = 0;
+
     // LOG_TRACE("send register msg into[%s] into", m_name);
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
     zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);
@@ -342,13 +314,11 @@ int CModBase::_sendRegisterMsg(int cmd) {
     }
 #if ZC_DEBUG
     uint64_t now = zc_system_time();
-    LOG_ERROR("recv rep ts:%llu,%llu,now:%llu \n", rep->ts, rep->ts1, now);
     LOG_TRACE("send register:%d pid:%d,modid:%d, pname:%s,mod:%s,date:%s, cos1:%llu,%llu", reqreg->regcmd, req->pid,
               req->modid, reqreg->pname, m_name, reqreg->date, (rep->ts1 - rep->ts), (now - rep->ts));
 #endif
     return 0;
 }
-#endif
 
 // send keepalive
 int CModBase::_sendKeepaliveMsg() {
@@ -378,6 +348,58 @@ int CModBase::_sendKeepaliveMsg() {
     }
     // LOG_TRACE("send keepalive msg into id[%d] sid[%d] into", pmsg->id, pmsg->sid);
 
+    return 0;
+}
+
+#if 1  // ZC_DEBUG_DUMP
+static inline void _dumpTrackInfo(const char *user, zc_mod_stream_track_t *info) {
+    LOG_TRACE("[%s] ch:%u,track:%u,encode:%u,en:%u,size:%u,status:%u,name:%s", user, info->chn, info->tracktype,
+              info->encode, info->enable, info->fifosize, info->status, info->name);
+    return;
+}
+
+static inline void _dumpStreamInfo(const char *user, zc_mod_smgr_iteminfo_t *info) {
+    LOG_TRACE("[%s] type:%d,idx:%u,ch:%u,tracknum:%u,status:%u", user, info->shmstreamtype, info->idx, info->chn,
+              info->tracknum, info->status);
+    _dumpTrackInfo("vtrack", &info->tracks[ZC_STREAM_VIDEO]);
+    _dumpTrackInfo("atrack", &info->tracks[ZC_STREAM_AUDIO]);
+    _dumpTrackInfo("mtrack", &info->tracks[ZC_STREAM_META]);
+
+    return;
+}
+#endif
+
+// send keepalive
+int CModBase::_sendSMgrGetInfo(unsigned int type, unsigned int chn) {
+    if (m_modid == ZC_MODID_SYS_E) {
+        return -1;
+    }
+
+    // LOG_TRACE("send register msg into[%s] into", m_name);
+    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t)] = {0};
+    zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);
+    BuildReqMsgHdr(req, ZC_MODID_SYS_E, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_GET_E, 0, sizeof(zc_mod_smgr_get_t));
+    zc_mod_smgr_get_t *reqinfo = reinterpret_cast<zc_mod_smgr_get_t *>(req->data);
+    reqinfo->type = type;
+    reqinfo->chn = chn;
+
+    // recv
+    char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t)] = {0};
+    zc_msg_t *rep = reinterpret_cast<zc_msg_t *>(rmsg_buf);
+    size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t);
+    zc_mod_smgr_get_rep_t *repinfo = reinterpret_cast<zc_mod_smgr_get_rep_t *>(rep->data);
+    if (MsgSendTo(req, ZC_SYS_URL_IPC, rep, &rlen)) {
+        if (rep->err != 0) {
+            LOG_ERROR("recv register rep err:%d \n", rep->err);
+        }
+    }
+
+#if ZC_DEBUG
+    _dumpStreamInfo("recv streaminfo", &repinfo->info);
+    uint64_t now = zc_system_time();
+    LOG_TRACE("sendto smgrgetinfo : pid:%d,modid:%d,mod:%s, type:%u,chn:%u, cos1:%llu,%llu", req->pid, req->modid,
+              m_name, reqinfo->type, reqinfo->chn, (rep->ts1 - rep->ts), (now - rep->ts));
+#endif
     return 0;
 }
 
@@ -462,12 +484,11 @@ int CModBase::_process_mod() {
     LOG_WARN("process into[%s] into", m_name);
     _sendRegisterMsg(ZC_SYS_REGISTER_E);
     // TODO(zhoucc): check register ret
-
+    _sendSMgrGetInfo(0, 0);
     while (State() == Running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         // LOG_INFO("process sleep[%s]", m_name);
         _sendKeepaliveMsg();
-        _sendRegisterMsg(ZC_SYS_REGISTER_E);
     }
     // unregister
     _sendRegisterMsg(ZC_SYS_UNREGISTER_E);

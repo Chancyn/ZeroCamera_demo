@@ -2,11 +2,11 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#include <mutex>
 #include <list>
+#include <mutex>
 
-#include "zc_type.h"
 #include "zc_stream_mgr.h"
+#include "zc_type.h"
 
 #include "Singleton.hpp"
 #include "Thread.hpp"
@@ -33,13 +33,22 @@ class CStreamMgr : public Thread, public Singleton<CStreamMgr> {
     bool Start();
     bool Stop();
 
-    int GetShmStreamInfo(zc_shmstream_info_t *info, zc_shmstream_type_e type, unsigned int nchn);
+
+    // ctrl interface
+    int HandleCtrl(unsigned int type, void *indata, void *outdata);
 
  private:
+    int getCount(unsigned int type);
+    int getALLShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int count);
+    int getShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int nchn);
+
     bool _unInit();
     virtual int process();
     int _findIdx(zc_shmstream_type_e type, unsigned int nchn);
-    int _getShmStreamInfo(zc_shmstream_info_t *info, int idx);
+    inline int _getShmStreamInfo(zc_shmstream_info_t *info, int idx, unsigned int count);
+    int _getALLShmStreamInfo(zc_shmstream_info_t *info);
+    int _setShmStreamInfo(zc_shmstream_info_t *info, int idx);
+    int setShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int nchn);
     void _initTracksInfo(zc_shmstream_track_t *info, unsigned char type, unsigned char chn, unsigned char venc,
                          unsigned char aenc, unsigned char menc);
 

@@ -76,6 +76,7 @@ class CModBase : public CModComm, public Thread {
     int _process_mod();
     int _sendRegisterMsg(int cmd);
     int _sendKeepaliveMsg();
+    int _sendSMgrGetInfo(unsigned int type, unsigned int chn);
 
  private:
     bool m_init;
