@@ -15,6 +15,7 @@
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_type.h"
+#include "zc_base64.h"
 
 #include "ZcMediaTrackH265.hpp"
 #include "ZcType.hpp"
@@ -36,6 +37,9 @@ CMediaTrackH265::~CMediaTrackH265() {}
 bool CMediaTrackH265::Init(void *pinfo) {
     LOG_TRACE("Create H265 into");
     char sdpbuf[1024];
+    char spspps[1024] = {0};
+    size_t spslen = 0;
+    zc_frame_userinfo_t frameinfo = {0};
     uint32_t ssrc = rtp_ssrc();
     m_timestamp = ssrc;
     static struct rtp_payload_t s_rtpfunc = {
@@ -51,8 +55,8 @@ bool CMediaTrackH265::Init(void *pinfo) {
     // video
     static const char *video_pattern =
         "m=video 0 RTP/AVP %d\n"
-        "a=rtpmap:%d H265/90000\n"
-        "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=";
+        "a=rtpmap:%d H265/%d\n"
+        "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=%s\n";
 
     const char *test_sps = "QAEMAf//AWAAAAMAsAAAAwAAAwBdqgJAAAAAAQ==";
     // profile-level-id=010C01;
@@ -78,6 +82,29 @@ bool CMediaTrackH265::Init(void *pinfo) {
         goto _err;
     }
 
+    if (m_fiforeader->GetStreamInfo(frameinfo)) {
+        LOG_ERROR("GetStreamInfo ok");
+        // goto _err;
+        for (int i = 0; i < frameinfo.vinfo.nalunum; i++) {
+            // sps pps
+            if (frameinfo.vinfo.nalu[i].type >= ZC_NALU_TYPE_VPS && frameinfo.vinfo.nalu[i].type <= ZC_NALU_TYPE_PPS) {
+                // sps - pfofileid
+                if (i == 0) {
+                    profileid[0] = frameinfo.vinfo.nalu[0].data[1];
+                    profileid[1] = frameinfo.vinfo.nalu[0].data[2];
+                    profileid[2] = frameinfo.vinfo.nalu[0].data[3];
+                } else if (spslen > 0) {
+                    spspps[spslen++] = ',';
+                }
+
+                spslen += zc_base64_encode(spspps + spslen, frameinfo.vinfo.nalu[i].data, frameinfo.vinfo.nalu[i].size);
+            }
+        }
+        // end
+        spspps[spslen++] = '\0';
+        LOG_ERROR("GetStreamInfo spspps[%s]", spspps);
+    }
+
     m_rtppacker = rtp_payload_encode_create(RTP_PAYLOAD_H265, "h265", (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
     if (!m_rtppacker) {
         LOG_ERROR("Create playload encode error H265");
@@ -94,7 +121,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
 
     // sps
     snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H265, RTP_PAYLOAD_H265, m_frequency, RTP_PAYLOAD_H265,
-             profileid[0], profileid[1], profileid[2], test_sps);
+             profileid[0], profileid[1], profileid[2], spspps);
     LOG_TRACE("ok H265 sdp sdpbuf[%s]", sdpbuf);
     m_sdp = sdpbuf;
     // set create flag

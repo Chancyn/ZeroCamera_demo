@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 aux_source_directory(./ DIR_SOURCE_SRCS)
 
 foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
@@ -14,7 +14,6 @@ add_executable(zc_sys ${DIR_SOURCE_SRCS})
 
 target_include_directories(zc_sys PRIVATE
 # ${NNG_INC}
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${MSGCOMM_INC}
 )
@@ -31,9 +30,11 @@ utilsxx
 utils
 plat_basic
 bsw_basic
+zccrypto
+zcfifo
 zc_log
 nng
-pthread
+#pthread
 )
 
 #asan

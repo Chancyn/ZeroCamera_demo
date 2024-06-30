@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 aux_source_directory(./ DIR_SOURCE_SRCS)
 
 foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
@@ -25,7 +25,6 @@ ${MEDIAHTTP_INC}
 ${MEDIARTSP_INC2}
 ${MEDIARTSP_INC}
 ${MEDIASDK_INC}
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 )
 

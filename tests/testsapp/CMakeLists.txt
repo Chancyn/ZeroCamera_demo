@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 #aux_source_directory(./ DIR_SOURCE_SRCS)
 add_executable(zc_tests zc_test_main.cpp)
 foreach(SOURCE_FILE zc_test_main.cpp)
@@ -11,6 +11,8 @@ foreach(SOURCE_FILE zc_test_main.cpp)
 endforeach()
 
 #add_executable(zc_tests zc_test_main.cpp)
+add_subdirectory(zc_test_binmsg)
+add_subdirectory(zc_test_crypto)
 add_subdirectory(zc_test_utilsxx)
 add_subdirectory(zc_test_msgcomm)
 add_subdirectory(zc_test_mod)
@@ -18,11 +20,12 @@ add_subdirectory(zc_test_fifo)
 #头文件包含
 #头文件包含
 target_include_directories(zc_tests PRIVATE
+zc_test_binmsg
+zc_test_crypto
 zc_test_utilsxx
 zc_test_mod
 zc_test_fifo
 zc_test_msgcomm
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}
@@ -36,6 +39,8 @@ ${NNG_LIBPATH}
 
 #连接库
 target_link_libraries(zc_tests PRIVATE
+zc_test_binmsg
+zc_test_crypto
 zc_test_mod
 zc_test_fifo
 mod_rtsp
@@ -45,6 +50,8 @@ zc_test_msgcomm
 msgcomm
 zc_test_utilsxx
 zcfifo
+binmsg
+zccrypto
 zc_log
 # plat_basic
 # bsw_basic

@@ -1,9 +1,9 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
-#include <string.h>
-
 #include <map>
+#include <string.h>
+#include <time.h>
 #include <utility>
 
 #include "zc_log.h"
@@ -25,14 +25,14 @@ CMsgProcMod::~CMsgProcMod() {
 }
 
 ZC_S32 CMsgProcMod::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
-    LOG_TRACE("MsgReqProc into, modid[%u], id[%hu],id[%hu]", m_modid, req->id, req->sid);
+    // LOG_TRACE("MsgReqProc into, pid:%d,modid:%u, id[%hu],id[%hu]", req->pid, req->modid, req->id, req->sid);
     ZC_U32 key = (req->id << 16) | req->sid;
     auto it = m_msgmap.find(key);
     if (it != m_msgmap.end()) {
-        it->second->MsgReqProc(req, iqsize, rep, opsize);
+        return it->second->MsgReqProc(req, iqsize, rep, opsize);
     }
 
-    return 0;
+    return ZC_MSG_ERR_CMDID_E;
 }
 
 ZC_S32 CMsgProcMod::MsgRepProc(zc_msg_t *rep, int size) {
@@ -40,11 +40,11 @@ ZC_S32 CMsgProcMod::MsgRepProc(zc_msg_t *rep, int size) {
         return -1;
     }
 
-    LOG_TRACE("RepProc into, modid[%u], id[%hu],id[%hu]", m_modid, rep->id, rep->sid);
+    // LOG_TRACE("RepProc into, modid[%u], id[%hu],id[%hu]", m_modid, rep->id, rep->sid);
     ZC_U32 key = (rep->id << 16) | rep->sid;
     auto it = m_msgmap.find(key);
     if (it != m_msgmap.end()) {
-        it->second->MsgRepProc(rep, size);
+        return it->second->MsgRepProc(rep, size);
     }
 
     return 0;

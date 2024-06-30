@@ -1,0 +1,235 @@
+
+ifeq ($(PARAM_FILE), )
+    PARAM_FILE := ../../../Makefile.param
+    include $(PARAM_FILE)
+endif
+
+################# select sensor type for your sample ###############################
+####    OV_OS08A20_MIPI_8M_30FPS_12BIT             #################
+####    OV_OS08A20_MIPI_8M_30FPS_10BIT_WDR2TO1     #################
+####    SONY_IMX347_SLAVE_MIPI_4M_30FPS_12BIT      #################
+####    OV_OS04A10_MIPI_4M_30FPS_12BIT             #################
+####    OV_OS04A10_SLAVE_MIPI_4M_30FPS_12BIT       #################
+####    SONY_IMX515_MIPI_8M_30FPS_12BIT            #################
+####    SC450AI_MIPI_4M_30FPS_10BIT                #################
+####    SC450AI_MIPI_4M_30FPS_10BIT_WDR2TO1        #################
+####    SC850SL_MIPI_8M_30FPS_12BIT                #################
+####    SC850SL_MIPI_8M_30FPS_10BIT_WDR2TO1        #################
+####    GST_412C_SLAVE_THERMO_T3_384_288_30FPS_14BIT #################
+
+#SENSOR0_TYPE ?= OV_OS04A10_MIPI_4M_30FPS_12BIT
+#SENSOR1_TYPE ?= OV_OS04A10_MIPI_4M_30FPS_12BIT
+#SENSOR2_TYPE ?= OV_OS04A10_MIPI_4M_30FPS_12BIT
+#SENSOR3_TYPE ?= OV_OS04A10_MIPI_4M_30FPS_12BIT
+# zhoucc-add-imx415
+#SENSOR0_TYPE ?= SONY_IMX415_MIPI_8M_20FPS_12BIT
+#SENSOR1_TYPE ?= SONY_IMX415_MIPI_8M_20FPS_12BIT
+#SENSOR2_TYPE ?= SONY_IMX415_MIPI_8M_20FPS_12BIT
+#SENSOR3_TYPE ?= SONY_IMX415_MIPI_8M_20FPS_12BIT
+
+SENSOR0_TYPE ?= SONY_IMX415_MIPI_2M_60FPS_12BIT
+SENSOR1_TYPE ?= SONY_IMX415_MIPI_2M_60FPS_12BIT
+SENSOR2_TYPE ?= SONY_IMX415_MIPI_2M_60FPS_12BIT
+SENSOR3_TYPE ?= SONY_IMX415_MIPI_2M_60FPS_12BIT
+
+MPI_LIBS := $(HI_REL_LIB)/libhi_mpi.a
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_sysbind.a
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_sysmem.a
+
+ifeq ($(CONFIG_OT_ISP_SUPPORT), y)
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_ae.a
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_thermo.a
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_isp.a
+MPI_LIBS += $(HI_REL_LIB)/libot_mpi_isp.a
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_awb.a
+MPI_LIBS += $(HI_REL_LIB)/libdehaze.a
+MPI_LIBS += $(HI_REL_LIB)/libextend_stats.a
+MPI_LIBS += $(HI_REL_LIB)/libdrc.a
+MPI_LIBS += $(HI_REL_LIB)/libldci.a
+MPI_LIBS += $(HI_REL_LIB)/libbnr.a
+MPI_LIBS += $(HI_REL_LIB)/libcalcflicker.a
+MPI_LIBS += $(HI_REL_LIB)/libir_auto.a
+MPI_LIBS += $(HI_REL_LIB)/libacs.a
+MPI_LIBS += $(HI_REL_LIB)/libacs.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_os08a20.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_imx347_slave.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_os04a10.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_os04a10_slave.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_imx515.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_sc450ai.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_sc850sl.a
+MPI_LIBS += $(HI_REL_LIB)/libsns_imx415.a  # zhoucc-add-imx415
+MPI_LIBS += $(HI_REL_LIB)/libsns_gst412c.a
+ifeq ($(CONFIG_OT_ISP_DUMP_DEBUG_SUPPORT), y)
+MPI_LIBS += $(HI_REL_LIB)/libdump_dbg.a
+endif
+endif
+
+ifeq ($(CONFIG_OT_AIISP_SUPPORT), y)
+ifeq ($(CONFIG_OT_AIDESTRIP_SUPPORT), y)
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_aidestrip.a
+endif
+
+ifeq ($(CONFIG_OT_AIBNR_SUPPORT), y)
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_aibnr.a
+endif
+ifeq ($(CONFIG_OT_AIDRC_SUPPORT), y)
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_aidrc.a
+endif
+ifeq ($(CONFIG_OT_AI3DNR_SUPPORT), y)
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_ai3dnr.a
+MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_mcf.a
+endif
+ifeq ($(CONFIG_OT_SVP_SUPPORT), y)
+ifeq ($(CONFIG_OT_SVP_SEC_SUPPORT), y)
+    MPI_LIBS += $(REL_LIB)/libsvp_acl_sec.a
+else
+    MPI_LIBS += $(REL_LIB)/libsvp_acl.a
+endif
+    MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_km.a
+    MPI_LIBS += $(HI_REL_LIB)/libprotobuf-c.a
+endif
+endif
+
+ifeq ($(CONFIG_OT_AVS_LUT_SUPPORT), y)
+    MPI_LIBS += $(HI_REL_LIB)/libhi_stitch_lut.a
+endif
+
+ifeq ($(CONFIG_OT_HEIF_SUPPORT), y)
+    MPI_LIBS += $(HI_REL_LIB)/libheif.a
+    MPI_LIBS += $(HI_REL_LIB)/libfileformat.a
+endif
+
+ifeq ($(CONFIG_OT_AUDIO_SUPPORT), y)
+AUDIO_LIBA := $(HI_REL_LIB)/libhi_mpi_audio.a
+AUDIO_LIBA += $(HI_REL_LIB)/libvoice_engine.a
+AUDIO_LIBA += $(HI_REL_LIB)/libupvqe.a
+AUDIO_LIBA += $(HI_REL_LIB)/libdnvqe.a
+AUDIO_LIBA += $(HI_REL_LIB)/libhi_mpi_audio_adp.a
+AUDIO_LIBA += $(HI_REL_LIB)/libopus.a
+AUDIO_ADP_DIR ?= $(PWD)/../audio/adp
+endif
+COMMON_DIR ?= $(PWD)/../common
+
+INC_FLAGS := -I$(REL_INC)
+INC_FLAGS += -I$(HI_REL_INC)
+INC_FLAGS += -I$(SDK_PATH)/$(EXTDRV)/es8388
+INC_FLAGS += -I$(SDK_PATH)/$(EXTDRV)/lt8618sx
+
+ISP_VERSION := ISP_V2
+
+CFLAGS += -Wall $(INC_FLAGS) -D$(OT_ARCH) -D$(OT_FPGA) -D$(ISP_VERSION)
+CFLAGS += -lstdc++
+ifneq ($(CONFIG_LLVM), y)
+CFLAGS += -lpthread -lm -ldl
+endif
+CFLAGS += $(LIBS_CFLAGS)
+CFLAGS += $(LIBS_EXEC_CFLAGS)
+CFLAGS += $(MPP_CFLAGS)
+CFLAGS += -DSENSOR0_TYPE=$(SENSOR0_TYPE)
+CFLAGS += -DSENSOR1_TYPE=$(SENSOR1_TYPE)
+CFLAGS += -DSENSOR2_TYPE=$(SENSOR2_TYPE)
+CFLAGS += -DSENSOR3_TYPE=$(SENSOR3_TYPE)
+
+ifeq ($(MEM_SHARE), y)
+	CFLAGS += -DSAMPLE_MEM_SHARE_ENABLE
+endif
+
+################ select audio codec type for your sample ################
+#external acodec
+#ACODEC_TYPE ?= ACODEC_TYPE_ES8388
+ACODEC_TYPE ?= ACODEC_TYPE_INNER
+
+ifeq ($(ACODEC_TYPE), ACODEC_TYPE_ES8388)
+	CFLAGS += -DOT_ACODEC_TYPE_ES8388
+endif
+
+
+ifeq ($(ACODEC_TYPE), ACODEC_TYPE_INNER)
+	CFLAGS += -DOT_ACODEC_TYPE_INNER
+endif
+
+################ select audio module library type for your sample ################
+AUDIO_MODULE_LIB_TYPE ?= AUDIO_LIB_TYPE_STATIC
+#AUDIO_MODULE_LIB_TYPE ?= AUDIO_LIB_TYPE_SHARE
+ifeq ($(CONFIG_OT_AUDIO_SUPPORT), y)
+ifeq ($(AUDIO_MODULE_LIB_TYPE), AUDIO_LIB_TYPE_STATIC)
+##### VQE #####
+	CFLAGS += -DOT_VQE_USE_STATIC_MODULE_REGISTER
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_res.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_record.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_hpf.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_anr.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_aec.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_agc.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_eq.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libvqe_talkv2.a
+##### AAC #####
+	AUDIO_LIBA += $(HI_REL_LIB)/libaac_dec.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libaac_enc.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libaac_comm.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libaac_sbr_dec.a
+	AUDIO_LIBA += $(HI_REL_LIB)/libaac_sbr_enc.a
+endif
+endif
+
+################ config gyro dis for your sample ################
+GYRO_DIS ?= n
+
+ifeq ($(GYRO_DIS), y)
+	CFLAGS += -DOT_GYRODIS_SUPPORT
+	MPI_LIBS += $(HI_REL_LIB)/libhi_mpi_motionfusion.a
+endif
+
+#########################################################################
+#COMM_SRC := $(wildcard $(COMMON_DIR)/*.c)
+COMM_SRC := $(wildcard $(COMMON_DIR)/sample_comm_sys.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_isp.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_vi.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_vo.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_mipi_tx.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_vpss.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/loadbmp.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_vdec.c)
+ifeq ($(CONFIG_OT_AUDIO_SUPPORT), y)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_audio.c)
+endif
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_venc.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_comm_region.c)
+COMM_SRC += $(wildcard $(COMMON_DIR)/sample_ipc.c)
+COMM_OBJ := $(COMM_SRC:%.c=%.o)
+COMM_INC := -I$(COMMON_DIR)
+ifeq ($(CONFIG_OT_AUDIO_SUPPORT), y)
+COMM_INC += -I$(AUDIO_ADP_DIR)
+endif
+
+MEDIA_MSG_CLIENT_SRC := $(wildcard $(COMMON_DIR)/media_msg/client/*.c)
+MEDIA_MSG_CLIENT_OBJ := $(MEDIA_MSG_CLIENT_SRC:%.c=%.o)
+
+MEDIA_MSG_SERVER_SRC := $(wildcard $(COMMON_DIR)/media_msg/server/*.c)
+MEDIA_MSG_SERVER_OBJ := $(MEDIA_MSG_SERVER_SRC:%.c=%.o)
+
+MEDIA_MSG_INC := -I$(COMMON_DIR)/media_msg/include
+MEDIA_MSG_INC += -I$(SDK_PATH)/ot_syslink/ipcmsg/include
+MEDIA_MSG_INC += -I$(SDK_PATH)/ot_syslink/datafifo/include
+
+#### test ZC_RTSP_TEST
+ZC_RTSP_TEST ?= 1
+ZC_RTSP_DEP_DIR = /home/zhoucc/work/study/zc_demo/ZeroCamera_demo
+##########
+
+## zhoucc rtsp test
+ifeq ($(ZC_RTSP_TEST), 1)
+	ZCC_RTSP_TEST_DEF_CFLAGS += -DZC_RTSP_TEST
+	ZCC_RTSP_TEST_INC += -I$(ZC_RTSP_DEP_DIR)/include
+	ZCC_RTSP_TEST_INC += -I$(ZC_RTSP_DEP_DIR)/include/fifo
+	ZCC_RTSP_TEST_INC += -I$(ZC_RTSP_DEP_DIR)/include/basic
+	ZCC_RTSP_TEST_INC += -I$(ZC_RTSP_DEP_DIR)/include/utilsxx
+	ZCC_RTSP_TEST_INC += -I$(ZC_RTSP_DEP_DIR)/include/utils
+	ZCC_RTSP_TEST_INC += -I$(ZC_RTSP_DEP_DIR)/include/zc_log
+	CFLAGS += -DZC_RTSP_TEST $(ZCC_RTSP_TEST_INC)
+	ZCC_RTSP_TEST_LIBS += -lzcfifo -lutilsxx -lutils -lbsw_basic -lzc_log -lspdlog
+	ZCC_RTSP_TEST_LIB_PATH += -L$(ZC_RTSP_DEP_DIR)/output/$(OT_ARCH)/lib -L$(ZC_RTSP_DEP_DIR)/thirdparty/install/$(OT_ARCH)/spdlog/lib/
+	LIBS_LD_CFLAGS += $(ZCC_RTSP_TEST_LIB_PATH) $(ZCC_RTSP_TEST_LIBS)
+endif
+###

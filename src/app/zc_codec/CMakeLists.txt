@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 aux_source_directory(./ DIR_SOURCE_SRCS)
 
 foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
@@ -15,7 +15,6 @@ add_executable(zc_codec ${DIR_SOURCE_SRCS})
 
 #头文件包含
 target_include_directories(zc_codec PRIVATE
-${BSW_BASIC_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}

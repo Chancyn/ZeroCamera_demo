@@ -34,7 +34,6 @@ int32_t zc_h264_sps_parse(const uint8_t *data, uint32_t dataSize, zc_h26x_sps_in
     }
 
     h264_free(h);
-
     return 0;
 }
 

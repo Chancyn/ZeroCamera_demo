@@ -15,9 +15,14 @@
 #include "MsgCommRepServer.hpp"
 #include "ZcType.hpp"
 
+#define ZC_DEBUG_DUMP 0    // debug dump
+#if ZC_DEBUG_DUMP
+#include "zc_basic_fun.h"
+#endif
+
 namespace zc {
-#define ZC_NNGREPMSG_SIZE (4096)
-#define ZC_NNGREPMSG_RECVFLAG (0)  // NNG_FLAG_ALLOC|NNG_FLAG_NONBLOCK
+#define ZC_NNGREPMSG_SIZE (4096)   // TODO(zhoucc):
+#define ZC_NNGREPMSG_RECVFLAG (0)  // block , NNG_FLAG_ALLOC|NNG_FLAG_NONBLOCK
 #define ZC_NNGREPMSG_SENDFLAG (0)
 
 CMsgCommRepServer::CMsgCommRepServer() : m_psock(new nng_socket()), m_handle(nullptr), m_running(0), m_tid(0) {}
@@ -82,18 +87,20 @@ void CMsgCommRepServer::runThreadProc() {
     nng_socket *psock = reinterpret_cast<nng_socket *>(m_psock);
     LOG_INFO("run into sock[%p], id[%d]", psock, psock->id);
     int rv;
-    char rbuf[ZC_NNGREPMSG_SIZE];
-    char sbuf[ZC_NNGREPMSG_SIZE];
-    size_t rlen = 0;
+    char rbuf[ZC_NNGREPMSG_SIZE] = {0};
+    char sbuf[ZC_NNGREPMSG_SIZE] = {0};
+    size_t rlen = sizeof(rbuf);
     int slen = 0;
 
     while (m_running) {
+        rlen = sizeof(rbuf);
         if ((rv = nng_recv(*psock, rbuf, &rlen, ZC_NNGREPMSG_RECVFLAG)) != 0) {
             LOG_ERROR("recv msg error %d %s", rv, nng_strerror(rv));
             goto _done_err;
         }
-
-        LOG_TRACE("recv msg sock:%d len:%d", psock->id, rlen);
+#if ZC_DUMP_BINSTREAM
+        zc_debug_dump_binstream("svrrecv", psock->id, (const uint8_t *)rbuf, rlen);
+#endif
         // handle
         if (m_handle) {
             slen = sizeof(sbuf);
@@ -104,6 +111,9 @@ void CMsgCommRepServer::runThreadProc() {
             LOG_ERROR("send msg error %d %s", rv, nng_strerror(rv));
             goto _done_err;
         }
+#if ZC_DUMP_BINSTREAM
+        zc_debug_dump_binstream("svrsend", psock->id, (const uint8_t *)sbuf, slen);
+#endif
     }
 _done_err:
 

@@ -99,7 +99,7 @@ int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
                 m_frame->video.height = spsinfo.height;
             }
         } else {
-            LOG_ERROR("h264 prase sps error");
+            LOG_ERROR("h264 parse sps error");
         }
     }
 

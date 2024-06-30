@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 
 project(zc_test VERSION 0.1.0 LANGUAGES C CXX)
 
@@ -18,27 +18,41 @@ set (CXXFLAGS_SOC )
 
 # set platform
 if("${ZC_SOC}x" STREQUAL "hi3519dv500x" )
-message("build hi3519dv500")
+message("build hi3519dv500 ####")
 set(COMPILER_PREFIX "aarch64-v01c01-linux-gnu-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set (CFLAGS_SOC -mcpu=cortex-a55)
 set (CXXFLAGS_SOC -mcpu=cortex-a55)
+elseif("${ZC_SOC}x" STREQUAL "ss928v100x" )
+message("build ss928v100 ####")
+set(COMPILER_PREFIX "aarch64-mix210-linux-")
+set(CMAKE_SYSTEM_PROCESSOR arm)
+elseif("${ZC_SOC}x" STREQUAL "rk3588x" )
+message("build rk3588 ####")
+set(COMPILER_PREFIX "aarch64-none-linux-gnu-")
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+#ffmpge
+set(FFMPEG_INC include)
+set(FFMPEG_LIB lib)
 else()
-message("build ${ZC_SOC}")
+message("build ${ZC_SOC} ####")
 #build memoryleak detect tool ON
 option(WITH_ASAN "asan option" OFF)
 endif()
 
+
 set (CMAKE_C_COMPILER ${COMPILER_PREFIX}gcc)
 set (CMAKE_CXX_COMPILER ${COMPILER_PREFIX}g++)
-
+message("build #### C compiler:${CMAKE_C_COMPILER} ####")
+message("build #### CXX compiler:${CMAKE_CXX_COMPILER} ####")
 set(CMAKE_C_FLAGS
-    "${CFLAGS_SOC} -Wall -std=gnu11 -fPIC"
+    "${CFLAGS_SOC} -Wall -std=gnu11 -fPIC -pthread"
 )
 
 #"${CXXFLAGS_SOC} -Wall -std=c++11 -Werror" -std=c++11
 set(CMAKE_CXX_FLAGS
-    "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC"
+    "${CXXFLAGS_SOC} -Wall -std=gnu++11 -fPIC -pthread"
 )
 
 if(WITH_ASAN)
@@ -78,11 +92,12 @@ set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib
 set(NNG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/include)
 set(NNG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/lib)
 
-set(BSW_BASIC_INC ${CMAKE_SOURCE_DIR}/src/bsw/basic)
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
+
 set(ZCRTSP_INC ${CMAKE_SOURCE_DIR}/src/media/zcrtsp)
+set(ZCCODEC_INC ${CMAKE_SOURCE_DIR}/src/media/zccodec)
 
 set(MEDIAINTALL ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server)
 set(MEDIARTSPAIO rtspaio)
@@ -134,24 +149,53 @@ set(MEDIAAIO_INC ${MEDIAINTALL}/sdk/libaio/include)
 
 include_directories(include
 include/zc_log
+include/zccrypto
 include/fifo
 include/utilsxx
 include/utils
 include/msgcomm
 include/mod
 include/media
+include/binmsg
+include/basic
 )
 
-add_subdirectory(src)
-add_subdirectory(tests)
-
-#add_subdirectory(tests)
 #option build if or not
 #option(WITH_BSW "bsw option"     ON)
 #if(WITH_BSW)
 #    TODO
 #    add_definitions(-DWITH_BSW)
 #endif()
+
+#option(WITH_FFMPEG "ffmpeg option"     ON)
+option(WITH_FFMPEG "ffmpeg option"     OFF)
+if(WITH_FFMPEG)
+    add_definitions(-DWITH_FFMPEG)
+endif()
+
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(AVCODEC libavcodec)
+pkg_check_modules(AVFORMAT libavformat)
+pkg_check_modules(AVUTIL libavutil)
+pkg_check_modules(SWSCALE libswscale)
+pkg_check_modules(SWRESAMPLE libswresample)
+pkg_check_modules(AVDEVICE libavdevice)
+
+if(WITH_FFMPEG)
+# 包含ffmpeg头文件
+
+include_directories(zc_testv4l2 PRIVATE
+${AVDEVICE_INCLUDE_DIRS}
+${AVFORMAT_INCLUDE_DIRS}
+${AVCODEC_INCLUDE_DIRS}
+${SWSCALE_INCLUDE_DIRS}
+${SWRESAMPLE_INCLUDE_DIRS}
+${AVUTIL_INCLUDE_DIRS} )
+endif()
+
+add_subdirectory(src)
+add_subdirectory(tests)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

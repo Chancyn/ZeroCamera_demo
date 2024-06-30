@@ -27,12 +27,14 @@ extern "C" uint32_t rtp_ssrc(void);
 
 #if ZC_LIVE_TEST
 namespace zc {
+enum { NAL_IDR = 5, NAL_SEI = 6, NAL_SPS = 7, NAL_PPS = 8 };
 CLiveTestWriterH264::CLiveTestWriterH264(const live_test_info_t &info)
     : Thread(info.threadname), m_status(0), m_reader(nullptr), m_fifowriter(nullptr) {
     m_rtp_clock = 0;
     m_rtcp_clock = 0;
     m_timestamp = 0;
     memcpy(&m_info, &info, sizeof(m_info));
+    memset(&m_naluinfo, 0, sizeof(m_naluinfo));
     Init();
     Start();
 }
@@ -95,6 +97,7 @@ int CLiveTestWriterH264::_putData2FIFO() {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             zc_frame_t frame;
+            memset(&frame, 0, sizeof(frame));
             frame.magic = ZC_FRAME_VIDEO_MAGIC;
             frame.size = bytes;
             frame.type = ZC_STREAM_VIDEO;
@@ -118,12 +121,59 @@ int CLiveTestWriterH264::_putData2FIFO() {
     return ret;
 }
 
+int CLiveTestWriterH264::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
+    const std::list<std::pair<const uint8_t *, size_t>> &sps = m_reader->GetParameterSets();
+    std::list<std::pair<const uint8_t *, size_t>>::const_iterator it;
+    zc_video_naluinfo_t tmp = {0};
+
+    unsigned int type = 0;
+    tmp.nalunum = 0;
+    for (it = sps.begin(); it != sps.end(); ++it) {
+        unsigned int naltype = (*(it->first)) & 0x1F;
+        size_t bytes = it->second;
+        LOG_WARN("naluinfo %p, type:%d, size:%d", it->first, naltype, bytes);
+        if (naltype == NAL_SPS) {
+            type = ZC_NALU_TYPE_SPS;
+        } else if (naltype == NAL_PPS) {
+            type = ZC_NALU_TYPE_PPS;
+        } else if (naltype == NAL_SEI) {
+            type = ZC_NALU_TYPE_SEI;
+        } else {
+            LOG_ERROR("unsupport naluinfo %p, type:%d, size:%d", it->first, naltype, bytes);
+            continue;
+        }
+
+        zc_nalu_t *nalu = &tmp.nalu[tmp.nalunum];
+        if (bytes > 0 && bytes <= sizeof(nalu->data)) {
+            memcpy(nalu->data, it->first, bytes);
+            nalu->size = bytes;
+            nalu->type = type;
+            LOG_WARN("fillSdpInfo num:%d, type:%d, size:%d", tmp.nalunum, type, nalu->size);
+#if 1  // dump
+            for (int i = 0; i < nalu->size; i++) {
+                printf("%02x ", nalu->data[i]);
+            }
+            printf("\n");
+#endif
+            tmp.nalunum++;
+            if (tmp.nalunum >= ZC_FRAME_NALU_MAXNUM) {
+                break;
+            }
+        }
+    }
+
+    memcpy(&sdpinfo, &tmp, sizeof(zc_video_naluinfo_t));
+
+    return 0;
+}
+
 int CLiveTestWriterH264::process() {
     LOG_WARN("process into\n");
     int ret = 0;
     int64_t dts = 0;
     ZC_SAFE_DELETE(m_reader);
     m_reader = new H264FileReader(m_info.filepath);
+    fillnaluInfo(m_naluinfo);
     while (State() == Running) {
         if (1 /*m_status == 1*/) {
             ret = _putData2FIFO();

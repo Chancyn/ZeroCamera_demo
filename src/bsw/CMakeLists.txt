@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 aux_source_directory(./ DIR_SOURCE_SRCS)
 
 foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
@@ -12,6 +12,8 @@ endforeach()
 
 add_subdirectory(log)
 add_subdirectory(basic)
+add_subdirectory(zccrypto)
+add_subdirectory(binmsg)
 add_subdirectory(fifo)
 add_subdirectory(utils)
 add_subdirectory(utilsxx)

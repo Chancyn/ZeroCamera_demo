@@ -20,6 +20,8 @@ class CMsgCommReqClient {
     bool Close();
     bool Send(void *buf, size_t len, int flags);
     bool Recv(void *buf, size_t *len, int flags);
+    bool SendTo(void *buf, size_t len, void *rbuf, size_t *rlen);
+    bool SendToNonBlock(void *buf, size_t len, void *rbuf, size_t *rlen);
 
  private:
     void *m_psock;  // nng_socket m_sock;

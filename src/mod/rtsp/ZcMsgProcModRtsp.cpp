@@ -46,6 +46,10 @@ ZC_S32 CMsgProcModRtsp::_handleReqRtspManRestart(zc_msg_t *req, int iqsize, zc_m
 ZC_S32 CMsgProcModRtsp::_handleRepRtspManRestart(zc_msg_t *rep, int size) {
     LOG_TRACE("handle RepRtspManRestart,size[%d]", size);
 
+    if (m_cbinfo.MgrHandleCb) {
+        m_cbinfo.MgrHandleCb(m_cbinfo.MgrContext, RTSP_MGR_HDL_RESTART_E, nullptr, nullptr);
+    }
+
     return 0;
 }
 
@@ -57,6 +61,22 @@ ZC_S32 CMsgProcModRtsp::_handleReqRtspManShutdown(zc_msg_t *req, int iqsize, zc_
 
 ZC_S32 CMsgProcModRtsp::_handleRepRtspManShutdown(zc_msg_t *rep, int size) {
     LOG_TRACE("handle RepRtspManShutdown,size[%d]", size);
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModRtsp::_handleReqRtspSMgrChgNotify(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+    zc_mod_smgrcli_chgnotify_t *pReqMsg = reinterpret_cast<zc_mod_smgrcli_chgnotify_t *>(req->data);
+    LOG_TRACE("handle ReqRtspSMgrNotify,iqsize:%d,modid:%d ", iqsize, pReqMsg->modid);
+    if (m_cbinfo.streamMgrHandleCb) {
+        m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, RTSP_SMGR_HDL_CHG_NOTIFY_E, nullptr, nullptr);
+    }
+
+    return 0;
+}
+
+ZC_S32 CMsgProcModRtsp::_handleRepRtspSMgrChgNotify(zc_msg_t *rep, int size) {
+    LOG_TRACE("handle RepRtspSMgrNotify,size[%d]", size);
 
     return 0;
 }
@@ -98,7 +118,7 @@ ZC_S32 CMsgProcModRtsp::_handleRepRtspCtrlReqIDR(zc_msg_t *rep, int size) {
     return 0;
 }
 
-bool CMsgProcModRtsp::Init() {
+bool CMsgProcModRtsp::Init(void *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
@@ -116,6 +136,10 @@ bool CMsgProcModRtsp::Init() {
     REGISTER_MSG(m_modid, ZC_MID_RTSP_MAN_E, ZC_MSID_RTSP_MAN_SHUTDOWN_E, &CMsgProcModRtsp::_handleReqRtspManShutdown,
                  &CMsgProcModRtsp::_handleRepRtspManShutdown);
 
+    // ZC_MID_RTSP_STREAMMGR_E
+    REGISTER_MSG(m_modid, ZC_MID_RTSP_SMGRCLI_E, ZC_MSID_SMGRCLI_CHGNOTIFY_E, &CMsgProcModRtsp::_handleReqRtspSMgrChgNotify,
+                 &CMsgProcModRtsp::_handleRepRtspSMgrChgNotify);
+
     // ZC_MID_RTSP_CFG_E
     REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MSID_RTSP_CFG_GET_E, &CMsgProcModRtsp::_handleReqRtspCfgGet,
                  &CMsgProcModRtsp::_handleRepRtspCfgGet);
@@ -127,6 +151,10 @@ bool CMsgProcModRtsp::Init() {
                  &CMsgProcModRtsp::_handleRepRtspCtrlReqIDR);
 
     init();
+
+    if (cbinfo) {
+        memcpy(&m_cbinfo, cbinfo, sizeof(m_cbinfo));
+    }
 
     m_init = true;
 

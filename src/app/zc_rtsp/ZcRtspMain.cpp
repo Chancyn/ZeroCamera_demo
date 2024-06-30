@@ -5,15 +5,20 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "zc_log.h"
+#include "zc_proc.h"
 
 #include "ZcRtspManager.hpp"
+#include "ZcStreamMgrCli.hpp"
+
 #if (ZC_LIVE_TEST && DZC_LIVE_TEST_THREADSHARED)
 #include "ZcLiveTestWriterSys.hpp"
 #endif
 
 #define ZC_LOG_PATH "./log"
+#define ZC_APP_NAME "zc_rtsp"
 #define ZC_LOG_APP_NAME "zc_rtsp.log"
 
 static BOOL bExitFlag = FALSE;
@@ -31,19 +36,57 @@ static void InitSignals() {
     signal(SIGPIPE, SIG_IGN);
 }
 
+// streamMgr handle mod msg callback
+static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
+    // LOG_TRACE("StreamMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    if (type == 0) {
+        // TODO(zhoucc):
+    }
+
+    return -1;
+}
+
+// RtspManager handle mod msg callback
+static int RtspMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
+    // LOG_TRACE("RtspMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    if (type == 0) {
+        // TODO(zhoucc):
+    }
+
+    return -1;
+}
+
 int main(int argc, char **argv) {
-    printf("main into\n");
+    ZC_PROC_SETNAME(ZC_APP_NAME);
+    char pname[ZC_MAX_PNAME] = {0};
+    ZC_PROC_GETNAME(pname, ZC_MAX_PNAME);
+
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
+    LOG_INFO("process[%s,%s], build:[%s]\n",argv[0], pname, g_buildDateTime);
 #if (ZC_LIVE_TEST && DZC_LIVE_TEST_THREADSHARED)
 #warning "zhoucc not process share testwrite"
     g_ZCLiveTestWriterInstance.Init();
 #endif
+    zc_streamcli_t cli = {0};
+    cli.mod = ZC_MODID_RTSP_E;
+    cli.pid = getpid();
+
+    strncpy(cli.pname, pname, sizeof(cli.pname) - 1);
+    g_ZCStreamMgrCliInstance.Init(&cli);
     zc::CRtspManager rtsp;
-    rtsp.Init();
+
+    zc::rtsp_callback_info_t cbinfo = {
+        .streamMgrHandleCb = StreamMgrHandleMsg,
+        .streamMgrContext = nullptr,
+        .MgrHandleCb = RtspMgrHandleMsg,
+        .MgrContext = &rtsp,
+    };
+
+    rtsp.Init(&cbinfo);
     rtsp.Start();
     while (!bExitFlag) {
-        usleep(100*1000);
+        usleep(100 * 1000);
         // LOG_DEBUG("sleep ");
     }
 
@@ -53,6 +96,7 @@ int main(int argc, char **argv) {
 #if (ZC_LIVE_TEST && DZC_LIVE_TEST_THREADSHARED)
     g_ZCLiveTestWriterInstance.UnInit();
 #endif
+    g_ZCStreamMgrCliInstance.UnInit();
     zc_log_uninit();
     printf("main exit\n");
     return 0;

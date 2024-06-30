@@ -16,7 +16,7 @@ class CModRtsp : public CModBase {
     virtual ~CModRtsp();
 
  public:
-    virtual bool Init();
+    virtual bool Init(void *cbinfo);
     virtual bool UnInit();
 
  private:

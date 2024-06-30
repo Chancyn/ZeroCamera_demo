@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.13)
 aux_source_directory(./ DIR_SOURCE_SRCS)
 
 foreach(SOURCE_FILE ${DIR_SOURCE_SRCS})
@@ -14,4 +14,4 @@ endforeach()
 
 add_subdirectory(testsapp)
 add_subdirectory(testappwriter)
-
+add_subdirectory(testv4l2)

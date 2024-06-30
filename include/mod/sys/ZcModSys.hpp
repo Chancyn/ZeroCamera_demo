@@ -16,7 +16,7 @@ class CModSys : public CModBase {
     virtual ~CModSys();
 
  public:
-    virtual bool Init();
+    virtual bool Init(void *cbinfo);
     virtual bool UnInit();
 
  private:

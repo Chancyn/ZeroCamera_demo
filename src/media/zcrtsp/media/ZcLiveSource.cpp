@@ -97,7 +97,7 @@ int CLiveSource::Init() {
             LOG_TRACE("Init m_chn[%d]", m_chn);
             if (m_chn == 0) {
                 // mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H265);
-                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_shmtype, m_chn);  // zhoucc
+                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H265, m_shmtype, m_chn);  // zhoucc
             } else {
                 LOG_TRACE("Init H264[%d]", m_chn);
                 mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_shmtype, m_chn);

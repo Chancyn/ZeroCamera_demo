@@ -21,7 +21,7 @@ typedef char ZC_CHAR;
 typedef void *ZC_HANDLE;
 
 #ifndef BOOL
-typedef int BOOL;
+typedef unsigned char BOOL;
 #define TRUE 1
 #define FALSE 0
 #endif
@@ -101,6 +101,7 @@ typedef int BOOL;
 
 
 #define ZC_MAX_PATH 256
+#define ZC_MAX_PNAME 32
 
 #ifdef __cplusplus
 }

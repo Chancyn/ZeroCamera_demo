@@ -13,7 +13,7 @@ class CSysManager : public CModSys {
     virtual ~CSysManager();
 
  public:
-    bool Init();
+    bool Init(sys_callback_info_t *cbinfo);
     bool UnInit();
     bool Start();
     bool Stop();

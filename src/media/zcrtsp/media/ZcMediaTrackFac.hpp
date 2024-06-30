@@ -21,7 +21,7 @@ class CMediaTrackFac {
     ~CMediaTrackFac() {}
     CMediaTrack *CreateMediaTrack(int code, int shmtype, int chn) {
         CMediaTrack *track = nullptr;
-        LOG_ERROR("CreateMediaTrack into, code:%d, shmtype:%d, chn:%d", code, shmtype, chn);
+        LOG_TRACE("CreateMediaTrack into, code:%d, shmtype:%d, chn:%d", code, shmtype, chn);
         switch (code) {
         case ZC_MEDIA_CODE_H264:
             track = new CMediaTrackH264(shmtype, chn);
