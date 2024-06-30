@@ -138,6 +138,7 @@ typedef struct {
 // shmstreamcfg
 typedef struct {
     unsigned char chn;        // chnno
+    unsigned char trackno;  // tracktype zc_stream_e
     unsigned char tracktype;  // tracktype zc_stream_e
     unsigned char encode;     // encode zc_frame_enc_e
     unsigned char enable;     // enable/disable

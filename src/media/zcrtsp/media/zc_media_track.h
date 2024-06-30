@@ -32,6 +32,27 @@ typedef enum {
 
     ZC_MEDIA_CODE_BUTT,
 } zc_media_code_e;
+// shmstreamcfg
+
+typedef struct _zc_media_track {
+    unsigned char chn;        // chnno
+    unsigned char trackno;    // tracktype zc_stream_e
+    unsigned char tracktype;  // tracktype zc_stream_e
+    unsigned char encode;     // encode zc_frame_enc_e
+    unsigned int mediacode;   // encode zc_media_code_e for new different CMediaTrackH264
+    unsigned int fifosize;    // shmfifosize
+    unsigned char enable;     // enable/disable
+    char name[32];         // shm path name
+} zc_meida_track_t;
+
+typedef struct _zc_stream_info {
+    unsigned char shmstreamtype;  // live push pull zc_shmstream_type_e
+    unsigned char idx;            // idx
+    unsigned char chn;            // chn num
+    unsigned char tracknum;       // num
+    int status;                   // zc_stream_status_e, status: ide ;
+    zc_meida_track_t tracks[ZC_MEDIA_TRACK_BUTT];
+} zc_media_info_t;
 
 #ifdef __cplusplus
 }

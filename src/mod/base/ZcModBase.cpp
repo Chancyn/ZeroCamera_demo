@@ -117,11 +117,11 @@ bool CModBase::init() {
     }
 
     if (!InitComm(m_url, svrreq)) {
-        LOG_ERROR("InitComm error");
+        LOG_ERROR("InitComm error modid:%d, url:%s", m_modid, m_url);
         goto _err;
     }
 
-    LOG_TRACE("init ok");
+    LOG_TRACE("init ok modid:%d, url:%s", m_modid, m_url);
     return true;
 
 _err:
@@ -353,8 +353,8 @@ int CModBase::_sendKeepaliveMsg() {
 
 #if 1  // ZC_DEBUG_DUMP
 static inline void _dumpTrackInfo(const char *user, zc_mod_stream_track_t *info) {
-    LOG_TRACE("[%s] ch:%u,track:%u,encode:%u,en:%u,size:%u,status:%u,name:%s", user, info->chn, info->tracktype,
-              info->encode, info->enable, info->fifosize, info->status, info->name);
+    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,en:%u,size:%u,status:%u,name:%s", user, info->chn,
+              info->trackno, info->tracktype, info->encode, info->enable, info->fifosize, info->status, info->name);
     return;
 }
 

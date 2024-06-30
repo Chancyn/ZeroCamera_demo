@@ -19,24 +19,24 @@ class CMediaTrackFac {
  public:
     CMediaTrackFac() {}
     ~CMediaTrackFac() {}
-    CMediaTrack *CreateMediaTrack(int code, int shmtype, int chn) {
+    CMediaTrack *CreateMediaTrack(const zc_meida_track_t &info) {
         CMediaTrack *track = nullptr;
-        LOG_TRACE("CreateMediaTrack into, code:%d, shmtype:%d, chn:%d", code, shmtype, chn);
-        switch (code) {
+        LOG_TRACE("CreateMediaTrack into, code:%d, chn:%u, trackno:%u,", info.mediacode, info.chn, info.trackno);
+        switch (info.mediacode) {
         case ZC_MEDIA_CODE_H264:
-            track = new CMediaTrackH264(shmtype, chn);
+            track = new CMediaTrackH264(info);
             break;
         case ZC_MEDIA_CODE_H265:
-            track = new CMediaTrackH265(shmtype, chn);
+            track = new CMediaTrackH265(info);
             break;
         case ZC_MEDIA_CODE_AAC:
-            track = new CMediaTrackAAC(shmtype, chn);
+            track = new CMediaTrackAAC(info);
             break;
         // case ZC_MEDIA_CODE_AAC:
         // track = new CMediaTrackAAC();
         // break;
         default:
-            LOG_ERROR("error, code[%d]", code);
+            LOG_ERROR("error, code[%d]", info.mediacode);
             break;
         }
         return track;

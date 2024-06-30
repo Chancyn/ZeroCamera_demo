@@ -21,7 +21,7 @@ namespace zc {
 class CLiveSource;
 class CMediaTrack {
  public:
-    explicit CMediaTrack(zc_media_track_e track, int encode, int code, int shmtype, int chn);
+    explicit CMediaTrack(const zc_meida_track_t &info);
     virtual ~CMediaTrack();
     virtual bool Init(void *info = nullptr) = 0;
     virtual void UnInit();
@@ -56,11 +56,7 @@ class CMediaTrack {
 
  protected:
     bool m_create;  // create ok
-    int m_track;    // trackid
-    int m_encode;   // frame codectype
-    int m_code;     // track codectype
-    zc_shmstream_e m_shmtype;   // live or push;different path
-    int m_chn;
+    zc_meida_track_t m_info;
     // CShmFIFOR *m_fiforeader;
     CShmStreamR *m_fiforeader;
     void *m_rtppacker;  // rtp encoder

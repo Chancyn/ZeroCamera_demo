@@ -26,10 +26,10 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
-CMediaTrack::CMediaTrack(zc_media_track_e track, int encode, int code, int shmtype, int chn)
-    : m_create(false), m_track(track), m_encode(encode), m_code(code), m_shmtype((zc_shmstream_e)shmtype), m_chn(chn),
-      m_fiforeader(nullptr), m_rtppacker(nullptr), m_rtp(nullptr), m_evfd(0), m_sendcnt(0), m_pollcnt(0),
-      m_rtp_clock(0), m_rtcp_clock(0) {
+CMediaTrack::CMediaTrack(const zc_meida_track_t &info)
+    : m_create(false), m_fiforeader(nullptr), m_rtppacker(nullptr), m_rtp(nullptr), m_evfd(0), m_sendcnt(0),
+      m_pollcnt(0), m_rtp_clock(0), m_rtcp_clock(0) {
+    memcpy(&m_info, &info, sizeof(zc_meida_track_t));
     memset(m_packet, 0, sizeof(m_packet));
     m_timestamp = 0;
     m_dts_first = -1;
@@ -79,8 +79,8 @@ int CMediaTrack::GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const 
     uint32_t timestamp;
 
     rtp_payload_encode_getinfo(m_rtppacker, &seq, &timestamp);
-    // snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_track, seq, timestamp);
-    snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_track, seq,
+    // snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_info.trackno, seq, timestamp);
+    snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_info.trackno, seq,
              (unsigned int)(m_timestamp * (m_frequency / 1000) /*kHz*/));
 
     return 0;
@@ -169,17 +169,17 @@ int CMediaTrack::GetData2Send() {
     int ret = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
 
-    #if 0   // for test frame write over read
+#if 0  // for test frame write over read
     // system_sleep(100);
     // if (!m_fiforeader->IsEmpty()) {
-    #endif
+#endif
     while (m_fiforeader->Len() > sizeof(zc_frame_t)) {
         ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
         ZC_ASSERT(ret > sizeof(zc_frame_t));
         ZC_ASSERT(pframe->size > 0);
-        if (pframe->video.encode != m_encode) {
+        if (pframe->video.encode != m_info.encode) {
             if (pframe->keyflag)
-                LOG_ERROR("encode error frame:%d!=m_encode:%d", pframe->video.encode, m_encode);
+                LOG_ERROR("encode error frame:%u!=encode:%u", pframe->video.encode, m_info.encode);
             continue;
         }
         if (pframe->keyflag) {

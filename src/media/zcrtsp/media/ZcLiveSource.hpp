@@ -18,7 +18,7 @@ class CMediaTrack;
 namespace zc {
 class CLiveSource : public IMediaSource, public Thread {
  public:
-    explicit CLiveSource(int shmtype, int chn);
+    explicit CLiveSource(const zc_media_info_t &info);
     virtual ~CLiveSource();
 
  public:
@@ -41,9 +41,7 @@ class CLiveSource : public IMediaSource, public Thread {
  private:
     std::string m_sdp;
     int m_status;
-    const zc_shmstream_e m_shmtype;   // live or push;different path
-    const int m_chn;
+    zc_media_info_t m_info;
     CMediaTrack *m_tracks[ZC_MEDIA_TRACK_BUTT];
-    int m_count;
 };
 }  // namespace zc

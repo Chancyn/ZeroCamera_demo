@@ -31,14 +31,13 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
-// CLiveSource::CLiveSource() :m_count(ZC_MEDIA_TRACK_BUTT){}
-CLiveSource::CLiveSource(int shmtype, int chn)
-    : Thread("LiveSource"), m_status(0), m_shmtype((zc_shmstream_e)shmtype), m_chn(chn), m_count(ZC_MEDIA_TRACK_META) {
+CLiveSource::CLiveSource(const zc_media_info_t &info) : Thread("LiveSource"), m_status(0) {
+    memcpy(&m_info, &info, sizeof(info));
     for (int i = 0; i < ZC_MEDIA_TRACK_BUTT; i++) {
         m_tracks[i] = nullptr;
     }
     Init();
-    LOG_TRACE("Constructor m_chn[%d]", m_chn);
+    LOG_TRACE("Constructor chn[%d]", m_info.chn);
 }
 
 CLiveSource::~CLiveSource() {
@@ -47,7 +46,7 @@ CLiveSource::~CLiveSource() {
 
 int CLiveSource::SetTransport(const char *track, std::shared_ptr<IRTPTransport> transport) {
     int t = atoi(track + 5 /*track*/);
-    if (t < 0 || t > m_count) {
+    if (t < 0 || t > m_info.tracknum) {
         return -1;
     }
 
@@ -91,23 +90,10 @@ int CLiveSource::UnInit() {
 int CLiveSource::Init() {
     CMediaTrackFac fac;
 
-    for (int i = 0; i < m_count; i++) {
+    for (int i = 0; i < m_info.tracknum; i++) {
         CMediaTrack *mtrack = nullptr;
-        if (i == ZC_MEDIA_TRACK_VIDEO) {
-            LOG_TRACE("Init m_chn[%d]", m_chn);
-            if (m_chn == 0) {
-                // mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H265);
-                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H265, m_shmtype, m_chn);  // zhoucc
-            } else {
-                LOG_TRACE("Init H264[%d]", m_chn);
-                mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_H264, m_shmtype, m_chn);
-            }
-
-        } else if (i == ZC_MEDIA_TRACK_AUDIO) {
-            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_AAC, m_shmtype, 0);
-        } else if (i == ZC_MEDIA_TRACK_META) {
-            mtrack = fac.CreateMediaTrack(ZC_MEDIA_CODE_METADATA, m_shmtype, 0);
-        }
+        LOG_TRACE("Init chn:%u, trackno:%u,track:%u", m_info.chn, m_info.tracks[i].trackno, m_info.tracks[i].tracktype);
+        mtrack = fac.CreateMediaTrack(m_info.tracks[i]);
 
         if (!mtrack) {
             continue;
@@ -136,7 +122,7 @@ int CLiveSource::GetSDPMedia(std::string &sdp) const {
     sdp = m_sdp;
 #else
     CMediaTrack *mtrack = nullptr;
-    for (int i = 0; i < m_count; i++) {
+    for (int i = 0; i < m_info.tracknum; i++) {
         mtrack = m_tracks[i];
         if (!mtrack) {
             continue;
@@ -155,7 +141,7 @@ int CLiveSource::GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const 
     // RTP-Info: url=rtsp://foo.com/bar.avi/streamid=0;seq=45102,
     //           url=rtsp://foo.com/bar.avi/streamid=1;seq=30211
     CMediaTrack *mtrack = nullptr;
-    for (int i = 0; i < m_count; i++) {
+    for (int i = 0; i < m_info.tracknum; i++) {
         mtrack = m_tracks[i];
         if (!mtrack) {
             continue;
@@ -180,7 +166,7 @@ int CLiveSource::_sendProcess() {
         return -1;
     }
 
-    for (int i = 0; i < m_count; i++) {
+    for (int i = 0; i < m_info.tracknum; i++) {
         int evfd = -1;
         if (m_tracks[i] && (evfd = m_tracks[i]->GetEvFd()) > 0) {
             LOG_WARN("epoll add i[%d], fd[%d] ptr[%p]", i, evfd, m_tracks[i]);

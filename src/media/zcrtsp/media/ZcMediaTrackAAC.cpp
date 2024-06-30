@@ -24,8 +24,8 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_FREQUENCE (48000)     // frequence
 
 namespace zc {
-CMediaTrackAAC::CMediaTrackAAC(int shmtype, int chn)
-    : CMediaTrack(ZC_MEDIA_TRACK_AUDIO, ZC_FRAME_ENC_AAC, ZC_MEDIA_CODE_AAC, shmtype, chn) {
+CMediaTrackAAC::CMediaTrackAAC(const zc_meida_track_t &info)
+    : CMediaTrack(info) {
     memset(&m_meidainfo, 0, sizeof(m_meidainfo));
     m_meidainfo.channels = 2;
     m_meidainfo.sample_bits = 2;
@@ -62,18 +62,7 @@ bool CMediaTrackAAC::Init(void *pinfo) {
 
     event.on_rtcp = CMediaTrack::OnRTCPEvent;
 
-    // m_fiforeader = new CShmFIFOR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, 0);
-    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
-        // push stream
-        m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_VIDEOPUSH_SHM_PATH, m_chn);
-    } else if (m_shmtype == ZC_SHMSTREAM_PULL) {
-        // pull stream
-        m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_VIDEOPULL_SHM_PATH, m_chn);
-    } else {
-        // live stream
-        m_fiforeader = new CShmStreamR(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIO_SHM_PATH, m_chn);
-    }
-
+    m_fiforeader = new CShmStreamR(m_info.fifosize, m_info.name, m_info.chn);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader");
         goto _err;

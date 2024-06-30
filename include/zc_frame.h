@@ -29,6 +29,7 @@ extern "C" {
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)
 #define ZC_STREAM_SUB_VIDEO_SIZE (8 * 1024 * 1024)
 #define ZC_STREAM_AUDIO_SIZE (1 * 1024 * 1024)
+#define ZC_STREAM_META_SIZE (1 * 1024 * 1024)
 
 // frame max size
 #define ZC_STREAM_MAXFRAME_SIZE (1 * 1024 * 1024)  // video frame
