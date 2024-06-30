@@ -165,7 +165,8 @@ include/media
 #    add_definitions(-DWITH_BSW)
 #endif()
 
-option(WITH_FFMPEG "ffmpeg option"     ON)
+#option(WITH_FFMPEG "ffmpeg option"     ON)
+option(WITH_FFMPEG "ffmpeg option"     OFF)
 if(WITH_FFMPEG)
     add_definitions(-DWITH_FFMPEG)
 endif()
