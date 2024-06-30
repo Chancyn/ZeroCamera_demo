@@ -56,3 +56,50 @@ GetEvFd: evfifo的fd,搭配epoll,实现事件驱动，读操作.
 
 ### 4.1参考用法
 doc/hisi_sample/sample_comm_venc.c中示例使用
+
+
+## 5.遗留问题
+### 5.1 遗留bug
+
+```
+[20240630_10_10_41_587][2024-06-30 10:10:41.580][warning][tid 2615312] [ZcLiveTestWriterH264.cpp 151][fillnaluInfo]fillSdpInfo num:1, type:2, size:28
+[20240630_10_10_41_589]68 ee 31 b2 00 00 00 01 06 e5 01 f3 80 00 00 00 01 65 b8 00 00 2b 0e 00 00 1b ff d2
+[20240630_10_10_44_320]
+[20240630_10_10_44_320]Thread 3 "TestWH264_1" received signal SIGSEGV, Segmentation fault.
+[20240630_10_10_44_321][Switching to Thread 0x7ffff5eed640 (LWP 2615312)]
+[20240630_10_10_44_349]__memmove_avx_unaligned_erms () at ../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S:708
+[20240630_10_10_44_350]708     ../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S: No such file or directory.
+[20240630_10_16_13_104](gdb) bt
+[20240630_10_16_13_235]#0  __memmove_avx_unaligned_erms () at ../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S:708
+[20240630_10_16_13_367]#1  0x00005555555631ba in zc::CShmFIFO::_put (this=0x555555588740, buffer=0x7fffd93b0135 "", len=14590)
+[20240630_10_16_13_381]    at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/bsw/fifo/ZcShmFIFIO.cpp:379
+[20240630_10_16_13_393]#2  0x0000555555563f71 in zc::CShmStreamW::PutAppending (this=0x555555588740, buffer=0x7fffd93b0135 "", len=14590)
+[20240630_10_16_13_407]    at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/bsw/fifo/ZcShmStream.cpp:78
+[20240630_10_16_13_410]#3  0x000055555555b5b5 in zc::CLiveTestWriterH264::_putingCb (this=0x555555587dc0, stream=0x7ffff5eecc20)
+[20240630_10_16_13_411]    at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/media/zcrtsp/media/ZcLiveTestWriterH264.cpp:48
+[20240630_10_16_13_416]#4  0x000055555555b5e7 in zc::CLiveTestWriterH264::putingCb (u=0x555555587dc0, stream=0x7ffff5eecc20)
+[20240630_10_16_13_427]    at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/media/zcrtsp/media/ZcLiveTestWriterH264.cpp:53
+[20240630_10_16_13_473]#5  0x0000555555563f24 in zc::CShmStreamW::Put (this=0x555555588740, buffer=0x7ffff5eecc30 "EVCZ\376\070", len=68, stream=0x7ffff5eecc20)
+[20240630_10_16_13_487]    at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/bsw/fifo/ZcShmStream.cpp:67
+[20240630_10_16_13_561]#6  0x000055555555b985 in zc::CLiveTestWriterH264::_putData2FIFO (this=0x555555587dc0)
+[20240630_10_16_13_564]    at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/media/zcrtsp/media/ZcLiveTestWriterH264.cpp:112
+[20240630_10_16_13_580]#7  0x000055555555bf07 in zc::CLiveTestWriterH264::process (this=0x555555587dc0)
+[20240630_10_16_13_582]    at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/media/zcrtsp/media/ZcLiveTestWriterH264.cpp:179
+[20240630_10_16_13_587]#8  0x000055555556507a in zc::Thread::_run (this=0x555555587dc0) at /home/zhoucc/work/study/zc_demo/ZeroCamera_demo/src/bsw/utilsxx/Thread.cpp:68
+[20240630_10_16_13_610]#9  0x0000555555565d4d in std::__invoke_impl<void, void (zc::Thread::*)(), zc::Thread*> (
+[20240630_10_16_13_647]    __f=@0x555555586b60: (void (zc::Thread::*)(zc::Thread * const)) 0x555555564fa2 <zc::Thread::_run()>, __t=@0x555555586b58: 0x555555587dc0)
+[20240630_10_16_13_649]    at /usr/include/c++/11/bits/invoke.h:74
+[20240630_10_16_13_652]#10 0x0000555555565c9f in std::__invoke<void (zc::Thread::*)(), zc::Thread*> (
+[20240630_10_16_13_655]    __fn=@0x555555586b60: (void (zc::Thread::*)(zc::Thread * const)) 0x555555564fa2 <zc::Thread::_run()>) at /usr/include/c++/11/bits/invoke.h:96
+[20240630_10_16_13_656]#11 0x0000555555565bff in std::thread::_Invoker<std::tuple<void (zc::Thread::*)(), zc::Thread*> >::_M_invoke<0ul, 1ul> (this=0x555555586b58)
+[20240630_10_16_13_657]    at /usr/include/c++/11/bits/std_thread.h:259
+[20240630_10_16_13_660]#12 0x0000555555565bb4 in std::thread::_Invoker<std::tuple<void (zc::Thread::*)(), zc::Thread*> >::operator() (this=0x555555586b58)
+[20240630_10_16_13_663]    at /usr/include/c++/11/bits/std_thread.h:266
+[20240630_10_16_13_684]#13 0x0000555555565b94 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (zc::Thread::*)(), zc::Thread*> > >::_M_run (
+[20240630_10_16_13_687]    this=0x555555586b50) at /usr/include/c++/11/bits/std_thread.h:211
+[20240630_10_16_13_693]#14 0x00007ffff7c06253 in ?? () from /lib/x86_64-linux-gnu/libstdc++.so.6
+[20240630_10_16_13_793]#15 0x00007ffff7975ac3 in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:442
+[20240630_10_16_13_807]#16 0x00007ffff7a07850 in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
+[20240630_10_16_20_655](gdb) bt full f 2
+[20240630_10_16_20_666]#0  __memmove_avx_unaligned_erms () at ../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S:708
+```

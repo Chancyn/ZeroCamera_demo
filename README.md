@@ -55,6 +55,9 @@ TODO:
 
 
 2.待完善
+TODO:
+1.出现zc_testwriter 异常崩溃bug;暂时未找到问题，x64环境下，重启wsl之后，正常; 怀疑点memcpy地址不对齐问题？
+
 ### 5.rtsps协议
 实现了rtspserver,rtspcli rtsppushserver,rtsppushcli模块 \
 对应测试进程
