@@ -86,18 +86,23 @@ CShmFIFO::CShmFIFO(unsigned int size, const char *name, unsigned char chn, bool 
         BUG_ON(size > 0x80000000);
         size = roundup_pow_of_two(size);
     }
-
+#if ZC_SUPPORT_USERDATA
     if (m_usersize)
         m_usersize = ALIGN_UP(usersize, 4);
     else
-        m_usersize = 0;
+     m_usersize = 0;
+
+    m_pfifo.usersize = 0;
+    m_pfifo.shmbuff = nullptr;
+#else
+    m_usersize = 0;
+#endif
 
     m_size = size;
-    m_pfifo.usersize = 0;
     m_pfifo.out = 0;
     m_pfifo.shmid = 0;
     m_pfifo.fifo = nullptr;
-    m_pfifo.shmbuff = nullptr;
+
     // /dev/shm/shmfifo
     snprintf(m_szfifoname, sizeof(m_szfifoname) - 1, "/tmp/shmfifo_%.8s%d", name, chn);
     if (access(m_szfifoname, F_OK) != 0) {
@@ -255,14 +260,17 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
         ZC_ASSERT(0);
         goto _err_open;
     }
-
-    m_pfifo.usersize = m_usersize;
-    m_pfifo.shmid = shmid;
+#if ZC_SUPPORT_USERDATA
     m_pfifo.shmbuff = p;
+    m_pfifo.usersize = m_usersize;
+#endif
+    m_pfifo.shmid = shmid;
     m_pfifo.fifo = reinterpret_cast<zcshmbuf_t *>((char *)p + m_usersize);
     if (m_bwrite) {
         // owner init in/out pos
+#if ZC_SUPPORT_USERDATA
         m_pfifo.fifo->usersetflag = 0;
+#endif
         m_pfifo.fifo->size = m_size;
         m_pfifo.fifo->in = m_pfifo.fifo->out = 0;
         m_pfifo.out = 0;
@@ -285,11 +293,12 @@ _err_open:
 _err_ctl:
     shmctl(shmid, IPC_RMID, NULL);
 _err:
+#if ZC_SUPPORT_USERDATA
     m_pfifo.shmid = 0;
     m_pfifo.fifo = nullptr;
     m_pfifo.shmbuff = nullptr;
     m_pfifo.usersize = 0;
-
+#endif
     LOG_ERROR("shmalloc error shmid[%d],shmkey[%d]", shmid, shmkey);
     return false;
 }
@@ -312,16 +321,25 @@ void CShmFIFO::_shmfree() {
         if (m_bwrite) {
             // don't destory mutex, destory
             // share_mutex_destroy(&m_pfifo.fifo->mutex, &m_pfifo.fifo->mutexattr);
+#if ZC_SUPPORT_USERDATA
             shmdt(m_pfifo.shmbuff);
             m_pfifo.shmbuff = nullptr;
             m_pfifo.usersize = 0;
+#else
+            share_mutex_destroy(&m_pfifo.fifo->mutex, &m_pfifo.fifo->mutexattr);
+            shmdt(m_pfifo.fifo);
+#endif
             m_pfifo.fifo = nullptr;
             LOG_TRACE("_shmfree shmctl delete shmid[%d]", m_pfifo.shmid);
             shmctl(m_pfifo.shmid, IPC_RMID, NULL);
         } else {
+#if ZC_SUPPORT_USERDATA
             shmdt(m_pfifo.shmbuff);
             m_pfifo.shmbuff = nullptr;
             m_pfifo.usersize = 0;
+#else
+            shmdt(m_pfifo.fifo);
+#endif
             m_pfifo.fifo = nullptr;
             LOG_TRACE("_shmfree shmctl delete shmid[%d]", m_pfifo.shmid);
         }
@@ -335,16 +353,17 @@ void CShmFIFO::ShmFree() {
 }
 
 void CShmFIFO::setKeyPos() {
-    m_pfifo.fifo->key = m_pfifo.fifo->in;
+    // m_pfifo.fifo->key = m_pfifo.fifo->in;
     return;
 }
 
 unsigned int CShmFIFO::getLatestPos(bool key) {
-    return key ? m_pfifo.fifo->key : m_pfifo.fifo->in;
+    // return key ? m_pfifo.fifo->key : m_pfifo.fifo->in;
+    return m_pfifo.fifo->in;
 }
 
 void CShmFIFO::setLatestOutpos(unsigned int pos) {
-    LOG_WARN("skip set Out pos:%u->%u, in:%u, key:%u", m_pfifo.out, pos, m_pfifo.fifo->in, m_pfifo.fifo->key);
+    // LOG_WARN("skip set Out pos:%u->%u, in:%u, key:%u", m_pfifo.out, pos, m_pfifo.fifo->in, m_pfifo.fifo->key);
     m_pfifo.out = pos;
     return;
 }
@@ -510,6 +529,7 @@ bool CShmFIFO::IsFull() {
 }
 
 unsigned int CShmFIFO::getUserData(unsigned char *buffer, unsigned int len) {
+    #if ZC_SUPPORT_USERDATA
     ZC_ASSERT(m_pfifo.shmbuff != nullptr);
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     share_mutex_lock(&m_pfifo.fifo->mutex);
@@ -520,9 +540,13 @@ unsigned int CShmFIFO::getUserData(unsigned char *buffer, unsigned int len) {
     }
     share_mutex_unlock(&m_pfifo.fifo->mutex);
     return wlen;
+    #else
+    return 0;
+    #endif
 }
 
 unsigned int CShmFIFO::setUserData(unsigned char *buffer, unsigned int len) {
+    #if ZC_SUPPORT_USERDATA
     ZC_ASSERT(m_pfifo.shmbuff != nullptr);
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     share_mutex_lock(&m_pfifo.fifo->mutex);
@@ -536,5 +560,8 @@ unsigned int CShmFIFO::setUserData(unsigned char *buffer, unsigned int len) {
     share_mutex_unlock(&m_pfifo.fifo->mutex);
 
     return wlen;
+    #else
+    return 0;
+    #endif
 }
 }  // namespace zc

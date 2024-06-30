@@ -173,7 +173,7 @@ int CLiveTestWriterH264::process() {
     int64_t dts = 0;
     ZC_SAFE_DELETE(m_reader);
     m_reader = new H264FileReader(m_info.filepath);
-    fillnaluInfo(m_naluinfo);
+    // fillnaluInfo(m_naluinfo);
     while (State() == Running) {
         if (1 /*m_status == 1*/) {
             ret = _putData2FIFO();

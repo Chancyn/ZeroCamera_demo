@@ -13,8 +13,10 @@
 
 #include "NonCopyable.hpp"
 #include "zc_log.h"
+#define ZC_SUPPORT_USERDATA 0
 
 namespace zc {
+#if ZC_SUPPORT_USERDATA
 // fifo buf
 typedef struct _zcshmbuf_ {
     pthread_mutex_t mutex; /* process shared mutex*/
@@ -37,6 +39,26 @@ typedef struct _zcshmfifo_ {
     int evfd;                  // for evevnt
     unsigned int out;
 } zcshmfifo_t;
+#else
+// fifo buf
+typedef struct _zcshmbuf_ {
+    pthread_mutex_t mutex;   /* process shared mutex*/
+    pthread_mutexattr_t mutexattr;
+    unsigned int size;       /* the size of the allocated buffer */
+    // unsigned int key;        /* key frame data at offset */
+    unsigned int in;         /* data is added at offset (in % size) */
+    unsigned int out;        /* data is extracted from off. (out % size) */
+    unsigned char buffer[0]; /* must be end the buffer holding the data */
+} zcshmbuf_t;
+
+//
+typedef struct _zcshmfifo_ {
+    zcshmbuf_t *fifo;
+    int shmid;  // shmid
+    int evfd;   // for evevnt
+    unsigned int out;
+} zcshmfifo_t;
+#endif
 // 性能说明 ThreadPutLock ret[1024000000],cos[108-120]ms;性能与c 语言版本一致
 class CShmFIFO : public NonCopyable {
  public:
