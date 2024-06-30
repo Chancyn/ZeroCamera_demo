@@ -118,7 +118,7 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
     unsigned char prefixlen = 0x01 == frame->data[2] ? 3 : 4;
 
     if (frame->video.encode == ZC_FRAME_ENC_H264 || frame->video.encode == ZC_FRAME_ENC_H265) {
-        ZC_ASSERT(frame->keyflag);
+        // ZC_ASSERT(frame->keyflag); // TODO(zhoucc):
         //
         if (frame->video.nalunum == 0) {
             LOG_WARN("no naluinfo, prase frame->size:%d", frame->size);

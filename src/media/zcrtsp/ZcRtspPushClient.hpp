@@ -10,6 +10,7 @@
 #include "sockutil.h"
 #include "zc_frame.h"
 #include "zc_type.h"
+#include "media/zc_media_track.h"
 #include "rtp-tcp-transport.h"
 #include "rtp-udp-transport.h"
 
@@ -40,10 +41,12 @@ typedef enum {
 
 class CRtspPushClient : protected Thread {
  public:
-    explicit CRtspPushClient(const char *url, int chn = 0, int transport = ZC_RTSP_TRANSPORT_RTP_UDP);
+    CRtspPushClient();
     virtual ~CRtspPushClient();
 
  public:
+    bool Init(const zc_media_info_t &info, const char *url, int transport);
+    bool UnInit();
     bool StartCli();
     bool StopCli();
 
@@ -76,7 +79,7 @@ class CRtspPushClient : protected Thread {
  private:
     bool m_init;
     int m_running;
-    int m_chn;
+    zc_media_info_t m_info;
     int m_transport;
     char *m_pbuf;  // buffer
     char m_host[128];

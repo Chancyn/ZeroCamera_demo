@@ -39,20 +39,35 @@
 extern "C" int rtsp_addr_is_multicast(const char *ip);
 
 namespace zc {
-CRtspPushClient::CRtspPushClient(const char *url, int chn, int transport)
-    : Thread("RtspCli"), m_init(false), m_running(0), m_chn(chn), m_transport(transport),
-      m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]), m_phandle(nullptr) {
-    memset(&m_client, 0, sizeof(m_client));
-    if (url)
-        strncpy(m_url, url, sizeof(m_url));
+CRtspPushClient::CRtspPushClient()
+    : Thread("RtspCli"), m_init(false), m_running(0), m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]),
+      m_phandle(nullptr) {
+
     m_keepalive = 0;
 }
 
 CRtspPushClient::~CRtspPushClient() {
-    StopCli();
+    UnInit();
     ZC_SAFE_DELETEA(m_pbuf);
 }
 
+bool CRtspPushClient::Init(const zc_media_info_t &info, const char *url, int transport) {
+    if (m_init || !url || url[0] == '\0') {
+        return false;
+    }
+
+    m_transport = transport;
+    strncpy(m_url, url, sizeof(m_url));
+    memcpy(&m_info, &info, sizeof(zc_media_info_t));
+    m_init = true;
+    return true;
+}
+
+bool CRtspPushClient::UnInit() {
+    StopCli();
+    m_init = false;
+    return true;
+}
 int CRtspPushClient::rtsp_client_sdp(const char *host) {
     static const char *pattern_live = "v=0\n"
                                       "o=- %llu %llu IN IP4 %s\n"
@@ -66,8 +81,7 @@ int CRtspPushClient::rtsp_client_sdp(const char *host) {
     int offset = 0;
 
     int64_t duration;
-    zc_media_info_t info = {0};
-    m_client.source.reset(new CLiveSource(info));
+    m_client.source.reset(new CLiveSource(m_info));
     // m_client.source.reset(new CLiveSource(ZC_SHMSTREAM_PUSH, m_chn));
 
     offset = snprintf(m_client.sdp, sizeof(m_client.sdp), pattern_live, ntp64_now(), ntp64_now(), "127.0.0.1", host);
@@ -116,7 +130,7 @@ int CRtspPushClient::_rtpport(int media, const char *source, unsigned short rtp[
     switch (m_client.transportmode) {
     case RTSP_TRANSPORT_RTP_UDP:
         // TODO: ipv6
-         if (sockpair_create("0.0.0.0", m_client.rtp[media], m_client.port[media]) != 0) {
+        if (sockpair_create("0.0.0.0", m_client.rtp[media], m_client.port[media]) != 0) {
             // TODO(zhoucc): ipv6
             LOG_ERROR("socket error, media:%d,port:%hu-%hu,rtp:%d-%d", media, m_client.port[media][0],
                       m_client.port[media][1], m_client.rtp[media][0], m_client.rtp[media][1]);
@@ -295,7 +309,7 @@ bool CRtspPushClient::_startconn() {
 
     url_decode(url->path, strlen(url->path), path, sizeof(path));
     url_decode(url->host, strlen(url->host), host, sizeof(host));
-    strncpy(m_host, host, sizeof(host)-1);
+    strncpy(m_host, host, sizeof(host) - 1);
     if (url->userinfo) {
         userptr = strtok_r(url->userinfo, "@", &pswptr);
     }

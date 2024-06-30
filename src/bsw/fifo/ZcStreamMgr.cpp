@@ -148,7 +148,7 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
     tmp.maxchn[ZC_SHMSTREAM_TYPE_PUSHC] =
         tmp.maxchn[ZC_SHMSTREAM_TYPE_PUSHC] < totalpushc ? tmp.maxchn[ZC_SHMSTREAM_TYPE_PUSHC] : totalpushc;
 
-    for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_PUSHS; type++) {
+    for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_BUTT; type++) {
         total += tmp.maxchn[type];
     }
 
@@ -188,7 +188,7 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
     for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_PUSHS; type++) {
         LOG_TRACE("Init ok idx:%d, num:%d ", tmp.maxchn[type]);
     }
-
+     LOG_TRACE("init streaminfo ok, m_total:%u", m_total);
     return true;
 
 _err:

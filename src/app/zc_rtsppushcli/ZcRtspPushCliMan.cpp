@@ -1,0 +1,167 @@
+// Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
+// Distributed under the MIT License (http://opensource.org/licenses/MIT)
+
+#include <stdio.h>
+
+#include "ZcModCli.hpp"
+#include "zc_basic_fun.h"
+#include "zc_log.h"
+#include "zc_msg_sys.h"
+
+#include "ZcRtspPushCliMan.hpp"
+#include "ZcType.hpp"
+
+namespace zc {
+// modsyscli
+CRtspPushCliMan::CRtspPushCliMan() : CModCli(ZC_MODID_SYSCLI_E), m_init(false), m_running(0) {}
+
+CRtspPushCliMan::~CRtspPushCliMan() {
+    UnInit();
+}
+
+bool CRtspPushCliMan::Init(unsigned int type, unsigned int chn, const char *url, int transport) {
+    if (m_init) {
+        LOG_ERROR("already init");
+        return false;
+    }
+    zc_media_info_t info;
+
+    if (_sendSMgrGetInfo(type, chn, &info) < 0) {
+        LOG_TRACE("_sendSMgrGetInfo error");
+        goto _err;
+    }
+
+    if (!CRtspPushClient::Init(info, url, transport)) {
+        LOG_TRACE("CModRtsp Init error");
+        goto _err;
+    }
+
+    m_init = true;
+    LOG_TRACE("Init ok");
+    return true;
+
+_err:
+    _unInit();
+
+    LOG_TRACE("Init error");
+    return false;
+}  // namespace zc
+
+bool CRtspPushCliMan::_unInit() {
+    Stop();
+    CRtspPushClient::UnInit();
+
+    return false;
+}
+
+bool CRtspPushCliMan::UnInit() {
+    if (!m_init) {
+        return true;
+    }
+
+    _unInit();
+
+    m_init = false;
+    return false;
+}
+bool CRtspPushCliMan::Start() {
+    if (m_running) {
+        return false;
+    }
+
+    m_running = CRtspPushClient::StartCli();
+    return m_running;
+}
+
+bool CRtspPushCliMan::Stop() {
+    if (!m_running) {
+        return false;
+    }
+
+    CRtspPushClient::StopCli();
+    m_running = false;
+    return true;
+}
+
+#if 1  // ZC_DEBUG_DUMP
+static inline void _dumpTrackInfo(const char *user, zc_meida_track_t *info) {
+    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,mediacode:%u,en:%u,size:%u,name:%s", user, info->chn,
+              info->trackno, info->tracktype, info->encode, info->mediacode, info->enable, info->fifosize, info->name);
+    return;
+}
+
+static inline void _dumpStreamInfo(const char *user, zc_media_info_t *info) {
+    LOG_TRACE("[%s] type:%d,idx:%u,ch:%u,tracknum:%u,status:%u", user, info->shmstreamtype, info->idx, info->chn,
+              info->tracknum, info->status);
+    _dumpTrackInfo("vtrack", &info->tracks[ZC_STREAM_VIDEO]);
+    _dumpTrackInfo("atrack", &info->tracks[ZC_STREAM_AUDIO]);
+    _dumpTrackInfo("mtrack", &info->tracks[ZC_STREAM_META]);
+
+    return;
+}
+#endif
+
+static inline void _mediainfo_trans(zc_media_info_t *info, const zc_mod_smgr_iteminfo_t *modinfo) {
+    info->shmstreamtype = modinfo->shmstreamtype;
+    info->chn = modinfo->chn;
+    info->idx = modinfo->idx;
+    info->tracknum = modinfo->tracknum;
+    info->status = modinfo->status;
+
+    for (unsigned int i = 0; i < modinfo->tracknum && i < ZC_MSG_TRACK_MAX_NUM; i++) {
+        info->tracks[i].chn = modinfo->tracks[i].chn;
+        info->tracks[i].trackno = modinfo->tracks[i].trackno;
+        info->tracks[i].tracktype = modinfo->tracks[i].tracktype;
+        info->tracks[i].encode = modinfo->tracks[i].encode;
+        if (modinfo->tracks[i].encode == ZC_FRAME_ENC_H264) {
+            info->tracks[i].mediacode = ZC_MEDIA_CODE_H264;
+        } else if (modinfo->tracks[i].encode == ZC_FRAME_ENC_H265) {
+            info->tracks[i].mediacode = ZC_MEDIA_CODE_H265;
+        } else if (modinfo->tracks[i].encode == ZC_FRAME_ENC_AAC) {
+            info->tracks[i].mediacode = ZC_MEDIA_CODE_AAC;
+        } else if (modinfo->tracks[i].encode == ZC_FRAME_ENC_META_BIN) {
+            info->tracks[i].mediacode = ZC_MEDIA_CODE_METADATA;
+        }
+        info->tracks[i].enable = modinfo->tracks[i].enable;
+        info->tracks[i].fifosize = modinfo->tracks[i].fifosize;
+        strncpy(info->tracks[i].name, modinfo->tracks[i].name, sizeof(info->tracks[i].name) - 1);
+    }
+    _dumpStreamInfo("user", info);
+    return;
+}
+
+// send get streaminfo
+int CRtspPushCliMan::_sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_media_info_t *info) {
+    // LOG_TRACE("send register msg into[%s] into", m_name);
+    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t)] = {0};
+    zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);
+    BuildReqMsgHdr(req, ZC_MODID_SYS_E, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_GET_E, 0, sizeof(zc_mod_smgr_get_t));
+    zc_mod_smgr_get_t *reqinfo = reinterpret_cast<zc_mod_smgr_get_t *>(req->data);
+    reqinfo->type = type;
+    reqinfo->chn = chn;
+
+    // recv
+    char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t)] = {0};
+    zc_msg_t *rep = reinterpret_cast<zc_msg_t *>(rmsg_buf);
+    size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t);
+    zc_mod_smgr_get_rep_t *repinfo = reinterpret_cast<zc_mod_smgr_get_rep_t *>(rep->data);
+    if (MsgSendTo(req, ZC_SYS_URL_IPC, rep, &rlen)) {
+        if (rep->err != 0) {
+            LOG_ERROR("recv register rep err:%d \n", rep->err);
+            return -1;
+        }
+    } else {
+        // TODO(zhoucc):
+        return -1;
+    }
+
+    _mediainfo_trans(info, &repinfo->info);
+#if ZC_DEBUG
+    // _dumpStreamInfo("recv streaminfo", &repinfo->info);
+    uint64_t now = zc_system_time();
+    LOG_TRACE("smgr getinfo : pid:%d,modid:%d, type:%u,chn:%u, cos1:%llu,%llu", req->pid, req->modid, reqinfo->type,
+              reqinfo->chn, (rep->ts1 - rep->ts), (now - rep->ts));
+#endif
+    return 0;
+}
+}  // namespace zc

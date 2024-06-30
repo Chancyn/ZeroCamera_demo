@@ -68,6 +68,9 @@ typedef enum {
     ZC_MODID_BUTT,  // end
 } zc_modid_e;
 
+// modcli
+#define ZC_MODID_SYSCLI_E ZC_MODID_SYS_E
+
 typedef enum {
     // req/rep
     ZC_MSG_TYPE_REQ_E = 0,  // request

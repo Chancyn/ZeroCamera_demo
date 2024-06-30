@@ -22,34 +22,10 @@
 #include "zc_type.h"
 
 #include "ZcModBase.hpp"
+#include "ZcModCli.hpp"
 #include "ZcType.hpp"
 
 namespace zc {
-const char *g_Modurltab[ZC_MODID_BUTT] = {
-    ZC_SYS_URL_IPC,
-    ZC_CODEC_URL_IPC,
-    ZC_RTSP_URL_IPC,
-};
-
-const char *g_Modnametab[ZC_MODID_BUTT] = {
-    ZC_SYS_MODNAME,
-    ZC_CODEC_MODNAME,
-    ZC_RTSP_MODNAME,
-};
-
-static inline const char *get_url_bymodid(ZC_U8 modid) {
-    if (modid >= ZC_MODID_BUTT) {
-        return nullptr;
-    }
-    return g_Modurltab[modid];
-}
-
-static inline const char *get_name_bymodid(ZC_U8 modid) {
-    if (modid >= ZC_MODID_BUTT) {
-        return nullptr;
-    }
-    return g_Modnametab[modid];
-}
 
 static inline void BuildRepMsgHdr(zc_msg_t *rep, zc_msg_t *req) {
     memcpy(rep, req, sizeof(zc_msg_t));
@@ -58,16 +34,12 @@ static inline void BuildRepMsgHdr(zc_msg_t *rep, zc_msg_t *req) {
     return;
 }
 
-const char *CModBase::GetUrlbymodid(ZC_U8 modid) {
-    return get_url_bymodid(modid);
-}
-
 CModBase::CModBase(ZC_U8 modid, ZC_U32 version)
-    : Thread(std::string(get_name_bymodid(modid))), m_init(false), m_status(false), m_modid(modid), m_seqno(0),
-      m_version(version) {
+    : CModCli(modid), Thread(std::string(CModCli::GetUrlbymodid(modid))), m_init(false), m_status(false),
+      m_modid(modid), m_seqno(0), m_version(version) {
     m_pid = getpid();
-    strncpy(m_url, get_url_bymodid(modid), sizeof(m_url) - 1);
-    strncpy(m_name, get_name_bymodid(modid), sizeof(m_name) - 1);
+    strncpy(m_url, CModCli::GetUrlbymodid(modid), sizeof(m_url) - 1);
+    strncpy(m_name, CModCli::GetUrlbymodid(modid), sizeof(m_name) - 1);
     ZC_PROC_GETNAME(m_pname, sizeof(m_pname));
 }
 
@@ -164,7 +136,7 @@ bool CModBase::unregisterMsgProcMod(CMsgProcMod *msgprocmod) {
 }
 
 // sys mod
-zc_msg_errcode_e CModBase::_svrSysRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
+zc_msg_errcode_e CModBase::_svrSysCheckRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     if (unlikely(_checklicense() < 0)) {
         LOG_TRACE("mod license error pid:%d,modid:%u", req->pid, req->modid);
         return ZC_MSG_ERR_LICENSE_E;
@@ -198,11 +170,20 @@ zc_msg_errcode_e CModBase::_svrSysRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_
     return (zc_msg_errcode_e)ret;
 }
 
+// sys reqproc
 ZC_S32 CModBase::svrSysRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {
     int ret = 0;
     zc_msg_t *reqmsg = reinterpret_cast<zc_msg_t *>(req);
     zc_msg_t *repmsg = reinterpret_cast<zc_msg_t *>(rep);
-    ret = _svrSysRecvReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, repmsg, opsize);
+
+    if (reqmsg->modid != ZC_MODID_SYS_E) {
+        // msg not from sysmod, check register and keeplive status
+        ret = _svrSysCheckRecvReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, repmsg, opsize);
+    } else {
+        // msg from sysmod(or CModCli), no need check register and keeplive status
+        ret = _svrRecvReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, repmsg, opsize);
+    }
+
     BuildRepMsgHdr(repmsg, reqmsg);
     repmsg->err = ret;
     if (ret < 0) {
@@ -248,41 +229,6 @@ ZC_S32 CModBase::_cliRecvRepProc(char *rep, int size) {
     // TODO(zhoucc) find msg procss mod
 
     return 0;
-}
-
-bool CModBase::BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modidto, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size) {
-    if (!pmsg) {
-        pmsg = reinterpret_cast<zc_msg_t *>(new char[sizeof(zc_msg_t) + size]());
-    }
-    pmsg->pid = m_pid;
-    pmsg->modid = m_modid;
-    pmsg->ver = ZC_MSG_VERSION;
-    pmsg->modidto = modidto;
-    pmsg->msgtype = ZC_MSG_TYPE_REQ_E;
-    pmsg->chn = chn;
-    pmsg->id = id;
-    pmsg->sid = sid;
-    pmsg->size = size;
-    pmsg->err = 0;
-    pmsg->ts = zc_system_time();
-
-    return true;
-}
-
-bool CModBase::MsgSendTo(zc_msg_t *pmsg, const char *urlto, zc_msg_t *prmsg, size_t *buflen) {
-    pmsg->ts = zc_system_time();
-    pmsg->seq = m_seqno++;
-    CMsgCommReqClient cli;
-    cli.Open(urlto);
-    return cli.SendTo(pmsg, sizeof(zc_msg_t) + pmsg->size, prmsg, buflen);
-}
-
-bool CModBase::MsgSendTo(zc_msg_t *pmsg, zc_msg_t *prmsg, size_t *buflen) {
-    pmsg->ts = zc_system_time();
-    pmsg->seq = m_seqno++;
-    CMsgCommReqClient cli;
-    cli.Open(GetUrlbymodid(pmsg->modidto));
-    return cli.SendTo(pmsg, sizeof(zc_msg_t) + pmsg->size, prmsg, buflen);
 }
 
 // send keepalive
@@ -368,40 +314,6 @@ static inline void _dumpStreamInfo(const char *user, zc_mod_smgr_iteminfo_t *inf
     return;
 }
 #endif
-
-// send keepalive
-int CModBase::_sendSMgrGetInfo(unsigned int type, unsigned int chn) {
-    if (m_modid == ZC_MODID_SYS_E) {
-        return -1;
-    }
-
-    // LOG_TRACE("send register msg into[%s] into", m_name);
-    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t)] = {0};
-    zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);
-    BuildReqMsgHdr(req, ZC_MODID_SYS_E, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_GET_E, 0, sizeof(zc_mod_smgr_get_t));
-    zc_mod_smgr_get_t *reqinfo = reinterpret_cast<zc_mod_smgr_get_t *>(req->data);
-    reqinfo->type = type;
-    reqinfo->chn = chn;
-
-    // recv
-    char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t)] = {0};
-    zc_msg_t *rep = reinterpret_cast<zc_msg_t *>(rmsg_buf);
-    size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t);
-    zc_mod_smgr_get_rep_t *repinfo = reinterpret_cast<zc_mod_smgr_get_rep_t *>(rep->data);
-    if (MsgSendTo(req, ZC_SYS_URL_IPC, rep, &rlen)) {
-        if (rep->err != 0) {
-            LOG_ERROR("recv register rep err:%d \n", rep->err);
-        }
-    }
-
-#if ZC_DEBUG
-    _dumpStreamInfo("recv streaminfo", &repinfo->info);
-    uint64_t now = zc_system_time();
-    LOG_TRACE("sendto smgrgetinfo : pid:%d,modid:%d,mod:%s, type:%u,chn:%u, cos1:%llu,%llu", req->pid, req->modid,
-              m_name, reqinfo->type, reqinfo->chn, (rep->ts1 - rep->ts), (now - rep->ts));
-#endif
-    return 0;
-}
 
 bool CModBase::registerInsert(zc_msg_t *msg) {
     ZC_U64 key = ((ZC_U64)msg->pid << 32) | msg->modid;

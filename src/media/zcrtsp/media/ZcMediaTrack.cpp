@@ -175,7 +175,10 @@ int CMediaTrack::GetData2Send() {
 #endif
     while (m_fiforeader->Len() > sizeof(zc_frame_t)) {
         ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
-        ZC_ASSERT(ret > sizeof(zc_frame_t));
+        if (ret < sizeof(zc_frame_t)) {
+            return -1;
+        }
+
         ZC_ASSERT(pframe->size > 0);
         if (pframe->video.encode != m_info.encode) {
             if (pframe->keyflag)

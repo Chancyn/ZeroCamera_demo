@@ -9,7 +9,7 @@
 
 #include "zc_log.h"
 
-#include "ZcRtspPushClient.hpp"
+#include "ZcRtspPushCliMan.hpp"
 
 #define ZC_LOG_PATH "./log"
 #define ZC_LOG_APP_NAME "zc_rtsppushcli.log"
@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     }
 
     int chn = 0;
+    int type = 0;
     int transport = zc::ZC_RTSP_TRANSPORT_RTP_TCP;
     if (argc > 2) {
         chn = atoi(argv[2]);
@@ -53,16 +54,21 @@ int main(int argc, char **argv) {
     }
 
     LOG_TRACE("pushcli url[%s] chn[%d] transport[%d]", argv[1], chn, transport);
-    zc::CRtspPushClient cli{argv[1], chn, transport};
+    zc::CRtspPushCliMan cli;
+    if (!cli.Init(type, chn, argv[1], transport)) {
+        goto _err;
+    }
 
-    cli.StartCli();
+    cli.Start();
     while (!bExitFlag) {
         usleep(100 * 1000);
         // LOG_DEBUG("sleep ");
     }
 
     LOG_ERROR("app loop exit");
-    cli.StopCli();
+    cli.Stop();
+    cli.UnInit();
+_err:
     zc_log_uninit();
     printf("main exit\n");
     return 0;

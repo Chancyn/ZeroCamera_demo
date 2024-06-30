@@ -27,7 +27,7 @@ extern "C" {
 #define ZC_STREAMMGR_DECODE_MAX_CHN 1
 
 // stream with track num, video+audio, ZC_STREAM_BUTT
-#define ZC_STREAMMGR_TRACK_MAX_NUM ZC_STREAM_BUTT  //
+#define ZC_STREAMMGR_TRACK_MAX_NUM ZC_STREAM_BUTT  //TODO(zhoucc): just video+audio
 
 #define ZC_SHMSTREAM_TYPE_ALL (0xFFFF)
 
