@@ -72,7 +72,7 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
     //               now - pframe->utc);
     // }
 
-    uint8_t type = *(uint8_t *)packet & 0x1f;
+    uint8_t type = ((*(uint8_t *)packet) & 0x7F) >> 1;
     struct timespec _ts;
     clock_gettime(CLOCK_MONOTONIC, &_ts);
     m_lasttime = _ts.tv_sec;
@@ -96,6 +96,7 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
                 memcpy(&m_spsinfo, &spsinfo, sizeof(zc_h26x_sps_info_t));
                 m_frame->video.width = spsinfo.width;
                 m_frame->video.height = spsinfo.height;
+                // m_frame->video.keyflag = 1;
             }
         } else {
             LOG_ERROR("h265 parse sps error");
@@ -128,7 +129,7 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
 
         m_fifowriter->Put((const unsigned char *)m_frame, sizeof(zc_frame_t) + m_frame->size, NULL);
 
-        // if (m_frame->keyflag)
+        if (m_frame->keyflag)
             LOG_TRACE("H265,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu,pkgcnt:%d", time, m_frame->utc,
                       m_frame->size, type, flags, m_frame->video.width, m_frame->video.height, m_pkgcnt);
 
