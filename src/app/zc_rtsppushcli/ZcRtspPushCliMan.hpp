@@ -20,10 +20,10 @@ class CRtspPushCliMan : public CModCli, public CRtspPushClient {
     bool Stop();
 
  private:
-    static int getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_media_info_t *info);
-    int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_media_info_t *info);
+    static int getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info);
+    int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_stream_info_t *info);
     bool _unInit();
-    int _sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_media_info_t *info);
+    int _sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
 
  private:
     bool m_init;

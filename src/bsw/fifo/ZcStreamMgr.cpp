@@ -61,14 +61,14 @@ static const mgr_shmname_t g_nametab = {
 
 // debug dump
 #if ZC_DEBUG_DUMP
-static inline void _dumpTrackInfo(const char *user, zc_shmstream_track_t *info) {
+static inline void _dumpTrackInfo(const char *user, zc_meida_track_t *info) {
     LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,en:%u,size:%u,fmaxlen:%u, status:%u,name:%s", user, info->chn,
               info->trackno, info->tracktype, info->encode, info->enable, info->fifosize, info->framemaxlen,
               info->status, info->name);
     return;
 }
 
-static inline void _dumpStreamInfo(const char *user, zc_shmstream_info_t *info) {
+static inline void _dumpStreamInfo(const char *user, zc_stream_info_t *info) {
     LOG_TRACE("[%s] type:%d(%s),idx:%u,ch:%u,tracknum:%u,status:%u", user, info->shmstreamtype,
               g_nametab.tabs[info->shmstreamtype].name, info->idx, info->chn, info->tracknum, info->status);
     _dumpTrackInfo("vtrack", &info->tracks[ZC_STREAM_VIDEO]);
@@ -79,13 +79,29 @@ static inline void _dumpStreamInfo(const char *user, zc_shmstream_info_t *info) 
 }
 #endif
 
-static inline void _initTrackInfo(zc_shmstream_track_t *info, unsigned char chn, unsigned int trackno,
-                                  unsigned char track, unsigned char encode, unsigned char enable,
-                                  unsigned int fifosize, unsigned int framemaxlen, const char *name) {
+static inline int transEncode2MediaCode(unsigned int encode) {
+    int mediacode = -1;
+    if (encode == ZC_FRAME_ENC_H264) {
+        mediacode = ZC_MEDIA_CODE_H264;
+    } else if (encode == ZC_FRAME_ENC_H265) {
+        mediacode = ZC_MEDIA_CODE_H265;
+    } else if (encode == ZC_FRAME_ENC_AAC) {
+        mediacode = ZC_MEDIA_CODE_AAC;
+    } else if (encode == ZC_FRAME_ENC_META_BIN) {
+        mediacode = ZC_MEDIA_CODE_METADATA;
+    }
+
+    return mediacode;
+}
+
+static inline void _initTrackInfo(zc_meida_track_t *info, unsigned char chn, unsigned int trackno, unsigned char track,
+                                  unsigned char encode, unsigned char enable, unsigned int fifosize,
+                                  unsigned int framemaxlen, const char *name) {
     info->chn = chn;
     info->trackno = trackno;
     info->tracktype = track;
     info->encode = encode;
+    info->mediacode = transEncode2MediaCode(encode);
     info->enable = enable;
     info->fifosize = fifosize;
     info->framemaxlen = framemaxlen;
@@ -101,7 +117,7 @@ CStreamMgr::~CStreamMgr() {
     UnInit();
 }
 
-void CStreamMgr::_initTracksInfo(zc_shmstream_track_t *info, unsigned char type, unsigned char chn, unsigned char venc,
+void CStreamMgr::_initTracksInfo(zc_meida_track_t *info, unsigned char type, unsigned char chn, unsigned char venc,
                                  unsigned char aenc, unsigned char menc) {
     unsigned int trackno = 0;
     _initTrackInfo(info + ZC_STREAM_VIDEO, chn, trackno++, ZC_STREAM_VIDEO, venc, 1, ZC_STREAM_MAIN_VIDEO_SIZE,
@@ -128,8 +144,8 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
 
     // init path
     memcpy(&m_nametab, &g_nametab, sizeof(mgr_shmname_t));
-    zc_shmstream_info_t *ptab = nullptr;
-    zc_shmstream_info_t *info = nullptr;
+    zc_stream_info_t *ptab = nullptr;
+    zc_stream_info_t *info = nullptr;
     zc_stream_mgr_cfg_t tmp = {
         {
             ZC_STREAMMGR_LIVE_MAX_CHN,
@@ -143,15 +159,15 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
     if (cfg) {
         memcpy(&tmp, cfg, sizeof(tmp));
     }
-    for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_PUSHS; type++) {
+    for (unsigned int type = 0; type < ZC_SHMSTREAM_PUSHS; type++) {
         totalpushc += tmp.maxchn[type];
     }
 
     // limit push client maxchn
-    tmp.maxchn[ZC_SHMSTREAM_TYPE_PUSHC] =
-        tmp.maxchn[ZC_SHMSTREAM_TYPE_PUSHC] < totalpushc ? tmp.maxchn[ZC_SHMSTREAM_TYPE_PUSHC] : totalpushc;
+    tmp.maxchn[ZC_SHMSTREAM_PUSHC] =
+        tmp.maxchn[ZC_SHMSTREAM_PUSHC] < totalpushc ? tmp.maxchn[ZC_SHMSTREAM_PUSHC] : totalpushc;
 
-    for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_BUTT; type++) {
+    for (unsigned int type = 0; type < ZC_SHMSTREAM_BUTT; type++) {
         total += tmp.maxchn[type];
     }
 
@@ -159,13 +175,13 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
     zc_frame_enc_e aenc = ZC_FRAME_ENC_AAC;
     zc_frame_enc_e menc = ZC_FRAME_ENC_META_BIN;
 
-    ptab = new zc_shmstream_info_t[total]();
+    ptab = new zc_stream_info_t[total]();
     if (!ptab) {
         LOG_TRACE("new streaminfo error");
         goto _err;
     }
     info = ptab;
-    for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_BUTT; type++) {
+    for (unsigned int type = 0; type < ZC_SHMSTREAM_BUTT; type++) {
         for (unsigned int chn = 0; chn < tmp.maxchn[type]; chn++) {
             info->chn = chn;
             info->idx = idx;
@@ -188,7 +204,7 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
     m_infoTab = ptab;
     memcpy(&m_cfg, &tmp, sizeof(tmp));
     m_init = true;
-    for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_PUSHS; type++) {
+    for (unsigned int type = 0; type < ZC_SHMSTREAM_PUSHS; type++) {
         LOG_TRACE("Init ok idx:%d, num:%d ", tmp.maxchn[type]);
     }
     LOG_TRACE("init streaminfo ok, m_total:%u", m_total);
@@ -216,8 +232,8 @@ bool CStreamMgr::UnInit() {
     return false;
 }
 
-int CStreamMgr::_findIdx(zc_shmstream_type_e type, unsigned int nchn) {
-    if (type < 0 || type >= ZC_SHMSTREAM_TYPE_BUTT) {
+int CStreamMgr::_findIdx(zc_shmstream_e type, unsigned int nchn) {
+    if (type < 0 || type >= ZC_SHMSTREAM_BUTT) {
         LOG_TRACE("error type:%d", type);
         return -1;
     }
@@ -236,30 +252,30 @@ int CStreamMgr::_findIdx(zc_shmstream_type_e type, unsigned int nchn) {
 }
 
 int CStreamMgr::getCount(unsigned int type) {
-    if (type == ZC_SHMSTREAM_TYPE_ALL) {
+    if (type == ZC_SHMSTREAM_ALL) {
         return m_total;
-    } else if (type >= 0 || type < ZC_SHMSTREAM_TYPE_BUTT) {
+    } else if (type >= 0 || type < ZC_SHMSTREAM_BUTT) {
         return m_cfg.maxchn[type];
     }
 
     return 0;
 }
 
-inline int CStreamMgr::_getShmStreamInfo(zc_shmstream_info_t *info, int idx, unsigned int count) {
+inline int CStreamMgr::_getShmStreamInfo(zc_stream_info_t *info, int idx, unsigned int count) {
     ZC_ASSERT(count > 0);
     ZC_ASSERT(idx + count <= m_total);
-    memcpy(info, &m_infoTab[idx], sizeof(zc_shmstream_info_t) * count);
+    memcpy(info, &m_infoTab[idx], sizeof(zc_stream_info_t) * count);
 
     return 0;
 }
 
-int CStreamMgr::getALLShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int count) {
+int CStreamMgr::getALLShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsigned int count) {
     int tmpc = getCount(type);
     count = count <= tmpc ? count : tmpc;
     if (count > 0) {
         int idx = 0;
-        if (type != ZC_SHMSTREAM_TYPE_ALL)
-            _findIdx((zc_shmstream_type_e)type, 0);
+        if (type != ZC_SHMSTREAM_ALL)
+            _findIdx((zc_shmstream_e)type, 0);
 
         std::lock_guard<std::mutex> locker(m_mutex);
         _getShmStreamInfo(info, idx, count);
@@ -268,8 +284,8 @@ int CStreamMgr::getALLShmStreamInfo(zc_shmstream_info_t *info, unsigned int type
     return 0;
 }
 
-int CStreamMgr::getShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int nchn) {
-    int idx = _findIdx((zc_shmstream_type_e)type, nchn);
+int CStreamMgr::getShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsigned int nchn) {
+    int idx = _findIdx((zc_shmstream_e)type, nchn);
     if (idx < 0) {
         return -1;
     }
@@ -278,16 +294,16 @@ int CStreamMgr::getShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, u
     return _getShmStreamInfo(info, idx, 1);
 }
 
-int CStreamMgr::_setShmStreamInfo(zc_shmstream_info_t *info, int idx) {
+int CStreamMgr::_setShmStreamInfo(zc_stream_info_t *info, int idx) {
     ZC_ASSERT(idx < m_total);
     // TODO(zhoucc): check param
-    memcpy(&m_infoTab[idx], info, sizeof(zc_shmstream_info_t));
+    memcpy(&m_infoTab[idx], info, sizeof(zc_stream_info_t));
 
     return 0;
 }
 
-int CStreamMgr::setShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, unsigned int nchn) {
-    int idx = _findIdx((zc_shmstream_type_e)type, nchn);
+int CStreamMgr::setShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsigned int nchn) {
+    int idx = _findIdx((zc_shmstream_e)type, nchn);
     if (idx < 0) {
         return -1;
     }
@@ -298,16 +314,16 @@ int CStreamMgr::setShmStreamInfo(zc_shmstream_info_t *info, unsigned int type, u
 #if 0
 int CStreamMgr::_createStreamW(int idx) {
     ZC_ASSERT(idx < m_total);
-    zc_shmstream_info_t tmp;
-    zc_shmstream_info_t *info = &m_infoTab[idx];
-    memcpy(&tmp, info, sizeof(zc_shmstream_info_t));
+    zc_stream_info_t tmp;
+    zc_stream_info_t *info = &m_infoTab[idx];
+    memcpy(&tmp, info, sizeof(zc_stream_info_t));
     if (tmp.status < ZC_TRACK_STATUS_W) {
         tmp.status = ZC_TRACK_STATUS_W;
     }
 
     ZC_ASSERT(idx == tmp.idx);
     tmp.tracknum = 2;
-    memcpy(info, &tmp, sizeof(zc_shmstream_info_t));
+    memcpy(info, &tmp, sizeof(zc_stream_info_t));
 
 #if ZC_DEBUG_DUMP
     _dumpStreamInfo("createw", info);
@@ -319,7 +335,7 @@ _err:
     return -1;
 }
 
-int CStreamMgr::CreateStreamW(zc_shmstream_type_e type, unsigned int nchn) {
+int CStreamMgr::CreateStreamW(zc_shmstream_e type, unsigned int nchn) {
     if (!m_running) {
         return -1;
     }
@@ -336,9 +352,9 @@ int CStreamMgr::CreateStreamW(zc_shmstream_type_e type, unsigned int nchn) {
 
 int CStreamMgr::_createStreamR(int idx) {
     ZC_ASSERT(idx < m_total);
-    zc_shmstream_info_t tmp;
-    zc_shmstream_info_t *info = &m_infoTab[idx];
-    memcpy(&tmp, info, sizeof(zc_shmstream_info_t));
+    zc_stream_info_t tmp;
+    zc_stream_info_t *info = &m_infoTab[idx];
+    memcpy(&tmp, info, sizeof(zc_stream_info_t));
     // not open write
     if (tmp.status < ZC_TRACK_STATUS_W) {
         LOG_ERROR("creater error, status:%d, idx:%d", tmp.status, idx);
@@ -348,7 +364,7 @@ int CStreamMgr::_createStreamR(int idx) {
     tmp.status = ZC_TRACK_STATUS_RW;
     ZC_ASSERT(idx == tmp.idx);
     tmp.tracknum = 2;
-    memcpy(info, &tmp, sizeof(zc_shmstream_info_t));
+    memcpy(info, &tmp, sizeof(zc_stream_info_t));
 
 #if ZC_DEBUG_DUMP
     _dumpStreamInfo("createw", info);
@@ -360,7 +376,7 @@ _err:
     return -1;
 }
 
-int CStreamMgr::CreateStreamR(zc_shmstream_type_e type, unsigned int nchn) {
+int CStreamMgr::CreateStreamR(zc_shmstream_e type, unsigned int nchn) {
     if (!m_running) {
         return -1;
     }
@@ -458,7 +474,7 @@ int CStreamMgr::HandleCtrl(unsigned int type, void *indata, void *outdata) {
         zc_sys_smgr_setinfo_in_t *in = reinterpret_cast<zc_sys_smgr_setinfo_in_t *>(indata);
         zc_sys_smgr_setinfo_out_t *out = reinterpret_cast<zc_sys_smgr_setinfo_out_t *>(outdata);
         // copy to out;set and update out info
-        memcpy(&out->info, &in->info, sizeof(zc_shmstream_info_t));
+        memcpy(&out->info, &in->info, sizeof(zc_stream_info_t));
         ret = setShmStreamInfo(&out->info, in->type, in->chn);
         break;
     }

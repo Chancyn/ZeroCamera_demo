@@ -164,28 +164,6 @@ ZC_S32 CMsgProcModSys::_handleRepSysSMgrUnRegister(zc_msg_t *rep, int size) {
     return 0;
 }
 
-static inline void _smgr_iteminfo_trans(zc_mod_smgr_iteminfo_t *modinfo, const zc_shmstream_info_t *info) {
-    modinfo->shmstreamtype = info->shmstreamtype;
-    modinfo->chn = info->chn;
-    modinfo->idx = info->idx;
-    modinfo->tracknum = info->tracknum;
-    modinfo->status = info->status;
-
-    for (unsigned int i = 0; i < info->tracknum && i < ZC_MSG_TRACK_MAX_NUM; i++) {
-        modinfo->tracks[i].chn = info->tracks[i].chn;
-        modinfo->tracks[i].trackno = info->tracks[i].trackno;
-        modinfo->tracks[i].tracktype = info->tracks[i].tracktype;
-        modinfo->tracks[i].encode = info->tracks[i].encode;
-        modinfo->tracks[i].enable = info->tracks[i].enable;
-        modinfo->tracks[i].fifosize = info->tracks[i].fifosize;
-        modinfo->tracks[i].framemaxlen = info->tracks[i].framemaxlen;
-        modinfo->tracks[i].status = info->tracks[i].status;
-        strncpy(modinfo->tracks[i].name, info->tracks[i].name, sizeof(modinfo->tracks[i].name) - 1);
-    }
-    // _dumpStreamInfo("user", modinfo);
-    return;
-}
-
 ZC_S32 CMsgProcModSys::_handleReqSysSMgrGet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     LOG_TRACE("handle ReqSysSMgrGet,iqsize[%d]", iqsize);
     ZC_ASSERT(iqsize = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t));
@@ -200,7 +178,7 @@ ZC_S32 CMsgProcModSys::_handleReqSysSMgrGet(zc_msg_t *req, int iqsize, zc_msg_t 
             return ZC_MSG_ERR_HADNLE_E;
         }
         zc_mod_smgr_get_rep_t *repmsg = reinterpret_cast<zc_mod_smgr_get_rep_t *>(rep->data);
-        _smgr_iteminfo_trans(&repmsg->info, &stout.info);
+        memcpy(&repmsg->info, &stout.info, sizeof(zc_stream_info_t));
         *opsize = sizeof(zc_msg_t)+ sizeof(zc_mod_smgr_get_rep_t);
         return ZC_MSG_SUCCESS_E;
     }
@@ -226,7 +204,7 @@ ZC_S32 CMsgProcModSys::_handleReqSysSMgrGetAll(zc_msg_t *req, int iqsize, zc_msg
         }
 
         // calcu max count
-        int count = ((*opsize) - sizeof(zc_msg_t) - sizeof(zc_mod_smgr_getall_rep_t)) / sizeof(zc_mod_smgr_iteminfo_t);
+        int count = ((*opsize) - sizeof(zc_msg_t) - sizeof(zc_mod_smgr_getall_rep_t)) / sizeof(zc_stream_info_t);
         if (count < stcountout.count) {
             stcountout.count = count;
             LOG_WARN("count %d < %u", count, stcountout.count);
@@ -234,23 +212,23 @@ ZC_S32 CMsgProcModSys::_handleReqSysSMgrGetAll(zc_msg_t *req, int iqsize, zc_msg
         LOG_WARN("count %u", stcountout.count);
         zc_mod_smgr_getall_rep_t *repmsg = reinterpret_cast<zc_mod_smgr_getall_rep_t *>(rep->data);
         repmsg->itemcount = stcountout.count;
-        repmsg->itemsize = sizeof(zc_mod_smgr_iteminfo_t);
+        repmsg->itemsize = sizeof(zc_stream_info_t);
         size += repmsg->itemsize *  repmsg->itemcount;
         *opsize = size;
         if (stcountout.count > 0) {
             zc_sys_smgr_getallinfo_in_t stin = {0};
             zc_sys_smgr_getallinfo_out_t stout = {0};
-            stout.pinfo = new zc_shmstream_info_t[stcountout.count]();
+            stout.pinfo = new zc_stream_info_t[stcountout.count]();
             ZC_ASSERT(stout.pinfo != nullptr);
             stin.type = reqmsg->type;
             stin.count = stcountout.count;
             if (m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, SYS_SMGR_HDL_GETALLINFO_E, &stin, &stout) < 0) {
                 ret = ZC_MSG_ERR_HADNLE_E;
             } else {
-                zc_mod_smgr_iteminfo_t *item =
-                    reinterpret_cast<zc_mod_smgr_iteminfo_t *>(rep->data + sizeof(zc_mod_smgr_getall_rep_t));
+                zc_stream_info_t *item =
+                    reinterpret_cast<zc_stream_info_t *>(rep->data + sizeof(zc_mod_smgr_getall_rep_t));
                 for (unsigned int i = 0; i < stcountout.count; i++) {
-                    _smgr_iteminfo_trans(item + i, stout.pinfo + i);
+                    memcpy(item + i, stout.pinfo + i, sizeof(zc_stream_info_t));
                 }
                 ret = ZC_MSG_SUCCESS_E;
             }

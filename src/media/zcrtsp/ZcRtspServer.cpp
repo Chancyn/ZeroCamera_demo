@@ -84,18 +84,18 @@ int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri
     return psvr->_ondescribe(ptr, rtsp, uri);
 }
 
-int CRtspServer::_findLiveSourceInfo(const char *filename, zc_media_info_t *info) {
+int CRtspServer::_findLiveSourceInfo(const char *filename, zc_stream_info_t *info) {
     int type = 0;
     int chn = 0;
     const char *pchn = nullptr;
     if (0 == strncasecmp(filename, ZC_RTSP_LIVEURL_CHN_PREFIX, strlen(ZC_RTSP_LIVEURL_CHN_PREFIX))) {
-        type = ZC_SHMSTREAM_TYPE_LIVE;
+        type = ZC_SHMSTREAM_LIVE;
         pchn = filename + strlen(ZC_RTSP_LIVEURL_CHN_PREFIX);
     } else if (0 == strncasecmp(filename, ZC_RTSP_PUSHURL_CHN_PREFIX, strlen(ZC_RTSP_PUSHURL_CHN_PREFIX))) {
-        type = ZC_SHMSTREAM_TYPE_PUSHS;
+        type = ZC_SHMSTREAM_PUSHS;
         pchn = filename + strlen(ZC_RTSP_PUSHURL_CHN_PREFIX);
     } else if (0 == strncasecmp(filename, ZC_RTSP_PULLURL_CHN_PREFIX, strlen(ZC_RTSP_PULLURL_CHN_PREFIX))) {
-        type = ZC_SHMSTREAM_TYPE_PULLC;
+        type = ZC_SHMSTREAM_PULLC;
         pchn = filename + strlen(ZC_RTSP_PULLURL_CHN_PREFIX);
     } else {
         LOG_ERROR("%s, error", filename);
@@ -164,7 +164,7 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
             TFileDescription describe;
             std::shared_ptr<IMediaSource> source;
             if (vod == 0) {
-                zc_media_info_t info = {0};
+                zc_stream_info_t info = {0};
                 if (_findLiveSourceInfo(filename.c_str(), &info) < 0) {
                     LOG_ERROR("live %s, 404 Not Find", filename.c_str());
                     return rtsp_server_reply_describe(rtsp, 404 /*Not Found*/, NULL);
@@ -270,7 +270,7 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
         item.status = 0;
 
         if (vod == 0) {
-            zc_media_info_t info = {0};
+            zc_stream_info_t info = {0};
             if (_findLiveSourceInfo(filename.c_str(), &info) < 0) {
                 LOG_ERROR("live %s, 404 Not Find", filename.c_str());
                 return rtsp_server_reply_setup(rtsp, 404 /*Not Found*/, NULL, NULL);

@@ -10,6 +10,7 @@ extern "C" {
 
 #include "zc_msg.h"
 #include "zc_type.h"
+#include "zc_frame.h"
 
 #define ZC_SYS_MODNAME "modsys"  // modname
 #
@@ -135,37 +136,12 @@ typedef struct {
     ZC_CHAR pname[ZC_MAX_PNAME];  // process name
 } zc_mod_smgr_unreg_t;
 
-// shmstreamcfg
-typedef struct {
-    unsigned char chn;        // chnno
-    unsigned char trackno;  // tracktype zc_stream_e
-    unsigned char tracktype;  // tracktype zc_stream_e
-    unsigned char encode;     // encode zc_frame_enc_e
-    unsigned char enable;     // enable/disable
-
-    unsigned int fifosize;    // shmfifosize
-    unsigned int framemaxlen;  // frame maxlen
-    int status;               // zc_track_status_e, track status already runnig write opened
-    int rsv[8];
-    char name[32];         // shm path name
-} zc_mod_stream_track_t;
-
-typedef struct {
-    unsigned char shmstreamtype;  // live push pull zc_shmstream_type_e
-    unsigned char idx;            // idx
-    unsigned char chn;            // chn num
-    unsigned char tracknum;       // num
-    int status;                   // zc_stream_status_e, status: ide ;
-    int rsv[8];
-    zc_mod_stream_track_t tracks[ZC_MSG_TRACK_MAX_NUM];
-} zc_mod_smgr_iteminfo_t;
-
 // ZC_MSID_SMGR_SET_E
 typedef struct {
     ZC_U32 type;     // live/pullc/pushs/pushc type
     ZC_U32 chn;      // channel
     ZC_U32 rsv1[6];  // rsv
-    zc_mod_smgr_iteminfo_t info;
+    zc_stream_info_t info;
 } zc_mod_smgr_set_t;
 
 // ZC_MSID_SMGR_GET_E
@@ -176,7 +152,7 @@ typedef struct {
 } zc_mod_smgr_get_t;
 
 typedef struct {
-    zc_mod_smgr_iteminfo_t info;
+    zc_stream_info_t info;
 } zc_mod_smgr_get_rep_t;
 
 // ZC_MSID_SMGR_GETALL_E

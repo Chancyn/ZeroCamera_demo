@@ -58,6 +58,7 @@ class CRtpReceiver : public NonCopyable {
     // for rtsp-push-server, m_ptr1 = CRtspServer, ptr2 = Session,
     CRtpReceiver(rtponframe onframe, void *ptr1, void *ptr2);
     virtual ~CRtpReceiver();
+    static int transEncode2MediaCode(unsigned int encode);
     static int Encodingtrans2Type(const char *encoding);
     static int Encodingtrans2Type(const char *encoding, unsigned int &tracktype, unsigned int &encode);
     int RtpReceiver(int timeout);

@@ -7,6 +7,7 @@
 
 #include "zc_type.h"
 #include "zc_stream_mgr.h"
+#include "zc_msg_sys.h"
 
 #include "Singleton.hpp"
 #include "Thread.hpp"
@@ -26,7 +27,7 @@ class CStreamMgrCli : public Thread, public Singleton<CStreamMgrCli> {
     bool Stop();
 
     // handle msg ModMsg
-    int GetShmStreamInfo(zc_shmstream_info_t *info, zc_shmstream_type_e type, unsigned int nchn);
+    int GetShmStreamInfo(zc_stream_info_t *info, zc_shmstream_e type, unsigned int nchn);
  private:
     int connectSvr();
     bool _unInit();

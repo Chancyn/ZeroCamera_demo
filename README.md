@@ -68,6 +68,27 @@ zc_rtsp:rtsp流服务器,实时流服务,推送上来的流,cli拉取的流,进�
 
 测试方法
 ```
+#1.启动sys
+./zc_sys
+#2.启动
+#3.启动rtsp服务器
+./zc_rtsp
+#4.启动rtsp push服务器
+./zc_rtsppushs
+#5.启动push客户端，将live0视频推送上push服务器上push.ch0通道上
+./zc_rtsppushc rtsp://192.168.1.166:5540/push/push.ch0 0 tcp
+./zc_rtsppushc rtsp://192.168.1.166:5540/push/push.ch1 1 tcp
+#6.启动cli客户端，拉live.ch0实时视频，拉到pull.ch0通道上
+./zc_rtspcli rtsp://192.168.1.166:8554/push/live.ch0 0 tcp
+./zc_rtspcli rtsp://192.168.1.166:8554/push/live.ch1 1 tcp
+#vlc取流测试
+rtsp://192.168.1.166:8554/live/live.ch0
+rtsp://192.168.1.166:8554/live/live.ch1
+rtsp://192.168.1.166:8554/live/push.ch0
+rtsp://192.168.1.166:8554/live/push.ch1
+rtsp://192.168.1.166:8554/live/pull.ch0
+rtsp://192.168.1.166:8554/live/pull.ch1
+
 #启动rtspserver;默认监听端口8554;流地址rtsp://192.168.1.166:8554/live/live.ch0[1];
 zc_rtsp &
 ##说明：共享内存的视频 /tmp/shmfifo_video0;/tmp/shmfifo_video1 对应rtsp服务器live.ch0/live.ch1

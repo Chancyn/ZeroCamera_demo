@@ -31,7 +31,7 @@ extern "C" uint32_t rtp_ssrc(void);
 #define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
-CLiveSource::CLiveSource(const zc_media_info_t &info) : Thread("LiveSource"), m_status(0) {
+CLiveSource::CLiveSource(const zc_stream_info_t &info) : Thread("LiveSource"), m_status(0) {
     memcpy(&m_info, &info, sizeof(info));
     for (int i = 0; i < ZC_MEDIA_TRACK_BUTT; i++) {
         m_tracks[i] = nullptr;

@@ -10,6 +10,7 @@ extern "C" {
 
 #include "zc_type.h"
 #include "zc_stream_mgr.h"
+#include "zc_msg_sys.h"
 
 // handle callback enum
 typedef enum {
@@ -33,12 +34,12 @@ typedef struct {
 
 // SYS_SMGR_HDL_GETINFO_E
 typedef struct {
-    ZC_U32 type;    // type:zc_shmstream_type_e
+    ZC_U32 type;    // type:zc_shmstream_e
     ZC_U32 chn;
 } zc_sys_smgr_getinfo_in_t;
 
 typedef struct {
-    zc_shmstream_info_t info;
+    zc_stream_info_t info;
 } zc_sys_smgr_getinfo_out_t;
 
 // SYS_SMGR_HDL_GECOUNT_E
@@ -52,23 +53,23 @@ typedef struct {
 
 // SYS_SMGR_HDL_GETALLINFO_E
 typedef struct {
-    ZC_U32 type;        // type:zc_shmstream_type_e or ZC_SHMSTREAM_TYPE_ALL
-    ZC_U32 count;       // out buffer, zc_shmstream_info_t item count
+    ZC_U32 type;        // type:zc_shmstream_e or ZC_SHMSTREAM_ALL
+    ZC_U32 count;       // out buffer, zc_stream_info_t item count
 } zc_sys_smgr_getallinfo_in_t;
 
 typedef struct {
-    zc_shmstream_info_t *pinfo;
+    zc_stream_info_t *pinfo;
 } zc_sys_smgr_getallinfo_out_t;
 
 // SYS_SMGR_HDL_GETINFO_E
 typedef struct {
-    ZC_U32 type;    // type:zc_shmstream_type_e
+    ZC_U32 type;    // type:zc_shmstream_e
     ZC_U32 chn;
-    zc_shmstream_info_t info;
+    zc_stream_info_t info;
 } zc_sys_smgr_setinfo_in_t;
 
 typedef struct {
-    zc_shmstream_info_t info;       // return; set
+    zc_stream_info_t info;       // return; set
 } zc_sys_smgr_setinfo_out_t;
 // streamMgr handle mod msg callback
 typedef int (*SysStreamMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);

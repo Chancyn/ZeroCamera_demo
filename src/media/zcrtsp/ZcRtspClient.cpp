@@ -64,7 +64,7 @@ bool CRtspClient::Init(rtspcli_callback_info_t *cbinfo, int chn, const char *url
     m_chn = chn;
     memcpy(&m_cbinfo, cbinfo, sizeof(rtspcli_callback_info_t));
     strncpy(m_url, url, sizeof(m_url));
-    // memcpy(&m_info, &info, sizeof(zc_media_info_t));
+    // memcpy(&m_info, &info, sizeof(zc_stream_info_t));
     m_init = true;
     return true;
 }
@@ -186,7 +186,7 @@ int CRtspClient::onsetup(void *param, int timeout, int64_t duration) {
     return pcli->_onsetup(timeout, duration);
 }
 
-static inline int findTrackIndex(unsigned int tracktype, const zc_media_info_t &stinfo) {
+static inline int findTrackIndex(unsigned int tracktype, const zc_stream_info_t &stinfo) {
     for (unsigned int i = 0; i < stinfo.tracknum; i++) {
         if (tracktype == stinfo.tracks[i].tracktype) {
             LOG_TRACE("find i:%u, trackno:%u, tracktype:%u", i, stinfo.tracks[i].trackno, stinfo.tracks[i].tracktype);
@@ -204,7 +204,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
     u_short rtspport;
     int ret = 0;
     CMediaReceiverFac fac;
-    zc_media_info_t stinfo = {0};
+    zc_stream_info_t stinfo = {0};
     // get streaminfo
     if (!m_cbinfo.GetInfoCb || m_cbinfo.GetInfoCb(m_cbinfo.MgrContext, m_chn, &stinfo) < 0) {
         LOG_ERROR("rtsp_client_play m_cbinfo.GetInfoCb error");
@@ -242,7 +242,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
         if (code >= 0 && ((trackidx = findTrackIndex(tracktype, stinfo)) >= 0)) {
             // update code
             stinfo.tracks[trackidx].encode = encode;
-            stinfo.tracks[trackidx].mediacode = code;
+            stinfo.tracks[trackidx].mediacode = CRtpReceiver::transEncode2MediaCode(encode);
             stinfo.tracks[trackidx].enable = 1;  // enable track
             // create MediaReceiver
             m_mediarecv[i] = fac.CreateMediaReceiver(stinfo.tracks[trackidx]);

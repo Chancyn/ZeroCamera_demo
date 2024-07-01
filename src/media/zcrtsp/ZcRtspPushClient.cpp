@@ -51,14 +51,14 @@ CRtspPushClient::~CRtspPushClient() {
     ZC_SAFE_DELETEA(m_pbuf);
 }
 
-bool CRtspPushClient::Init(const zc_media_info_t &info, const char *url, int transport) {
+bool CRtspPushClient::Init(const zc_stream_info_t &info, const char *url, int transport) {
     if (m_init || !url || url[0] == '\0') {
         return false;
     }
 
     m_transport = transport;
     strncpy(m_url, url, sizeof(m_url));
-    memcpy(&m_info, &info, sizeof(zc_media_info_t));
+    memcpy(&m_info, &info, sizeof(zc_stream_info_t));
     m_init = true;
     return true;
 }
@@ -82,7 +82,6 @@ int CRtspPushClient::rtsp_client_sdp(const char *host) {
 
     int64_t duration;
     m_client.source.reset(new CLiveSource(m_info));
-    // m_client.source.reset(new CLiveSource(ZC_SHMSTREAM_PUSH, m_chn));
 
     offset = snprintf(m_client.sdp, sizeof(m_client.sdp), pattern_live, ntp64_now(), ntp64_now(), "127.0.0.1", host);
     assert(offset > 0 && offset + 1 < sizeof(m_client.sdp));

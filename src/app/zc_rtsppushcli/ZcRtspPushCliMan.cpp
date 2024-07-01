@@ -24,7 +24,7 @@ bool CRtspPushCliMan::Init(unsigned int type, unsigned int chn, const char *url,
         LOG_ERROR("already init");
         return false;
     }
-    zc_media_info_t info;
+    zc_stream_info_t info;
 
     if (_sendSMgrGetInfo(type, chn, &info) < 0) {
         LOG_TRACE("_sendSMgrGetInfo error");
@@ -91,7 +91,7 @@ static inline void _dumpTrackInfo(const char *user, zc_meida_track_t *info) {
     return;
 }
 
-static inline void _dumpStreamInfo(const char *user, zc_media_info_t *info) {
+static inline void _dumpStreamInfo(const char *user, zc_stream_info_t *info) {
     LOG_TRACE("[%s] type:%d,idx:%u,ch:%u,tracknum:%u,status:%u", user, info->shmstreamtype, info->idx, info->chn,
               info->tracknum, info->status);
     _dumpTrackInfo("vtrack", &info->tracks[ZC_STREAM_VIDEO]);
@@ -102,38 +102,8 @@ static inline void _dumpStreamInfo(const char *user, zc_media_info_t *info) {
 }
 #endif
 
-static inline void _mediainfo_trans(zc_media_info_t *info, const zc_mod_smgr_iteminfo_t *modinfo) {
-    info->shmstreamtype = modinfo->shmstreamtype;
-    info->chn = modinfo->chn;
-    info->idx = modinfo->idx;
-    info->tracknum = modinfo->tracknum;
-    info->status = modinfo->status;
-
-    for (unsigned int i = 0; i < modinfo->tracknum && i < ZC_MSG_TRACK_MAX_NUM; i++) {
-        info->tracks[i].chn = modinfo->tracks[i].chn;
-        info->tracks[i].trackno = modinfo->tracks[i].trackno;
-        info->tracks[i].tracktype = modinfo->tracks[i].tracktype;
-        info->tracks[i].encode = modinfo->tracks[i].encode;
-        if (modinfo->tracks[i].encode == ZC_FRAME_ENC_H264) {
-            info->tracks[i].mediacode = ZC_MEDIA_CODE_H264;
-        } else if (modinfo->tracks[i].encode == ZC_FRAME_ENC_H265) {
-            info->tracks[i].mediacode = ZC_MEDIA_CODE_H265;
-        } else if (modinfo->tracks[i].encode == ZC_FRAME_ENC_AAC) {
-            info->tracks[i].mediacode = ZC_MEDIA_CODE_AAC;
-        } else if (modinfo->tracks[i].encode == ZC_FRAME_ENC_META_BIN) {
-            info->tracks[i].mediacode = ZC_MEDIA_CODE_METADATA;
-        }
-        info->tracks[i].enable = modinfo->tracks[i].enable;
-        info->tracks[i].fifosize = modinfo->tracks[i].fifosize;
-        info->tracks[i].framemaxlen = modinfo->tracks[i].framemaxlen;
-        strncpy(info->tracks[i].name, modinfo->tracks[i].name, sizeof(info->tracks[i].name) - 1);
-    }
-    _dumpStreamInfo("user", info);
-    return;
-}
-
 // send get streaminfo
-int CRtspPushCliMan::_sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_media_info_t *info) {
+int CRtspPushCliMan::_sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info) {
     // LOG_TRACE("send register msg into[%s] into", m_name);
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t)] = {0};
     zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);
@@ -157,9 +127,9 @@ int CRtspPushCliMan::_sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_me
         return -1;
     }
 
-    _mediainfo_trans(info, &repinfo->info);
+    memcpy(info, &repinfo->info, sizeof(zc_stream_info_t));
 #if ZC_DEBUG
-    // _dumpStreamInfo("recv streaminfo", &repinfo->info);
+    _dumpStreamInfo("recv streaminfo", info);
     uint64_t now = zc_system_time();
     LOG_TRACE("smgr getinfo : pid:%d,modid:%d, type:%u,chn:%u, cos1:%llu,%llu", req->pid, req->modid, reqinfo->type,
               reqinfo->chn, (rep->ts1 - rep->ts), (now - rep->ts));

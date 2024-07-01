@@ -10,7 +10,7 @@
 #include "sockutil.h"
 #include "zc_frame.h"
 #include "zc_type.h"
-#include "media/zc_media_track.h"
+#include "zc_media_track.h"
 #include "rtp-tcp-transport.h"
 #include "rtp-udp-transport.h"
 
@@ -45,7 +45,7 @@ class CRtspPushClient : protected Thread {
     virtual ~CRtspPushClient();
 
  public:
-    bool Init(const zc_media_info_t &info, const char *url, int transport);
+    bool Init(const zc_stream_info_t &info, const char *url, int transport);
     bool UnInit();
     bool StartCli();
     bool StopCli();
@@ -79,7 +79,7 @@ class CRtspPushClient : protected Thread {
  private:
     bool m_init;
     int m_running;
-    zc_media_info_t m_info;
+    zc_stream_info_t m_info;
     int m_transport;
     char *m_pbuf;  // buffer
     char m_host[128];

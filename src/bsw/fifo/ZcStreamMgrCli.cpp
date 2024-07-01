@@ -87,7 +87,7 @@ int CStreamMgrCli::connectSvr() {
     return 0;
 }
 
-int CStreamMgrCli::GetShmStreamInfo(zc_shmstream_info_t *info, zc_shmstream_type_e type, unsigned int nchn) {
+int CStreamMgrCli::GetShmStreamInfo(zc_stream_info_t *info, zc_shmstream_e type, unsigned int nchn) {
     if (m_running) {
         return -1;
     }
