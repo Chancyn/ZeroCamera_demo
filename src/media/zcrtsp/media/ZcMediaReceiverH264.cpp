@@ -13,8 +13,7 @@
 #include "ZcMediaReceiverH264.hpp"
 
 namespace zc {
-CMediaReceiverH264::CMediaReceiverH264(int shmtype, int chn, unsigned int framemaxlen)
-    : CMediaReceiver(ZC_MEDIA_TRACK_VIDEO, ZC_MEDIA_CODE_H264, shmtype, chn, framemaxlen) {
+CMediaReceiverH264::CMediaReceiverH264(const zc_meida_track_t &info) : CMediaReceiver(info) {
     m_frame = (zc_frame_t *)m_framebuf;
     memset(m_frame, 0, sizeof(zc_frame_t));
     m_frame->magic = ZC_FRAME_VIDEO_MAGIC;
@@ -30,16 +29,7 @@ CMediaReceiverH264::CMediaReceiverH264(int shmtype, int chn, unsigned int framem
 CMediaReceiverH264::~CMediaReceiverH264() {}
 
 bool CMediaReceiverH264::Init(void *pinfo) {
-    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
-        // push-server recv stream
-        m_fifowriter =
-            new CShmStreamW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEOPUSH_SHM_PATH, m_chn, putingCb, this);
-    } else {
-        // pull-cli recv stream,
-        m_fifowriter =
-            new CShmStreamW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEOPULL_SHM_PATH, m_chn, putingCb, this);
-    }
-
+    m_fifowriter = new CShmStreamW(m_info.fifosize, m_info.name, m_info.chn, putingCb, this);
     if (!m_fifowriter) {
         LOG_ERROR("Create m_fifowriter");
         goto _err;
@@ -103,7 +93,7 @@ int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
         }
     }
 
-    if (m_frame->size + 4 + bytes <= m_framemaxlen) {
+    if (m_frame->size + 4 + bytes <= m_info.framemaxlen) {
         m_frame->data[m_frame->size + 0] = 00;
         m_frame->data[m_frame->size + 1] = 00;
         m_frame->data[m_frame->size + 2] = 00;

@@ -93,7 +93,7 @@ enum mpeg4_aac_object_type {
 
 class CMediaReceiverAAC : public CMediaReceiver {
  public:
-    explicit CMediaReceiverAAC(int shmtype, int chn);
+    explicit CMediaReceiverAAC(const zc_meida_track_t &info);
     virtual ~CMediaReceiverAAC();
     virtual bool Init(void *info = nullptr);
     virtual int RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags);
@@ -105,7 +105,7 @@ class CMediaReceiverAAC : public CMediaReceiver {
 
  private:
     zc_frame_t *m_frame;
-    zc_aac_info_t m_info;
+    zc_aac_info_t m_accinfo;
    char m_dtshdr[ADTS_HEADER_LEN];
 };
 }  // namespace zc

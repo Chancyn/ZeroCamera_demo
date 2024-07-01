@@ -41,17 +41,14 @@
 extern "C" int rtsp_addr_is_multicast(const char *ip);
 
 namespace zc {
-CRtspClient::CRtspClient(const char *url, int chn, int transport)
-    : Thread("RtspCli"), m_init(false), m_running(0), m_chn(chn), m_transport(transport), m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]),
-      m_phandle(nullptr) {
+CRtspClient::CRtspClient()
+    : Thread("RtspCli"), m_init(false), m_running(0), m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]), m_phandle(nullptr) {
     memset(&m_client, 0, sizeof(m_client));
-    if (url)
-        strncpy(m_url, url, sizeof(m_url));
     m_keepalive = 0;
 }
 
 CRtspClient::~CRtspClient() {
-    StopCli();
+    UnInit();
     for (unsigned int i = 0; i < ZC_MEIDIA_NUM; i++) {
         ZC_SAFE_DELETE(m_pRtp[i]);
         ZC_SAFE_DELETE(m_mediarecv[i]);
@@ -59,34 +56,36 @@ CRtspClient::~CRtspClient() {
     ZC_SAFE_DELETEA(m_pbuf);
 }
 
+bool CRtspClient::Init(rtspcli_callback_info_t *cbinfo, int chn, const char *url, int transport) {
+    if (m_init || !url || url[0] == '\0') {
+        return false;
+    }
+    m_transport = transport;
+    m_chn = chn;
+    memcpy(&m_cbinfo, cbinfo, sizeof(rtspcli_callback_info_t));
+    strncpy(m_url, url, sizeof(m_url));
+    // memcpy(&m_info, &info, sizeof(zc_media_info_t));
+    m_init = true;
+    return true;
+}
+
+bool CRtspClient::UnInit() {
+    StopCli();
+    m_init = false;
+    return true;
+}
+
 int CRtspClient::onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
     CRtspClient *pcli = reinterpret_cast<CRtspClient *>(ptr1);
     return pcli->_onframe(ptr2, encode, packet, bytes, time, flags);
 }
 
-#if 1
 int CRtspClient::_onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
     // LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
     CMediaReceiver *precv = reinterpret_cast<CMediaReceiver *>(ptr2);
     return precv->RtpOnFrameIn(packet, bytes, time, flags);
 }
-#else  // remove to CMediaReceiver
-int CRtspClient::_onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags) {
-    if (flags) {
-        LOG_TRACE("encode:%d, time:%08u, flags:%08d, drop.", encode, time, flags);
-    }
 
-    if (ZC_FRAME_ENC_H264 == encode) {
-        return _frameH264(packet, bytes, time, flags);
-    } else if (ZC_FRAME_ENC_H265 == encode) {
-        return _frameH265(packet, bytes, time, flags);
-    } else if (ZC_FRAME_ENC_AAC == encode) {
-        return _frameAAC(packet, bytes, time, flags);
-    }
-
-    return -1;
-}
-#endif
 int CRtspClient::send(void *param, const char *uri, const void *req, size_t bytes) {
     CRtspClient *pcli = reinterpret_cast<CRtspClient *>(param);
     return pcli->_send(uri, req, bytes);
@@ -187,12 +186,36 @@ int CRtspClient::onsetup(void *param, int timeout, int64_t duration) {
     return pcli->_onsetup(timeout, duration);
 }
 
+static inline int findTrackIndex(unsigned int tracktype, const zc_media_info_t &stinfo) {
+    for (unsigned int i = 0; i < stinfo.tracknum; i++) {
+        if (tracktype == stinfo.tracks[i].tracktype) {
+            LOG_TRACE("find i:%u, trackno:%u, tracktype:%u", i, stinfo.tracks[i].trackno, stinfo.tracks[i].tracktype);
+            return i;
+        }
+    }
+
+    LOG_ERROR("notfind tracktype:%u", tracktype);
+    return -1;
+}
+
 int CRtspClient::_onsetup(int timeout, int64_t duration) {
     uint64_t npt = 0;
     char ip[65];
     u_short rtspport;
     int ret = 0;
     CMediaReceiverFac fac;
+    zc_media_info_t stinfo = {0};
+    // get streaminfo
+    if (!m_cbinfo.GetInfoCb || m_cbinfo.GetInfoCb(m_cbinfo.MgrContext, m_chn, &stinfo) < 0) {
+        LOG_ERROR("rtsp_client_play m_cbinfo.GetInfoCb error");
+        return -1;
+    }
+
+    for (unsigned int i = 0; i < stinfo.tracknum; i++) {
+        stinfo.tracks[i].enable = 0;
+        LOG_TRACE("diable i:%u, trackno:%u, tracktype:%u", i, stinfo.tracks[i].trackno, stinfo.tracks[i].tracktype);
+    }
+
     rtsp_client_t *rtsp = reinterpret_cast<rtsp_client_t *>(m_client.rtsp);
     ret = rtsp_client_play(rtsp, &npt, NULL);
     ZC_ASSERT(0 == ret);
@@ -202,6 +225,10 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
     }
     int media_count = rtsp_client_media_count(rtsp);
     media_count = media_count < ZC_MEIDIA_NUM ? media_count : ZC_MEIDIA_NUM;
+    unsigned int tracktype = 0;
+    unsigned int encode = 0;
+    int code = 0;
+    int trackidx = 0;
 
     for (int i = 0; i < media_count; i++) {
         int payload, port[2];
@@ -210,6 +237,30 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
         transport = rtsp_client_get_media_transport(rtsp, i);
         encoding = rtsp_client_get_media_encoding(rtsp, i);
         payload = rtsp_client_get_media_payload(rtsp, i);
+        code = CRtpReceiver::Encodingtrans2Type(encoding, tracktype, encode);
+        // find trackidx
+        if (code >= 0 && (trackidx = findTrackIndex(tracktype, stinfo) > 0)) {
+            // update code
+            stinfo.tracks[trackidx].encode = encode;
+            stinfo.tracks[trackidx].mediacode = code;
+            stinfo.tracks[trackidx].enable = 1;  // enable track
+            // create MediaReceiver
+            m_mediarecv[i] = fac.CreateMediaReceiver(stinfo.tracks[trackidx]);
+        }
+
+        if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
+            m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
+        } else {
+            // donot regiester recv onframe callback
+            LOG_ERROR("error, don't recv frame, i:%d, encoding:%s", i, encoding);
+            m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
+        }
+
+        if (!m_pRtp[i]) {
+            LOG_ERROR("udp new CRtpReceiver error");
+            continue;
+        }
+
         if (RTSP_TRANSPORT_RTP_UDP == transport->transport) {
             // assert(RTSP_TRANSPORT_RTP_UDP == transport->transport); // udp only
             assert(0 == transport->multicast);  // unicast only
@@ -218,60 +269,27 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
 
             port[0] = transport->rtp.u.server_port1;
             port[1] = transport->rtp.u.server_port2;
+
             if (*transport->source) {
-                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), ZC_SHMSTREAM_PULL, m_chn);
-                if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
-                    m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
-                } else {
-                    // donot regiester recv onframe callback
-                    LOG_ERROR("error, don't recv frame, i:%d, encoding:%s", i, encoding);
-                    m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
-                }
-
-                if (!m_pRtp[i]) {
-                    LOG_ERROR("udp new CRtpReceiver error");
-                    continue;
-                }
                 m_pRtp[i]->RtpReceiverUdpStart(m_client.rtp[i], transport->source, port, payload, encoding);
-
             } else {
                 socket_getpeername(m_client.socket, ip, &rtspport);
-
-                m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), ZC_SHMSTREAM_PULL, m_chn);
-                if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
-                    m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
-                } else {
-                    // donot regiester recv onframe callback
-                    LOG_ERROR("error, don't recv frame, i:%d, encoding:%s", i, encoding);
-                    m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
-                }
-                if (!m_pRtp[i]) {
-                    LOG_ERROR("udp new CRtpReceiver error");
-                    continue;
-                }
                 m_pRtp[i]->RtpReceiverUdpStart(m_client.rtp[i], ip, port, payload, encoding);
             }
         } else if (RTSP_TRANSPORT_RTP_TCP == transport->transport) {
             // assert(transport->rtp.u.client_port1 == transport->interleaved1);
             // assert(transport->rtp.u.client_port2 == transport->interleaved2);
-
-            m_mediarecv[i] = fac.CreateMediaReceiver(CRtpReceiver::Encodingtrans2Type(encoding), ZC_SHMSTREAM_PULL, m_chn);
-            if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
-                m_pRtp[i] = new CRtpReceiver(m_client.onframe, this, m_mediarecv[i]);
-            } else {
-                // donot regiester recv onframe callback
-                LOG_ERROR("error, don't recv frame, i:%d, encoding:%s", i, encoding);
-                m_pRtp[i] = new CRtpReceiver(NULL, this, NULL);
-            }
-            if (!m_pRtp[i]) {
-                LOG_ERROR("udp new CRtpReceiver error");
-                continue;
-            }
             m_pRtp[i]->RtpReceiverTcpStart(transport->interleaved1, transport->interleaved2, payload, encoding);
 
         } else {
             ZC_ASSERT(0);  // TODO(zhoucc)
         }
+    }
+
+    // update streaminfo
+    if (!m_cbinfo.SetInfoCb || m_cbinfo.SetInfoCb(m_cbinfo.MgrContext, m_chn, &stinfo) < 0) {
+        LOG_ERROR("rtsp_client_play m_cbinfo.GetInfoCb  ret[%d]", ret);
+        return 0;
     }
 
     return 0;

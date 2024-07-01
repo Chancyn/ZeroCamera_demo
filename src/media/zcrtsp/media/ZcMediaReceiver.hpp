@@ -14,15 +14,16 @@
 #include "ZcShmFIFO.hpp"
 #include "ZcShmStream.hpp"
 #include "ZcType.hpp"
+#include "NonCopyable.hpp"
 
 #define ZC_DEBUG_MEDIATRACK 1
 
 namespace zc {
 
 
-class CMediaReceiver {
+class CMediaReceiver : public NonCopyable{
  public:
-    explicit CMediaReceiver(zc_media_track_e track, int code, int shmtype, int chn, unsigned int m_framemaxlen);
+    explicit CMediaReceiver(const zc_meida_track_t &info);
     virtual ~CMediaReceiver();
     virtual bool Init(void *info = nullptr) = 0;
     virtual void UnInit();
@@ -32,11 +33,7 @@ class CMediaReceiver {
 
  protected:
     bool m_create;  // create ok
-    int m_track;    // trackid
-    int m_code;     // codectype
-    const zc_shmstream_e m_shmtype;  // push/pull
-    const int m_chn;
-    unsigned int m_framemaxlen;
+    zc_meida_track_t m_info;
     char *m_framebuf;      // sizeof(zc_frame_t)+ZC_STREAM_MAXFRAME_SIZE
     CShmStreamW *m_fifowriter;
  private:

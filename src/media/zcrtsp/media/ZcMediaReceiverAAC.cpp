@@ -67,34 +67,25 @@ typedef struct {
 } audio_raw_frame_t;
 
 // bufsize = zc_frame_t hdr + ADTS_HDR
-CMediaReceiverAAC::CMediaReceiverAAC(int shmtype, int chn)
-    : CMediaReceiver(ZC_MEDIA_TRACK_AUDIO, ZC_MEDIA_CODE_AAC, shmtype, chn, 7) {
+CMediaReceiverAAC::CMediaReceiverAAC(const zc_meida_track_t &info) : CMediaReceiver(info) {
     m_frame = (zc_frame_t *)m_framebuf;
     memset(m_frame, 0, sizeof(zc_frame_t));
     m_frame->magic = ZC_FRAME_AUDIO_MAGIC;
     m_frame->type = ZC_STREAM_AUDIO;
     m_frame->audio.encode = ZC_FRAME_ENC_AAC;
 
-    m_info.profile = MPEG4_AAC_MAIN;
-    m_info.sampling_frequency_index = MPEG4_AAC_48000;
-    m_info.channel_configuration = 2;
+    m_accinfo.profile = MPEG4_AAC_MAIN;
+    m_accinfo.sampling_frequency_index = MPEG4_AAC_48000;
+    m_accinfo.channel_configuration = 2;
     // init hdr
-    adts_fixed_header(&m_info, m_dtshdr, 0);
+    adts_fixed_header(&m_accinfo, m_dtshdr, 0);
 }
 
 CMediaReceiverAAC::~CMediaReceiverAAC() {}
 
 bool CMediaReceiverAAC::Init(void *pinfo) {
     // TODO(zhoucc): update dts hdr
-    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
-        // push-server recv stream
-        m_fifowriter =
-            new CShmStreamW(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIOPUSH_SHM_PATH, m_chn, putingCb, this);
-    } else {
-        // pull-cli recv stream,
-        m_fifowriter =
-            new CShmStreamW(ZC_STREAM_AUDIO_SIZE, ZC_STREAM_AUDIOPULL_SHM_PATH, m_chn, putingCb, this);
-    }
+    m_fifowriter = new CShmStreamW(m_info.fifosize, m_info.name, m_info.chn, putingCb, this);
     if (!m_fifowriter) {
         LOG_ERROR("Create m_fifowriter");
         goto _err;
@@ -119,7 +110,7 @@ _err:
 void CMediaReceiverAAC::_framelenUpdateADTSHdr(int len) {
     len += 7;  // framelen = dtshdrlen+datalen
     // len:13bits len.bit[12-11] @data[3].bit[1-0]
-    m_dtshdr[3] = ((m_info.channel_configuration & 0x03) << 6) | ((len >> 11) & 0x03);
+    m_dtshdr[3] = ((m_accinfo.channel_configuration & 0x03) << 6) | ((len >> 11) & 0x03);
     // len:13bits len.bit[10-3] @data[4].bit[7-0]
     m_dtshdr[4] = (uint8_t)(len >> 3);
     // len:13bits len.bit[2-0] @data[5].bit[7-5]
@@ -142,7 +133,7 @@ int CMediaReceiverAAC::RtpOnFrameIn(const void *packet, int bytes, uint32_t time
     ZC_ASSERT(m_fifowriter != nullptr);
     struct timespec _ts;
     clock_gettime(CLOCK_MONOTONIC, &_ts);
-    if (bytes + 7 <= ZC_STREAM_MAXFRAME_SIZE_A) {
+    if (bytes + 7 <= m_info.framemaxlen) {
         _framelenUpdateADTSHdr(bytes);
         memcpy(m_frame->data, m_dtshdr, 7);
 

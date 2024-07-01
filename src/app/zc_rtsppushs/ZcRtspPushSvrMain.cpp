@@ -9,10 +9,10 @@
 
 #include "zc_log.h"
 
-#include "ZcRtspClient.hpp"
+#include "ZcRtspPushSvrMan.hpp"
 
 #define ZC_LOG_PATH "./log"
-#define ZC_LOG_APP_NAME "zc_rtspcli.log"
+#define ZC_LOG_APP_NAME "zc_rtsppushs.log"
 
 static BOOL bExitFlag = FALSE;
 
@@ -33,35 +33,24 @@ int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-    if (argc < 1) {
-        LOG_ERROR("args error pls ./zc_rtspcli url chn [tcp/udp]\n \
-        example./zc_rtspcli rtsp://192.168.1.166:8554/live/live.ch0 0 tcp\n \
-        example./zc_rtspcli rtsp://192.168.1.166:8554/live/live.ch1 1 udp");
-        return -1;
-    }
-    int chn = 0;
-    int transport = zc::ZC_RTSP_TRANSPORT_RTP_TCP;
-    if (argc > 2) {
-        chn = atoi(argv[2]);
+
+    zc::CRtspPushSvrMan svr;
+    if (!svr.Init()) {
+        LOG_TRACE("CRtspPushServer Init error");
+        goto _done;
     }
 
-    if (argc > 3) {
-        if (strncasecmp(argv[3], "udp", strlen("udp")) == 0) {
-            transport = zc::ZC_RTSP_TRANSPORT_RTP_UDP;
-        }
-    }
-
-    LOG_TRACE("pushcli url[%s] chn[%d] transport[%d]", argv[1], chn, transport);
-    zc::CRtspClient cli{argv[1], chn, transport};
-
-    cli.StartCli();
+    svr.Start();
     while (!bExitFlag) {
-        usleep(100 * 1000);
+        usleep(100*1000);
         // LOG_DEBUG("sleep ");
     }
 
+    _done:
+    svr.Stop();
+    svr.UnInit();
     LOG_ERROR("app loop exit");
-    cli.StopCli();
+
     zc_log_uninit();
     printf("main exit\n");
     return 0;

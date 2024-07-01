@@ -162,8 +162,10 @@ typedef struct {
 
 // ZC_MSID_SMGR_SET_E
 typedef struct {
-    // TODO(zhoucc): something
-    ZC_U8 data[1024];
+    ZC_U32 type;     // live/pullc/pushs/pushc type
+    ZC_U32 chn;      // channel
+    ZC_U32 rsv1[6];  // rsv
+    zc_mod_smgr_iteminfo_t info;
 } zc_mod_smgr_set_t;
 
 // ZC_MSID_SMGR_GET_E

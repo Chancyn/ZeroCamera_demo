@@ -14,7 +14,7 @@ namespace zc {
 
 class CMediaReceiverH265 : public CMediaReceiver {
  public:
-    explicit CMediaReceiverH265(int shmtype, int chn, unsigned int framemaxlen = ZC_STREAM_MAXFRAME_SIZE);
+    explicit CMediaReceiverH265(const zc_meida_track_t &info);
     virtual ~CMediaReceiverH265();
     virtual bool Init(void *info = nullptr);
     virtual int RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags);

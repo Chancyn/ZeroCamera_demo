@@ -15,10 +15,10 @@
 #include "ZcMediaReceiver.hpp"
 
 namespace zc {
-CMediaReceiver::CMediaReceiver(zc_media_track_e track, int code, int shmtype, int chn, unsigned int framemaxlen)
-    : m_create(false), m_track(track), m_code(code), m_shmtype((zc_shmstream_e)shmtype), m_chn(chn), m_framemaxlen(framemaxlen),
-      m_framebuf(new char[framemaxlen + sizeof(zc_frame_t)]), m_fifowriter(nullptr) {
-
+CMediaReceiver::CMediaReceiver(const zc_meida_track_t &info) : m_create(false), m_fifowriter(nullptr) {
+    memcpy(&m_info, &info, sizeof(zc_meida_track_t));
+    m_framebuf = new char[m_info.framemaxlen + sizeof(zc_frame_t)]();
+    m_lasttime = 0;
 #if ZC_DEBUG_MEDIATRACK
     m_debug_cnt_lasttime = 0;
     m_debug_framecnt_last = 0;

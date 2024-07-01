@@ -169,7 +169,8 @@ int CRtspPushServer::_onsetup(rtsp_server_t *rtsp, const char *uri, const char *
             // RTP/AVP/TCP
             // 10.12 Embedded (Interleaved) Binary Data (p40)
             stream->tack = i;  // save trackid
-            stream->trackcode = CRtpReceiver::Encodingtrans2Type(stream->media->avformats[0].encoding);
+            stream->trackcode = CRtpReceiver::Encodingtrans2Type(stream->media->avformats[0].encoding,
+                                                                 stream->tracktype, stream->encode);
             memcpy(&stream->transport, t, sizeof(rtsp_header_transport_t));
             // RTP/AVP/TCP;interleaved=0-1
             snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=%d-%d",
@@ -177,7 +178,8 @@ int CRtspPushServer::_onsetup(rtsp_server_t *rtsp, const char *uri, const char *
             break;
         } else if (RTSP_TRANSPORT_RTP_UDP == transports[i].transport) {
             stream->tack = i;  // save trackid
-            stream->trackcode = CRtpReceiver::Encodingtrans2Type(stream->media->avformats[0].encoding);
+            stream->trackcode = CRtpReceiver::Encodingtrans2Type(stream->media->avformats[0].encoding,
+                                                                 stream->tracktype, stream->encode);
             // RTP/AVP/UDP
             memcpy(&stream->transport, t, sizeof(rtsp_header_transport_t));
 
@@ -231,8 +233,49 @@ int CRtspPushServer::rtsp_onrecord(void *ptr, rtsp_server_t *rtsp, const char *u
     return psvr->_onrecord(rtsp, uri, session, npt, scale);
 }
 
+static inline int findTrackIndex(unsigned int tracktype, const zc_media_info_t &stinfo) {
+    for (unsigned int i = 0; i < stinfo.tracknum; i++) {
+        if (tracktype == stinfo.tracks[i].tracktype) {
+            LOG_TRACE("find i:%u, trackno:%u, tracktype:%u", i, stinfo.tracks[i].trackno, stinfo.tracks[i].tracktype);
+            return i;
+        }
+    }
+
+    LOG_ERROR("notfind tracktype:%u", tracktype);
+    return -1;
+}
+
 int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char *session, const int64_t * /*npt*/,
                                const double * /*scale*/) {
+    int nchn = 0;
+    const char *pchn = nullptr;
+    std::string filename;
+    rtsp_uri_parse(uri, filename);
+    if (strstartswith(filename.c_str(), "/push/")) {
+        filename = filename.c_str() + 6;
+    }
+    pchn = strstr(filename.c_str(), "ch");
+    if (pchn != nullptr) {
+        nchn = atoi(pchn + 2);
+        nchn = nchn < 0 ? 0 : nchn;
+        LOG_TRACE("push server prase nchn:%d, path: %s", filename.c_str());
+    }
+
+    zc_media_info_t stinfo = {0};
+    int trackidx = 0;
+
+    // get streaminfo
+    if (!m_cbinfo.GetInfoCb || m_cbinfo.GetInfoCb(m_cbinfo.MgrContext, nchn, &stinfo) < 0) {
+        LOG_ERROR("rtsp_client_play m_cbinfo.GetInfoCb error");
+        // 500 Internal Server Error
+        return rtsp_server_reply_play(rtsp, 500, NULL, NULL, NULL);
+    }
+
+    for (unsigned int i = 0; i < stinfo.tracknum; i++) {
+        stinfo.tracks[i].enable = 0;
+        LOG_TRACE("diable i:%u, trackno:%u, tracktype:%u", i, stinfo.tracks[i].trackno, stinfo.tracks[i].tracktype);
+    }
+
     std::list<std::shared_ptr<pushrtsp_stream_t>> streams;
     {
         TPushSessions::iterator it;
@@ -257,28 +300,38 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
     std::list<std::shared_ptr<pushrtsp_stream_t>>::iterator it;
     for (it = streams.begin(); it != streams.end(); ++it) {
         std::shared_ptr<pushrtsp_stream_t> &stream = *it;
+        // find trackidx
+        if (stream->trackcode >= 0 && (trackidx = findTrackIndex(stream->tracktype, stinfo) > 0)) {
+            // update code
+            stinfo.tracks[trackidx].encode = stream->encode;
+            stinfo.tracks[trackidx].mediacode = stream->trackcode;
+            stinfo.tracks[trackidx].enable = 1;  // enable track
+        }
+        // media receiver, receiver frame
+        if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
+            stream->mediarecv.reset(new CMediaReceiverH264(stinfo.tracks[trackidx]));
+            stream->mediarecv->Init();
+        } else if (ZC_MEDIA_CODE_H265 == stream->trackcode) {
+            stream->mediarecv.reset(new CMediaReceiverH265(stinfo.tracks[trackidx]));
+            stream->mediarecv->Init();
+        } else if (ZC_MEDIA_CODE_AAC == stream->trackcode) {
+            stream->mediarecv.reset(new CMediaReceiverAAC(stinfo.tracks[trackidx]));
+            stream->mediarecv->Init();
+        } else {
+            stream->mediarecv.reset();
+            // continue;
+        }
+
+        stream->rtpreceiver.reset(new CRtpReceiver(onframe, this, stream->mediarecv.get()));
         if (RTSP_TRANSPORT_RTP_UDP == stream->transport.transport) {
             assert(!stream->transport.multicast);
             int port[2] = {stream->transport.rtp.u.client_port1, stream->transport.rtp.u.client_port2};
             // LOG_ERROR("cport:%hu-%hu, sport:%hu-%hu", stream->transport.rtp.u.client_port1,
             //           stream->transport.rtp.u.client_port2, stream->transport.rtp.u.server_port1,
             //           stream->transport.rtp.u.server_port2);
-            // media receiver, receiver frame
-            if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH264(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
-            } else if (ZC_MEDIA_CODE_H265 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH265(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
-            } else if (ZC_MEDIA_CODE_AAC == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverAAC(ZC_SHMSTREAM_PUSH, 0));
-            } else {
-                stream->mediarecv.reset();
-                // continue;
-            }
-            stream->mediarecv->Init();
             // TODO(zhoucc): rtp recvicer, receiver rtp package
             // rtp_receiver_test(stream->socket, stream->transport.destination, port, stream->media->avformats[0].fmt,
             //                   stream->media->avformats[0].encoding);
-            stream->rtpreceiver.reset(new CRtpReceiver(onframe, this, stream->mediarecv.get()));
             stream->rtpreceiver->RtpReceiverUdpStart(stream->socket, stream->transport.destination, port,
                                                      stream->media->avformats[0].fmt,
                                                      stream->media->avformats[0].encoding);
@@ -287,25 +340,19 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
             // assert(0);
             // to be continue
             LOG_ERROR("tcp new into");
-            // media receiver, receiver frame
-            if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH264(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
-            } else if (ZC_MEDIA_CODE_H265 == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverH265(ZC_SHMSTREAM_PUSH, 0, ZC_STREAM_MAXFRAME_SIZE));
-            } else if (ZC_MEDIA_CODE_AAC == stream->trackcode) {
-                stream->mediarecv.reset(new CMediaReceiverAAC(ZC_SHMSTREAM_PUSH, 0));
-            } else {
-                stream->mediarecv.reset();
-                // continue;
-            }
-            stream->mediarecv->Init();
-            stream->rtpreceiver.reset(new CRtpReceiver(onframe, this, stream->mediarecv.get()));
             stream->rtpreceiver->RtpReceiverTcpStart(stream->transport.interleaved1, stream->transport.interleaved2,
                                                      stream->media->avformats[0].fmt,
                                                      stream->media->avformats[0].encoding);
         } else {
             assert(0);
         }
+    }
+
+    // get streaminfo
+    if (!m_cbinfo.SetInfoCb || m_cbinfo.SetInfoCb(m_cbinfo.MgrContext, nchn, &stinfo) < 0) {
+        LOG_ERROR("rtsp_client_play m_cbinfo.SetInfoCb error");
+        // 500 Internal Server Error
+        return rtsp_server_reply_play(rtsp, 500, NULL, NULL, NULL);
     }
 
     return rtsp_server_reply_record(rtsp, 200, NULL, NULL);
@@ -617,12 +664,12 @@ _err:
     return false;
 }
 
-bool CRtspPushServer::Init() {
+bool CRtspPushServer::Init(rtsppushs_callback_info_t *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
     }
-
+    memcpy(&m_cbinfo, cbinfo, sizeof(rtsppushs_callback_info_t));
     if (!_init()) {
         goto _err;
     }
