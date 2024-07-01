@@ -25,15 +25,26 @@
 #define ZC_RTSP_MAX_CHN ZC_STREAM_VIDEO_MAX_CHN
 
 namespace zc {
+typedef int (*RtspPushSGetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
+typedef int (*RtspPushSSetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
+
+typedef struct {
+    RtspPushSGetInfoCb GetInfoCb;
+    RtspPushSSetInfoCb SetInfoCb;
+    void *MgrContext;
+} rtsppushs_callback_info_t;
+
 // TODO(zhoucc) : optimization to cstruct style
 struct pushrtsp_stream_t {
     std::shared_ptr<CMediaReceiver> mediarecv;  // media frame receiver
     std::shared_ptr<rtsp_media_t> media;
     std::shared_ptr<CRtpReceiver> rtpreceiver;
     struct rtsp_header_transport_t transport;
-    socket_t socket[2];  // rtp/rtcp socket
-    unsigned int tack;   // media trackid
-    int trackcode;       // media track encode
+    socket_t socket[2];       // rtp/rtcp socket
+    unsigned int tack;        // media trackid
+    int trackcode;            // media track code
+    unsigned int encode;  // media  encode
+    unsigned int tracktype;   // media tracktype
 };
 
 struct pushrtsp_source_t {
@@ -59,7 +70,7 @@ class CRtspPushServer : public Thread {
     virtual ~CRtspPushServer();
 
  public:
-    bool Init();
+    bool Init(rtsppushs_callback_info_t *cbinfo);
     bool UnInit();
 
  private:
@@ -116,6 +127,7 @@ class CRtspPushServer : public Thread {
  private:
     bool m_init;
     int m_running;
+    rtsppushs_callback_info_t m_cbinfo;
     void *m_phandle;  // handle
     void *m_psvr;     // server
     std::mutex m_pushmutex;

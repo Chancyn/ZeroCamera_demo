@@ -19,21 +19,23 @@ class CMediaReceiverFac {
  public:
     CMediaReceiverFac() {}
     ~CMediaReceiverFac() {}
-    CMediaReceiver *CreateMediaReceiver(int code, int shmtype, int chn) {
+    CMediaReceiver *CreateMediaReceiver(const zc_meida_track_t &info) {
         CMediaReceiver *recv = nullptr;
-        LOG_ERROR("into, code:%d, shmtype:%d, chn:%d", code, shmtype, chn);
-        switch (code) {
+        LOG_TRACE("into, code:%u, chn:%u, trackno:%u, tracktype:%u, shm:%s", info.mediacode, info.chn, info.trackno,
+                  info.tracktype, info.name);
+        switch (info.mediacode) {
         case ZC_MEDIA_CODE_H264:
-            recv = new CMediaReceiverH264(shmtype, chn, ZC_STREAM_MAXFRAME_SIZE);
+            recv = new CMediaReceiverH264(info);
             break;
         case ZC_MEDIA_CODE_H265:
-            recv = new CMediaReceiverH265(shmtype, chn, ZC_STREAM_MAXFRAME_SIZE);
+            recv = new CMediaReceiverH265(info);
             break;
         case ZC_MEDIA_CODE_AAC:
-            recv = new CMediaReceiverAAC(shmtype, chn);
+            recv = new CMediaReceiverAAC(info);
             break;
         default:
-            LOG_ERROR("error, code[%d]", code);
+        LOG_ERROR("error, code:%u, chn:%u, trackno:%u, tracktype:%u, shm:%s", info.mediacode, info.chn, info.trackno,
+                  info.tracktype, info.name);
             break;
         }
         return recv;

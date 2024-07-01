@@ -13,6 +13,7 @@
 #include "MsgCommReqClient.hpp"
 #include "Thread.hpp"
 #include "ZcModComm.hpp"
+#include "ZcModCli.hpp"
 #include "ZcMsgProcMod.hpp"
 
 namespace zc {
@@ -39,16 +40,12 @@ typedef struct {
     ZC_CHAR pname[ZC_MAX_PNAME];  // process name
 } sys_modcli_status_t;
 
-class CModBase : public CModComm, public Thread {
+class CModBase : public CModComm,  public CModCli, public Thread {
  public:
     explicit CModBase(ZC_U8 modid, ZC_U32 version = ZC_MSG_VERSION);
     virtual ~CModBase();
     virtual bool Init(void *cbinfo) = 0;
     virtual bool UnInit() = 0;
-    bool BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modid, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size);
-    bool MsgSendTo(zc_msg_t *pmsg, const char *urlto, zc_msg_t *prmsg, size_t *buflen);
-    bool MsgSendTo(zc_msg_t *pmsg, zc_msg_t *prmsg, size_t *buflen);
-    const char *GetUrlbymodid(ZC_U8 modid);
     virtual int process();
 
  protected:
@@ -64,7 +61,7 @@ class CModBase : public CModComm, public Thread {
     bool registerInsert(zc_msg_t *msg);
     bool unregisterRemove(zc_msg_t *msg);
     bool updateStatus(zc_msg_t *msg);
-    zc_msg_errcode_e _svrSysRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    zc_msg_errcode_e _svrSysCheckRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 svrSysRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
     zc_msg_errcode_e _svrRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 svrRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
@@ -76,7 +73,6 @@ class CModBase : public CModComm, public Thread {
     int _process_mod();
     int _sendRegisterMsg(int cmd);
     int _sendKeepaliveMsg();
-    int _sendSMgrGetInfo(unsigned int type, unsigned int chn);
 
  private:
     bool m_init;

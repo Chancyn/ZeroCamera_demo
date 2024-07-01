@@ -3,48 +3,35 @@
 
 #include <stdio.h>
 
+#include "ZcModCli.hpp"
 #include "zc_basic_fun.h"
 #include "zc_log.h"
 #include "zc_msg_sys.h"
 
-#include "ZcRtspManager.hpp"
-#include "ZcRtspServer.hpp"
+#include "ZcRtspPushCliMan.hpp"
 #include "ZcType.hpp"
 
 namespace zc {
-CRtspManager::CRtspManager() : m_init(false), m_running(0) {}
+// modsyscli
+CRtspPushCliMan::CRtspPushCliMan() : CModCli(ZC_MODID_SYSCLI_E), m_init(false), m_running(0) {}
 
-CRtspManager::~CRtspManager() {
+CRtspPushCliMan::~CRtspPushCliMan() {
     UnInit();
 }
 
-int CRtspManager::_getStreamInfoCb(unsigned int type, unsigned int chn, zc_media_info_t *info) {
-    LOG_TRACE("get info type:%u, chn:%d", type, chn);
-    // TODO(zhoucc): cb
-    return _sendSMgrGetInfo(type, chn, info);
-}
-
-int CRtspManager::getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_media_info_t *info) {
-    CRtspManager *pRtsp = reinterpret_cast<CRtspManager *>(ptr);
-    return pRtsp->_getStreamInfoCb(type, chn, info);
-}
-
-bool CRtspManager::Init(rtsp_callback_info_t *cbinfo) {
+bool CRtspPushCliMan::Init(unsigned int type, unsigned int chn, const char *url, int transport) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
     }
-    rtspsvr_cb_info_t stSvrCbinfo = {
-        .getStreamInfoCb = CRtspManager::getStreamInfoCb,
-        .MgrContext = this,
-    };
+    zc_media_info_t info;
 
-    if (!CModRtsp::Init(cbinfo)) {
-        LOG_TRACE("CModRtsp Init error");
+    if (_sendSMgrGetInfo(type, chn, &info) < 0) {
+        LOG_TRACE("_sendSMgrGetInfo error");
         goto _err;
     }
 
-    if (!CRtspServer::Init(&stSvrCbinfo)) {
+    if (!CRtspPushClient::Init(info, url, transport)) {
         LOG_TRACE("CModRtsp Init error");
         goto _err;
     }
@@ -60,14 +47,14 @@ _err:
     return false;
 }  // namespace zc
 
-bool CRtspManager::_unInit() {
+bool CRtspPushCliMan::_unInit() {
     Stop();
-    CModRtsp::UnInit();
-    CRtspServer::UnInit();
+    CRtspPushClient::UnInit();
+
     return false;
 }
 
-bool CRtspManager::UnInit() {
+bool CRtspPushCliMan::UnInit() {
     if (!m_init) {
         return true;
     }
@@ -77,32 +64,29 @@ bool CRtspManager::UnInit() {
     m_init = false;
     return false;
 }
-bool CRtspManager::Start() {
+bool CRtspPushCliMan::Start() {
     if (m_running) {
         return false;
     }
 
-    CModRtsp::Start();
-    CRtspServer::Start();
-    m_running = true;
-    return true;
+    m_running = CRtspPushClient::StartCli();
+    return m_running;
 }
 
-bool CRtspManager::Stop() {
+bool CRtspPushCliMan::Stop() {
     if (!m_running) {
         return false;
     }
 
-    CModRtsp::Stop();
-    CRtspServer::Stop();
+    CRtspPushClient::StopCli();
     m_running = false;
     return true;
 }
 
 #if 1  // ZC_DEBUG_DUMP
 static inline void _dumpTrackInfo(const char *user, zc_meida_track_t *info) {
-    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,mediacode:%u,en:%u,size:%u,fmaxlen:%u,name:%s", user, info->chn,
-              info->trackno, info->tracktype, info->encode, info->mediacode, info->enable, info->fifosize,
+    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,mediacode:%u,en:%u,size:%u,fmaxlen:%u, name:%s", user,
+              info->chn, info->trackno, info->tracktype, info->encode, info->mediacode, info->enable, info->fifosize,
               info->framemaxlen, info->name);
     return;
 }
@@ -149,7 +133,7 @@ static inline void _mediainfo_trans(zc_media_info_t *info, const zc_mod_smgr_ite
 }
 
 // send get streaminfo
-int CRtspManager::_sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_media_info_t *info) {
+int CRtspPushCliMan::_sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_media_info_t *info) {
     // LOG_TRACE("send register msg into[%s] into", m_name);
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t)] = {0};
     zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);

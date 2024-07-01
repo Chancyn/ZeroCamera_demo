@@ -21,7 +21,7 @@ extern "C" {
 #define ZC_TASK_COMM_LEN (16)
 #endif
 
-const char *g_buildDateTime = __DATE__ " " __TIME__;
+extern const char *g_buildDateTime;
 
 #define ZC_PROC_ABSPATH(p, len) \
     ({ \

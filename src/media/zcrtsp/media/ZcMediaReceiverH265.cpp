@@ -12,8 +12,7 @@
 #include "ZcMediaReceiverH265.hpp"
 
 namespace zc {
-CMediaReceiverH265::CMediaReceiverH265(int shmtype, int chn, unsigned int maxframelen)
-    : CMediaReceiver(ZC_MEDIA_TRACK_VIDEO, ZC_MEDIA_CODE_H265, shmtype, chn, maxframelen) {
+CMediaReceiverH265::CMediaReceiverH265(const zc_meida_track_t &info) : CMediaReceiver(info) {
     m_frame = (zc_frame_t *)m_framebuf;
     memset(m_frame, 0, sizeof(zc_frame_t));
     m_frame->magic = ZC_FRAME_VIDEO_MAGIC;
@@ -23,19 +22,13 @@ CMediaReceiverH265::CMediaReceiverH265(int shmtype, int chn, unsigned int maxfra
     memset(&m_spsinfo, 0, sizeof(m_spsinfo));
     m_pkgcnt = 0;
     m_lasttime = 0;
+    LOG_TRACE("debug framemaxlen:%u", m_info.framemaxlen);
 }
 
 CMediaReceiverH265::~CMediaReceiverH265() {}
 
 bool CMediaReceiverH265::Init(void *pinfo) {
-    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
-        // push-server recv stream
-        m_fifowriter = new CShmStreamW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEOPUSH_SHM_PATH, m_chn, putingCb, this);
-    } else {
-        // pull-cli recv stream,
-        m_fifowriter =
-            new CShmStreamW(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEOPULL_SHM_PATH, m_chn, putingCb, this);
-    }
+    m_fifowriter = new CShmStreamW(m_info.fifosize, m_info.name, m_info.chn, putingCb, this);
     if (!m_fifowriter) {
         LOG_ERROR("Create m_fifowriter");
         goto _err;
@@ -79,7 +72,7 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
     //               now - pframe->utc);
     // }
 
-    uint8_t type = *(uint8_t *)packet & 0x1f;
+    uint8_t type = ((*(uint8_t *)packet) & 0x7F) >> 1;
     struct timespec _ts;
     clock_gettime(CLOCK_MONOTONIC, &_ts);
     m_lasttime = _ts.tv_sec;
@@ -103,13 +96,14 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
                 memcpy(&m_spsinfo, &spsinfo, sizeof(zc_h26x_sps_info_t));
                 m_frame->video.width = spsinfo.width;
                 m_frame->video.height = spsinfo.height;
+                // m_frame->video.keyflag = 1;
             }
         } else {
             LOG_ERROR("h265 parse sps error");
         }
     }
 
-    if (m_frame->size + 4 + bytes <= m_maxframelen) {
+    if (m_frame->size + 4 + bytes <= m_info.framemaxlen) {
         m_frame->data[m_frame->size + 0] = 00;
         m_frame->data[m_frame->size + 1] = 00;
         m_frame->data[m_frame->size + 2] = 00;
@@ -120,7 +114,8 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
         m_frame->size += bytes + 4;
         m_pkgcnt++;
     } else {
-        LOG_ERROR("pack error, reset time:%08u, bytes[%u], size[%u], pkgcnt[%u]", time, bytes, m_frame->size, m_pkgcnt);
+        LOG_ERROR("pack error, reset time:%08u, bytes:%u, size:%u,framemaxlen:%u, pkgcnt:%u", time, bytes,
+                  m_frame->size, m_info.framemaxlen, m_pkgcnt);
         m_frame->size = 0;
         m_pkgcnt = 0;
         return 0;

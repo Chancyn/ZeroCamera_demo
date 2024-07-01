@@ -18,6 +18,16 @@
 #define ZC_MEIDIA_NUM 8  // #define N_MEDIA 8 from rtsp-client-internal.h
 
 namespace zc {
+// zhoucc mancallback
+typedef int (*RtspCliGetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
+typedef int (*RtspCliSetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
+
+typedef struct {
+    RtspCliGetInfoCb GetInfoCb;
+    RtspCliSetInfoCb SetInfoCb;
+    void *MgrContext;
+} rtspcli_callback_info_t;
+
 struct zc_rtsp_client_t {
     void *rtsp;
     rtponframe onframe;
@@ -36,28 +46,29 @@ typedef enum {
 
 class CRtspClient : protected Thread {
  public:
-    explicit CRtspClient(const char *url, int chn = 0,int transport = ZC_RTSP_TRANSPORT_RTP_UDP);
+    CRtspClient();
     virtual ~CRtspClient();
 
  public:
+    bool Init(rtspcli_callback_info_t *cbinfo, int chn, const char *url, int transport);
+    bool UnInit();
     bool StartCli();
     bool StopCli();
-
 
  private:
     bool _startconn();
     bool _stopconn();
     virtual int process();
     int _cliwork();
-    #if 0
+#if 0
     inline int _frameH264(const void *packet, int bytes, uint32_t time, int flags);
     inline int _frameH265(const void *packet, int bytes, uint32_t time, int flags);
     inline int _frameAAC(const void *packet, int bytes, uint32_t time, int flags);
-    #endif
+#endif
 
     // rtp on frame
     static int onframe(void *ptr1, void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
-    int _onframe( void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
+    int _onframe(void *ptr2, int encode, const void *packet, int bytes, uint32_t time, int flags);
 
     static int send(void *param, const char *uri, const void *req, size_t bytes);
     int _send(const char *uri, const void *req, size_t bytes);
@@ -88,6 +99,7 @@ class CRtspClient : protected Thread {
     void *m_phandle;  // handle
     unsigned int m_keepalive;
     zc_rtsp_client_t m_client;
+    rtspcli_callback_info_t m_cbinfo;
     CRtpReceiver *m_pRtp[ZC_MEIDIA_NUM];  // [rtp&rtcp] Receiver
     CMediaReceiver *m_mediarecv[ZC_MEIDIA_NUM];
     std::mutex m_mutex;

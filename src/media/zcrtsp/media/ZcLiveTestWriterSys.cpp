@@ -55,7 +55,7 @@ ILiveTestWriter *CLiveTestWriterFac::CreateLiveTestWriter(int code, const live_t
 }
 
 CLiveTestWriterSys::CLiveTestWriterSys() : m_init(0) {
-    Init();
+    // Init();
 }
 
 CLiveTestWriterSys::~CLiveTestWriterSys() {

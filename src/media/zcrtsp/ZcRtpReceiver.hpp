@@ -23,7 +23,7 @@ typedef struct _rtp_context_ {
 #endif
 
     char encoding[64];
-    int encodetype;     // zc_frame_enc_e
+    int mediacode;     // zc_media_code_e
     socket_t socket[2];
     struct sockaddr_storage ss[2];
 
@@ -58,8 +58,8 @@ class CRtpReceiver : public NonCopyable {
     // for rtsp-push-server, m_ptr1 = CRtspServer, ptr2 = Session,
     CRtpReceiver(rtponframe onframe, void *ptr1, void *ptr2);
     virtual ~CRtpReceiver();
-
     static int Encodingtrans2Type(const char *encoding);
+    static int Encodingtrans2Type(const char *encoding, unsigned int &tracktype, unsigned int &encode);
     int RtpReceiver(int timeout);
     bool RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int peerport[2], int payload, const char *encoding);
     bool RtpReceiverTcpStart(uint8_t interleave1, uint8_t interleave2, int payload, const char *encoding);

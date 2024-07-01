@@ -26,8 +26,8 @@ extern "C" uint32_t rtp_ssrc(void);
 #define VIDEO_FREQUENCE (90000)  // frequence
 
 namespace zc {
-CMediaTrackH265::CMediaTrackH265(int shmtype, int chn)
-    : CMediaTrack(ZC_MEDIA_TRACK_VIDEO, ZC_FRAME_ENC_H265, ZC_MEDIA_CODE_H265, shmtype, chn) {
+CMediaTrackH265::CMediaTrackH265(const zc_meida_track_t &info)
+    : CMediaTrack(info) {
     m_frequency = VIDEO_FREQUENCE;
     LOG_TRACE("Constructor");
 }
@@ -62,16 +62,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
     // profile-level-id=010C01;
     char profileid[3] = {0x01, 0x0C, 0x01};
 
-    if (m_shmtype == ZC_SHMSTREAM_PUSH) {
-        // push stream
-        m_fiforeader = new CShmStreamR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEOPUSH_SHM_PATH, m_chn);
-    } else if (m_shmtype == ZC_SHMSTREAM_PULL) {
-        // pull stream
-        m_fiforeader = new CShmStreamR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEOPULL_SHM_PATH, m_chn);
-    } else {
-        // live stream
-        m_fiforeader = new CShmStreamR(ZC_STREAM_MAIN_VIDEO_SIZE, ZC_STREAM_VIDEO_SHM_PATH, m_chn);
-    }
+    m_fiforeader = new CShmStreamR(m_info.fifosize, m_info.name, m_info.chn);
     if (!m_fiforeader) {
         LOG_ERROR("Create m_fiforeader");
         goto _err;

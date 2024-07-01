@@ -22,6 +22,7 @@
 #include "zc_h26x_sps_parse.h"
 #include "zc_log.h"
 #include "zc_macros.h"
+#include "media/zc_media_track.h"
 
 #include "Epoll.hpp"
 #include "ZcRtpReceiver.hpp"
@@ -243,22 +244,22 @@ int CRtpReceiver::rtpOnpacket(void *param, const void *packet, int bytes, uint32
 
 int CRtpReceiver::_rtpOnpacket(const void *packet, int bytes, uint32_t timestamp, int flags) {
     const uint8_t start_code[] = {0, 0, 0, 1};
-    if (m_rtpctx->encodetype == ZC_FRAME_ENC_H264 || m_rtpctx->encodetype == ZC_FRAME_ENC_H264) {
+    if (m_rtpctx->mediacode == ZC_MEDIA_CODE_H264 || m_rtpctx->mediacode == ZC_MEDIA_CODE_H265) {
         fwrite(start_code, 1, 4, m_rtpctx->fp);
 #if 0
-        if (m_rtpctx->encodetype == ZC_FRAME_ENC_H264) {
+        if (m_rtpctx->mediacode == ZC_MEDIA_CODE_H264) {
             uint8_t type = *(uint8_t *)packet & 0x1f;
             if (0 < type && type <= 5) {
                 // VCL frame
             }
-        } else if (m_rtpctx->encodetype == ZC_FRAME_ENC_H265) {
+        } else if (m_rtpctx->mediacode == ZC_MEDIA_CODE_H265) {
             uint8_t type = (*(uint8_t *)packet >> 1) & 0x3f;
             if (type <= 32) {
                 // VCL frame
             }
         }
 #endif
-    } else if (m_rtpctx->encodetype == ZC_FRAME_ENC_AAC) {
+    } else if (m_rtpctx->mediacode == ZC_MEDIA_CODE_AAC) {
         uint8_t adts[7];
         int len = bytes + 7;
         uint8_t profile = 2;
@@ -282,7 +283,7 @@ int CRtpReceiver::_rtpOnpacket(const void *packet, int bytes, uint32_t timestamp
     (void)flags;
 
     if (m_onframe) {
-        m_onframe(m_ptr1, m_ptr2, m_rtpctx->encodetype, packet, bytes, timestamp, flags);
+        m_onframe(m_ptr1, m_ptr2, m_rtpctx->mediacode, packet, bytes, timestamp, flags);
     }
 
     return 0;
@@ -290,14 +291,37 @@ int CRtpReceiver::_rtpOnpacket(const void *packet, int bytes, uint32_t timestamp
 
 int CRtpReceiver::Encodingtrans2Type(const char *encoding) {
     if (0 == strcasecmp("H264", encoding)) {
-        return ZC_FRAME_ENC_H264;
+        return ZC_MEDIA_CODE_H264;
     } else if (0 == strcasecmp("H265", encoding)) {
-        return ZC_FRAME_ENC_H265;
+        return ZC_MEDIA_CODE_H265;
     } else if (0 == strcasecmp("mpeg4-generic", encoding)) {
-        return ZC_FRAME_ENC_AAC;
+        return ZC_MEDIA_CODE_AAC;
     } else if (0 == strcmp("MP4A-LATM", encoding)) {
         // add ADTS header
-        return ZC_FRAME_ENC_AAC;  // TODO(zhoucc):
+        return ZC_MEDIA_CODE_AAC;  // TODO(zhoucc):
+    }
+
+    return -1;
+}
+
+int CRtpReceiver::Encodingtrans2Type(const char *encoding, unsigned int &tracktype, unsigned int &encode) {
+    if (0 == strcasecmp("H264", encoding)) {
+        tracktype = ZC_MEDIA_TRACK_VIDEO;
+        encode = ZC_FRAME_ENC_H264;
+        return ZC_MEDIA_CODE_H264;
+    } else if (0 == strcasecmp("H265", encoding)) {
+        tracktype = ZC_MEDIA_TRACK_VIDEO;
+        encode = ZC_FRAME_ENC_H265;
+        return ZC_MEDIA_CODE_H265;
+    } else if (0 == strcasecmp("mpeg4-generic", encoding)) {
+        tracktype = ZC_MEDIA_TRACK_AUDIO;
+        encode = ZC_FRAME_ENC_AAC;
+        return ZC_MEDIA_CODE_AAC;
+    } else if (0 == strcmp("MP4A-LATM", encoding)) {
+        // add ADTS header
+        tracktype = ZC_MEDIA_TRACK_AUDIO;
+        encode = ZC_FRAME_ENC_AAC;
+        return ZC_MEDIA_CODE_AAC;  // TODO(zhoucc):
     }
 
     return -1;
@@ -344,7 +368,7 @@ bool CRtpReceiver::RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int pe
     // assert(0 == connect(rtp[1], (struct sockaddr*)&m_rtpctx->ss[1], len));
     LOG_TRACE("rtp/rtcp  peer:%s,%hu-%hu", peer, peerport[0], peerport[0]);
     snprintf(m_rtpctx->encoding, sizeof(m_rtpctx->encoding), "%s", encoding);
-    m_rtpctx->encodetype = Encodingtrans2Type(m_rtpctx->encoding);
+    m_rtpctx->mediacode = Encodingtrans2Type(m_rtpctx->encoding);
     m_rtpctx->socket[0] = rtp[0];
     m_rtpctx->socket[1] = rtp[1];
     m_running = RTP_STATUS_RUNNING;
@@ -373,7 +397,7 @@ bool CRtpReceiver::RtpReceiverTcpStart(uint8_t interleave1, uint8_t interleave2,
     m_rtpctx->fp = fopen(m_rtpctx->rtp_buffer, "wb");
     m_rtpctx->frtp = fopen(m_rtpctx->rtcp_buffer, "wb");
     snprintf(m_rtpctx->encoding, sizeof(m_rtpctx->encoding), "%s", encoding);
-    m_rtpctx->encodetype = Encodingtrans2Type(m_rtpctx->encoding);
+    m_rtpctx->mediacode = Encodingtrans2Type(m_rtpctx->encoding);
     profile = rtp_profile_find(payload);
     m_rtpctx->demuxer =
         rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtpOnpacket, this);

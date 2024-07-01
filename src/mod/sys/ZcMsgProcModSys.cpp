@@ -173,10 +173,12 @@ static inline void _smgr_iteminfo_trans(zc_mod_smgr_iteminfo_t *modinfo, const z
 
     for (unsigned int i = 0; i < info->tracknum && i < ZC_MSG_TRACK_MAX_NUM; i++) {
         modinfo->tracks[i].chn = info->tracks[i].chn;
+        modinfo->tracks[i].trackno = info->tracks[i].trackno;
         modinfo->tracks[i].tracktype = info->tracks[i].tracktype;
         modinfo->tracks[i].encode = info->tracks[i].encode;
         modinfo->tracks[i].enable = info->tracks[i].enable;
         modinfo->tracks[i].fifosize = info->tracks[i].fifosize;
+        modinfo->tracks[i].framemaxlen = info->tracks[i].framemaxlen;
         modinfo->tracks[i].status = info->tracks[i].status;
         strncpy(modinfo->tracks[i].name, info->tracks[i].name, sizeof(modinfo->tracks[i].name) - 1);
     }

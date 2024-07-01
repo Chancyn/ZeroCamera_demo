@@ -38,6 +38,8 @@
 #include "ZcType.hpp"
 #include "media/ZcLiveSource.hpp"
 
+#include "zc_stream_mgr.h"
+
 #define ZC_N_AIO_THREAD (4)  // aio thread num
 #define ZC_TEST_SESSION 1    // test示例代码
 #define ZC_SUPPORT_VOD 1     // video on Demand 点播
@@ -82,6 +84,37 @@ int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri
     return psvr->_ondescribe(ptr, rtsp, uri);
 }
 
+int CRtspServer::_findLiveSourceInfo(const char *filename, zc_media_info_t *info) {
+    int type = 0;
+    int chn = 0;
+    const char *pchn = nullptr;
+    if (0 == strncasecmp(filename, ZC_RTSP_LIVEURL_CHN_PREFIX, strlen(ZC_RTSP_LIVEURL_CHN_PREFIX))) {
+        type = ZC_SHMSTREAM_TYPE_LIVE;
+        pchn = filename + strlen(ZC_RTSP_LIVEURL_CHN_PREFIX);
+    } else if (0 == strncasecmp(filename, ZC_RTSP_PUSHURL_CHN_PREFIX, strlen(ZC_RTSP_PUSHURL_CHN_PREFIX))) {
+        type = ZC_SHMSTREAM_TYPE_PUSHS;
+        pchn = filename + strlen(ZC_RTSP_PUSHURL_CHN_PREFIX);
+    } else if (0 == strncasecmp(filename, ZC_RTSP_PULLURL_CHN_PREFIX, strlen(ZC_RTSP_PULLURL_CHN_PREFIX))) {
+        type = ZC_SHMSTREAM_TYPE_PULLC;
+        pchn = filename + strlen(ZC_RTSP_PULLURL_CHN_PREFIX);
+    } else {
+        LOG_ERROR("%s, error", filename);
+        return -1;
+    }
+
+    if (pchn)
+        chn = atoi(pchn);
+
+    // prase chn 0; default chn = 0
+    chn = chn < 0 ? 0 : chn;
+    LOG_TRACE("%s, type:%d, chn:%d", filename, type, chn);
+    if (m_cbinfo.getStreamInfoCb) {
+        return m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, info);
+    }
+
+    return -1;
+}
+
 int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
     static const char *pattern_vod = "v=0\n"
                                      "o=- %llu %llu IN IP4 %s\n"
@@ -105,19 +138,22 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
     std::map<std::string, TFileDescription>::const_iterator it;
 
     rtsp_uri_parse(uri, filename);
+    int vod = 0;
     if (strstartswith(filename.c_str(), "/live/")) {
         filename = filename.c_str() + 6;
     }
 #if ZC_SUPPORT_VOD  // TODO(zhoucc)
     else if (strstartswith(filename.c_str(), "/vod/")) {
         filename = path::join(s_workdir, filename.c_str() + 5);
+        vod = 1;
     }
 #endif
     else {
-        assert(0);
-        return -1;
+        // assert(0);
+        // return -1;
+        return rtsp_server_reply_describe(rtsp, 404 /*Not Found*/, NULL);
     }
-    int vod = 0;
+
     char buffer[1024] = {0};
     {
         // AutoThreadLocker locker(s_locker);
@@ -127,31 +163,14 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
             // unlock
             TFileDescription describe;
             std::shared_ptr<IMediaSource> source;
-            if (0 == strncasecmp(filename.c_str(), ZC_RTSP_LIVEURL_CHN_PREFIX, strlen(ZC_RTSP_LIVEURL_CHN_PREFIX))) {
-                int t = atoi(filename.c_str() + strlen(ZC_RTSP_LIVEURL_CHN_PREFIX));
-                if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
-                    t = 0;
+            if (vod == 0) {
+                zc_media_info_t info = {0};
+                if (_findLiveSourceInfo(filename.c_str(), &info) < 0) {
+                    LOG_ERROR("live %s, 404 Not Find", filename.c_str());
+                    return rtsp_server_reply_describe(rtsp, 404 /*Not Found*/, NULL);
                 }
-                source.reset(new CLiveSource(ZC_SHMSTREAM_LIVE, t));
-                LOG_TRACE("livestream live %s, %d,", filename.c_str(), t);
-            } else if (0 ==
-                       strncasecmp(filename.c_str(), ZC_RTSP_PUSHURL_CHN_PREFIX, strlen(ZC_RTSP_PUSHURL_CHN_PREFIX))) {
-                int t = atoi(filename.c_str() + strlen(ZC_RTSP_PUSHURL_CHN_PREFIX));
-                if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
-                    t = 0;
-                }
-                source.reset(new CLiveSource(ZC_SHMSTREAM_PUSH, t));
-                LOG_TRACE("pushstream live %s, %d,", filename.c_str(), t);
-            } else if (0 ==
-                       strncasecmp(filename.c_str(), ZC_RTSP_PULLURL_CHN_PREFIX, strlen(ZC_RTSP_PULLURL_CHN_PREFIX))) {
-                int t = atoi(filename.c_str() + strlen(ZC_RTSP_PULLURL_CHN_PREFIX));
-                if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
-                    t = 0;
-                }
-                source.reset(new CLiveSource(ZC_SHMSTREAM_PULL, t));
-                LOG_TRACE("pullstream live %s, %d,", filename.c_str(), t);
+                source.reset(new CLiveSource(info));
             } else {
-                vod = 1;
                 LOG_TRACE("vod %s", filename.c_str());
                 if (strendswith(filename.c_str(), ".ps"))
                     source.reset(new PSFileSource(filename.c_str()));
@@ -206,17 +225,20 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
     const struct rtsp_header_transport_t *transport = NULL;
 
     rtsp_uri_parse(uri, filename);
+    int vod = 0;
     if (strstartswith(filename.c_str(), "/live/")) {
         filename = filename.c_str() + 6;
     }
 #if ZC_SUPPORT_VOD  // TODO(zhoucc)
     else if (strstartswith(filename.c_str(), "/vod/")) {
         filename = path::join(s_workdir, filename.c_str() + 5);
+        vod = 1;
     }
 #endif
     else {
-        assert(0);
-        return -1;
+        // assert(0);
+        // return -1;
+        return rtsp_server_reply_setup(rtsp, 404, NULL, NULL);
     }
 
     if ('\\' == *filename.rbegin() || '/' == *filename.rbegin())
@@ -247,27 +269,13 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
         item.channel = 0;
         item.status = 0;
 
-        if (0 == strncasecmp(filename.c_str(), ZC_RTSP_LIVEURL_CHN_PREFIX, strlen(ZC_RTSP_LIVEURL_CHN_PREFIX))) {
-            int t = atoi(filename.c_str() + strlen(ZC_RTSP_LIVEURL_CHN_PREFIX));
-            if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
-                t = 0;
+        if (vod == 0) {
+            zc_media_info_t info = {0};
+            if (_findLiveSourceInfo(filename.c_str(), &info) < 0) {
+                LOG_ERROR("live %s, 404 Not Find", filename.c_str());
+                return rtsp_server_reply_setup(rtsp, 404 /*Not Found*/, NULL, NULL);
             }
-            item.media.reset(new CLiveSource(ZC_SHMSTREAM_LIVE, t));
-            LOG_TRACE("livestream live %s, %d,", filename.c_str(), t);
-        } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_PUSHURL_CHN_PREFIX, strlen(ZC_RTSP_PUSHURL_CHN_PREFIX))) {
-            int t = atoi(filename.c_str() + strlen(ZC_RTSP_PUSHURL_CHN_PREFIX));
-            if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
-                t = 0;
-            }
-            item.media.reset(new CLiveSource(ZC_SHMSTREAM_PUSH, t));
-            LOG_TRACE("pushstream live %s, %d,", filename.c_str(), t);
-        } else if (0 == strncasecmp(filename.c_str(), ZC_RTSP_PULLURL_CHN_PREFIX, strlen(ZC_RTSP_PULLURL_CHN_PREFIX))) {
-            int t = atoi(filename.c_str() + strlen(ZC_RTSP_PULLURL_CHN_PREFIX));
-            if (t < 0 || t >= ZC_RTSP_MAX_CHN) {
-                t = 0;
-            }
-            item.media.reset(new CLiveSource(ZC_SHMSTREAM_PULL, t));
-            LOG_TRACE("pullstream live %s, %d,", filename.c_str(), t);
+            item.media.reset(new CLiveSource(info));
         } else {
             if (strendswith(filename.c_str(), ".ps"))
                 item.media.reset(new PSFileSource(filename.c_str()));
@@ -621,7 +629,9 @@ int CRtspServer::_send(void *ptr, const void *data, size_t bytes) {
     return bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
 }
 
-CRtspServer::CRtspServer() : Thread("RtspSer"), m_init(false), m_running(0), m_phandle(nullptr), m_psvr(nullptr) {}
+CRtspServer::CRtspServer() : Thread("RtspSer"), m_init(false), m_running(0), m_phandle(nullptr), m_psvr(nullptr) {
+    memset(&m_cbinfo, 0, sizeof(m_cbinfo));
+}
 
 CRtspServer::~CRtspServer() {
     UnInit();
@@ -678,7 +688,7 @@ _err:
     return false;
 }
 
-bool CRtspServer::Init() {
+bool CRtspServer::Init(rtspsvr_cb_info_t *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
@@ -687,6 +697,7 @@ bool CRtspServer::Init() {
     if (!_init()) {
         goto _err;
     }
+    memcpy(&m_cbinfo, cbinfo, sizeof(m_cbinfo));
     m_init = true;
     LOG_TRACE("Init ok");
     return true;

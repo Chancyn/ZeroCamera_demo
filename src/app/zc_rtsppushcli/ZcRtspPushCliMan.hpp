@@ -4,17 +4,17 @@
 #pragma once
 #include "zc_type.h"
 
-#include "ZcRtspServer.hpp"
-#include "rtsp/ZcModRtsp.hpp"
+#include "ZcRtspPushClient.hpp"
+#include "ZcModCli.hpp"
 
 namespace zc {
-class CRtspManager : public CModRtsp, public CRtspServer {
+class CRtspPushCliMan : public CModCli, public CRtspPushClient {
  public:
-    CRtspManager();
-    virtual ~CRtspManager();
+    CRtspPushCliMan();
+    virtual ~CRtspPushCliMan();
 
  public:
-    bool Init(rtsp_callback_info_t *cbinfo);
+    bool Init(unsigned int type, unsigned int chn, const char *url, int transport = ZC_RTSP_TRANSPORT_RTP_UDP);
     bool UnInit();
     bool Start();
     bool Stop();
@@ -24,11 +24,9 @@ class CRtspManager : public CModRtsp, public CRtspServer {
     int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_media_info_t *info);
     bool _unInit();
     int _sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_media_info_t *info);
+
  private:
     bool m_init;
     int m_running;
-
-    rtsp_callback_info_t m_cbinfo;
-    zc_media_info_t *m_pmediainfo;
 };
 }  // namespace zc

@@ -16,8 +16,8 @@ IPC cli registermsg(len244) req->rsp cos:2ms, cos1:2ms
 TCP cli registermsg(len244) req->rsp cos:3ms, cos1:2ms
 tcp for test:for debug use tcpdump capture msg; tcpdump -i lo port 8880 port-s0 -w msg.cap
 */
-#define ZC_MSG_REPREQ_TRANSPORT_IPC 1
-#define ZC_MSG_REPREQ_TRANSPORT_TCP 0
+#define ZC_MSG_REPREQ_TRANSPORT_IPC 0
+#define ZC_MSG_REPREQ_TRANSPORT_TCP 1
 
 #if ZC_MSG_REPREQ_TRANSPORT_IPC
 #define ZC_SYS_URL_IPC "ipc:///tmp/sys_rep"      // req/rep url
@@ -26,7 +26,7 @@ tcp for test:for debug use tcpdump capture msg; tcpdump -i lo port 8880 port-s0 
 #define ZC_CODEC_URL_PUB "ipc:///tmp/codec_pub"  // pub/sub url
 #define ZC_RTSP_URL_IPC "ipc:///tmp/rtsp_rep"    // req/rep url
 #define ZC_RTSP_URL_PUB "ipc:///tmp/rtsp_pub"    // pub/sub url
-#elif ZC_MSG_TRANSPORT_TCP      // cli registermsg req->rsp cos:3ms, cos1:2ms
+#elif ZC_MSG_REPREQ_TRANSPORT_TCP      // cli registermsg req->rsp cos:3ms, cos1:2ms
 #define ZC_SYS_URL_IPC "tcp://127.0.0.1:8880"    // req/rep url
 #define ZC_SYS_URL_PUB "tcp://127.0.0.1:8881"    // pub/sub url
 #define ZC_CODEC_URL_IPC "tcp://127.0.0.1:8882"  // req/rep url
@@ -67,6 +67,9 @@ typedef enum {
 
     ZC_MODID_BUTT,  // end
 } zc_modid_e;
+
+// modcli
+#define ZC_MODID_SYSCLI_E ZC_MODID_SYS_E
 
 typedef enum {
     // req/rep
