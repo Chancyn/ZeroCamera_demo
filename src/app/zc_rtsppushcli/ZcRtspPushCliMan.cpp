@@ -85,8 +85,9 @@ bool CRtspPushCliMan::Stop() {
 
 #if 1  // ZC_DEBUG_DUMP
 static inline void _dumpTrackInfo(const char *user, zc_meida_track_t *info) {
-    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,mediacode:%u,en:%u,size:%u,name:%s", user, info->chn,
-              info->trackno, info->tracktype, info->encode, info->mediacode, info->enable, info->fifosize, info->name);
+    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,mediacode:%u,en:%u,size:%u,fmaxlen:%u, name:%s", user,
+              info->chn, info->trackno, info->tracktype, info->encode, info->mediacode, info->enable, info->fifosize,
+              info->framemaxlen, info->name);
     return;
 }
 
@@ -124,6 +125,7 @@ static inline void _mediainfo_trans(zc_media_info_t *info, const zc_mod_smgr_ite
         }
         info->tracks[i].enable = modinfo->tracks[i].enable;
         info->tracks[i].fifosize = modinfo->tracks[i].fifosize;
+        info->tracks[i].framemaxlen = modinfo->tracks[i].framemaxlen;
         strncpy(info->tracks[i].name, modinfo->tracks[i].name, sizeof(info->tracks[i].name) - 1);
     }
     _dumpStreamInfo("user", info);

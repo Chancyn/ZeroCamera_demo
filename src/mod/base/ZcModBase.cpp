@@ -299,8 +299,9 @@ int CModBase::_sendKeepaliveMsg() {
 
 #if 1  // ZC_DEBUG_DUMP
 static inline void _dumpTrackInfo(const char *user, zc_mod_stream_track_t *info) {
-    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,en:%u,size:%u,status:%u,name:%s", user, info->chn,
-              info->trackno, info->tracktype, info->encode, info->enable, info->fifosize, info->status, info->name);
+    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,en:%u,size:%u,fmaxlen:%u,status:%u,name:%s", user, info->chn,
+              info->trackno, info->tracktype, info->encode, info->enable, info->fifosize, info->framemaxlen,
+              info->status, info->name);
     return;
 }
 

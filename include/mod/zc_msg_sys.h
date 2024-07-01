@@ -144,6 +144,7 @@ typedef struct {
     unsigned char enable;     // enable/disable
 
     unsigned int fifosize;    // shmfifosize
+    unsigned int framemaxlen;  // frame maxlen
     int status;               // zc_track_status_e, track status already runnig write opened
     int rsv[8];
     char name[32];         // shm path name

@@ -178,6 +178,7 @@ static inline void _smgr_iteminfo_trans(zc_mod_smgr_iteminfo_t *modinfo, const z
         modinfo->tracks[i].encode = info->tracks[i].encode;
         modinfo->tracks[i].enable = info->tracks[i].enable;
         modinfo->tracks[i].fifosize = info->tracks[i].fifosize;
+        modinfo->tracks[i].framemaxlen = info->tracks[i].framemaxlen;
         modinfo->tracks[i].status = info->tracks[i].status;
         strncpy(modinfo->tracks[i].name, info->tracks[i].name, sizeof(modinfo->tracks[i].name) - 1);
     }

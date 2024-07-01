@@ -83,15 +83,15 @@ CShmStreamR::CShmStreamR(unsigned int size, const char *name, unsigned char chn)
     if (name[0] == 'v') {
         m_type = ZC_STREAM_VIDEO;
         m_magic = ZC_FRAME_VIDEO_MAGIC;
-        m_maxframelen = ZC_STREAM_MAXFRAME_SIZE;
+        m_framemaxlen = ZC_STREAM_MAXFRAME_SIZE;
     } else if (name[0] == 'a') {
         m_type = ZC_STREAM_AUDIO;
         m_magic = ZC_FRAME_AUDIO_MAGIC;
-        m_maxframelen = ZC_STREAM_MAXFRAME_SIZE_A;
+        m_framemaxlen = ZC_STREAM_MAXFRAME_SIZE_A;
     } else if (name[0] == 'm') {
         m_type = ZC_STREAM_META;
         m_magic = ZC_FRAME_META_MAGIC;
-        m_maxframelen = ZC_STREAM_MAXFRAME_SIZE_M;
+        m_framemaxlen = ZC_STREAM_MAXFRAME_SIZE_M;
     } else {
         ZC_ASSERT(0);
     }
@@ -160,7 +160,7 @@ bool CShmStreamR::_getLatestFrameInfo(zc_frame_userinfo_t &info) {
     bool ret = false;
     unsigned int pos = 0;
     unsigned int hdrlen = sizeof(zc_frame_t);
-    unsigned char buffer[hdrlen + m_maxframelen];
+    unsigned char buffer[hdrlen + m_framemaxlen];
     zc_frame_t *frame = (zc_frame_t *)buffer;
     unsigned int framelen = 0;
     ShareLock();

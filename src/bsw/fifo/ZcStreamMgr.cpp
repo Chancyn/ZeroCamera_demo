@@ -62,8 +62,9 @@ static const mgr_shmname_t g_nametab = {
 // debug dump
 #if ZC_DEBUG_DUMP
 static inline void _dumpTrackInfo(const char *user, zc_shmstream_track_t *info) {
-    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,en:%u,size:%u,status:%u,name:%s", user, info->chn,
-              info->trackno, info->tracktype, info->encode, info->enable, info->fifosize, info->status, info->name);
+    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,en:%u,size:%u,fmaxlen:%u, status:%u,name:%s", user, info->chn,
+              info->trackno, info->tracktype, info->encode, info->enable, info->fifosize, info->framemaxlen,
+              info->status, info->name);
     return;
 }
 
@@ -78,14 +79,16 @@ static inline void _dumpStreamInfo(const char *user, zc_shmstream_info_t *info) 
 }
 #endif
 
-static inline void _initTrackInfo(zc_shmstream_track_t *info, unsigned char chn, unsigned int trackno, unsigned char track,
-                                  unsigned char encode, unsigned char enable, unsigned int fifosize, const char *name) {
+static inline void _initTrackInfo(zc_shmstream_track_t *info, unsigned char chn, unsigned int trackno,
+                                  unsigned char track, unsigned char encode, unsigned char enable,
+                                  unsigned int fifosize, unsigned int framemaxlen, const char *name) {
     info->chn = chn;
     info->trackno = trackno;
     info->tracktype = track;
     info->encode = encode;
     info->enable = enable;
     info->fifosize = fifosize;
+    info->framemaxlen = framemaxlen;
     info->status = ZC_TRACK_STATUS_IDE;
     strncpy(info->name, name, sizeof(info->name));
 
@@ -102,13 +105,13 @@ void CStreamMgr::_initTracksInfo(zc_shmstream_track_t *info, unsigned char type,
                                  unsigned char aenc, unsigned char menc) {
     unsigned int trackno = 0;
     _initTrackInfo(info + ZC_STREAM_VIDEO, chn, trackno++, ZC_STREAM_VIDEO, venc, 1, ZC_STREAM_MAIN_VIDEO_SIZE,
-                   m_nametab.tabs[type].tracksname[ZC_STREAM_VIDEO]);
+                   ZC_STREAM_MAXFRAME_SIZE, m_nametab.tabs[type].tracksname[ZC_STREAM_VIDEO]);
 
     _initTrackInfo(info + ZC_STREAM_AUDIO, chn, trackno++, ZC_STREAM_AUDIO, aenc, 1, ZC_STREAM_AUDIO_SIZE,
-                   m_nametab.tabs[type].tracksname[ZC_STREAM_AUDIO]);
+                   ZC_STREAM_MAXFRAME_SIZE_A, m_nametab.tabs[type].tracksname[ZC_STREAM_AUDIO]);
     // meta disable
     _initTrackInfo(info + ZC_STREAM_META, chn, trackno++, ZC_STREAM_META, menc, 0, ZC_STREAM_META_SIZE,
-                   m_nametab.tabs[type].tracksname[ZC_STREAM_META]);
+                   ZC_STREAM_MAXFRAME_SIZE_M, m_nametab.tabs[type].tracksname[ZC_STREAM_META]);
 
     return;
 }
@@ -188,7 +191,7 @@ bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
     for (unsigned int type = 0; type < ZC_SHMSTREAM_TYPE_PUSHS; type++) {
         LOG_TRACE("Init ok idx:%d, num:%d ", tmp.maxchn[type]);
     }
-     LOG_TRACE("init streaminfo ok, m_total:%u", m_total);
+    LOG_TRACE("init streaminfo ok, m_total:%u", m_total);
     return true;
 
 _err:

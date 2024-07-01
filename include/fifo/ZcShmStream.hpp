@@ -52,7 +52,7 @@ class CShmStreamR : public CShmFIFO{
     bool _getLatestFrameInfo(zc_frame_userinfo_t &info);
 
     unsigned int m_magic;
-    unsigned int m_maxframelen;
+    unsigned int m_framemaxlen;
     zc_stream_e m_type;
     zc_frame_t *m_latest_idr;    // latest idr
 };

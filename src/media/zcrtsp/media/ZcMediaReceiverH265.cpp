@@ -12,8 +12,8 @@
 #include "ZcMediaReceiverH265.hpp"
 
 namespace zc {
-CMediaReceiverH265::CMediaReceiverH265(int shmtype, int chn, unsigned int maxframelen)
-    : CMediaReceiver(ZC_MEDIA_TRACK_VIDEO, ZC_MEDIA_CODE_H265, shmtype, chn, maxframelen) {
+CMediaReceiverH265::CMediaReceiverH265(int shmtype, int chn, unsigned int framemaxlen)
+    : CMediaReceiver(ZC_MEDIA_TRACK_VIDEO, ZC_MEDIA_CODE_H265, shmtype, chn, framemaxlen) {
     m_frame = (zc_frame_t *)m_framebuf;
     memset(m_frame, 0, sizeof(zc_frame_t));
     m_frame->magic = ZC_FRAME_VIDEO_MAGIC;
@@ -109,7 +109,7 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
         }
     }
 
-    if (m_frame->size + 4 + bytes <= m_maxframelen) {
+    if (m_frame->size + 4 + bytes <= m_framemaxlen) {
         m_frame->data[m_frame->size + 0] = 00;
         m_frame->data[m_frame->size + 1] = 00;
         m_frame->data[m_frame->size + 2] = 00;

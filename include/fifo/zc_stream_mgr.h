@@ -27,7 +27,7 @@ extern "C" {
 #define ZC_STREAMMGR_DECODE_MAX_CHN 1
 
 // stream with track num, video+audio, ZC_STREAM_BUTT
-#define ZC_STREAMMGR_TRACK_MAX_NUM ZC_STREAM_BUTT  //TODO(zhoucc): just video+audio
+#define ZC_STREAMMGR_TRACK_MAX_NUM ZC_STREAM_BUTT  // TODO(zhoucc): just video+audio
 
 #define ZC_SHMSTREAM_TYPE_ALL (0xFFFF)
 
@@ -36,8 +36,8 @@ typedef enum {
     // video
     ZC_TRACK_STATUS_ERROR = -1,
     ZC_TRACK_STATUS_IDE = 0,
-    ZC_TRACK_STATUS_W,         // write open
-    ZC_TRACK_STATUS_RW,        // write/read open
+    ZC_TRACK_STATUS_W,   // write open
+    ZC_TRACK_STATUS_RW,  // write/read open
 
     ZC_TRACK_STATUS_BUTT,
 } zc_track_status_e;
@@ -46,18 +46,18 @@ typedef enum {
 typedef enum {
     // video
     ZC_STREAM_STATUS_ERROR = -1,
-    ZC_STREAM_STATUS_INIT = 0,        // init
-    ZC_STREAM_STATUS_IDE,               // ide
-    ZC_STREAM_STATUS_RUNING,            // working
+    ZC_STREAM_STATUS_INIT = 0,  // init
+    ZC_STREAM_STATUS_IDE,       // ide
+    ZC_STREAM_STATUS_RUNING,    // working
 
     ZC_STREAM_STATUS_BUTT,
 } zc_stream_status_e;
 
 typedef enum {
-    ZC_SHMSTREAM_TYPE_LIVE = 0,   // live
-    ZC_SHMSTREAM_TYPE_PULLC,      // pull client
-    ZC_SHMSTREAM_TYPE_PUSHS,      // push server
-    ZC_SHMSTREAM_TYPE_PUSHC,      // push client
+    ZC_SHMSTREAM_TYPE_LIVE = 0,  // live
+    ZC_SHMSTREAM_TYPE_PULLC,     // pull client
+    ZC_SHMSTREAM_TYPE_PUSHS,     // push server
+    ZC_SHMSTREAM_TYPE_PUSHC,     // push client
 
     ZC_SHMSTREAM_TYPE_BUTT,
 } zc_shmstream_type_e;
@@ -71,15 +71,16 @@ typedef struct _zc_stream_mgr_cfg {
 // shmstreamcfg
 typedef struct _zc_shmstream_track {
     unsigned char chn;        // chnno
-    unsigned char trackno;  // tracktype zc_stream_e
+    unsigned char trackno;    // tracktype zc_stream_e
     unsigned char tracktype;  // tracktype zc_stream_e
     unsigned char encode;     // encode zc_frame_enc_e
     unsigned char enable;     // enable/disable
 
-    unsigned int fifosize;    // shmfifosize
-    int status;               // zc_track_status_e, track status already runnig write opened
+    unsigned int fifosize;     // shmfifosize
+    unsigned int framemaxlen;  // frame maxlen
+    int status;                // zc_track_status_e, track status already runnig write opened
     int rsv[8];
-    char name[32];         // shm path name
+    char name[32];  // shm path name
 } zc_shmstream_track_t;
 
 // shmstreamcfg
@@ -96,10 +97,10 @@ typedef struct _zc_shmstream_info {
 // streammgr client info
 typedef struct _zc_streamcli {
     ZC_U32 mod;
-    ZC_S32 pid;               // pid_t
-    unsigned int lasttime;    // recv last msg time, for keepalive
+    ZC_S32 pid;             // pid_t
+    unsigned int lasttime;  // recv last msg time, for keepalive
 
-    char pname[64];           // process name
+    char pname[64];  // process name
 } zc_streamcli_t;
 
 #ifdef __cplusplus
