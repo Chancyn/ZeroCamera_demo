@@ -23,7 +23,7 @@ CMediaReceiverH264::CMediaReceiverH264(const zc_meida_track_t &info) : CMediaRec
     memset(&m_spsinfo, 0, sizeof(m_spsinfo));
     m_pkgcnt = 0;
     m_lasttime = 0;
-    LOG_ERROR("Create Constructor [%p]", m_frame);
+    LOG_TRACE("Create Constructor [%p]", m_frame);
 }
 
 CMediaReceiverH264::~CMediaReceiverH264() {}

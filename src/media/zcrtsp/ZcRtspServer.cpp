@@ -191,6 +191,7 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
             source->GetSDPMedia(describe.sdpmedia);
 
             // re-lock
+            // TODO(zhoucc): donot insert,every time create describes again
             it = m_describes.insert(std::make_pair(filename, describe)).first;
         }
     }

@@ -275,7 +275,7 @@ bool CShmFIFO::_shmalloc(unsigned int size, int shmkey, bool bwrite) {
     }
 
     m_pfifo.evfd = evfd;
-    LOG_ERROR("shmalloc ok shmid[%d],shmkey[%d]", shmid, shmkey);
+    LOG_TRACE("shmalloc ok shmid[%d],shmkey[%d]", shmid, shmkey);
     return true;
 _err_open:
     if (m_bwrite) {
