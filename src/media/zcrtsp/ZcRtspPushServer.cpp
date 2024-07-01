@@ -261,6 +261,7 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
         LOG_TRACE("push server prase nchn:%d, path: %s", filename.c_str());
     }
 
+    LOG_TRACE("pushsvr nchn:%d, path: %s", filename.c_str());
     zc_stream_info_t stinfo = {0};
     int trackidx = 0;
 
@@ -303,10 +304,14 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
         // find trackidx
         if (stream->trackcode >= 0 && ((trackidx = findTrackIndex(stream->tracktype, stinfo)) >= 0)) {
             // update code
+
             stinfo.tracks[trackidx].encode = stream->encode;
             stinfo.tracks[trackidx].mediacode =
                 CRtpReceiver::transEncode2MediaCode(stream->encode);  // stream->trackcode;
-            stinfo.tracks[trackidx].enable = 1;                      // enable track
+            stinfo.tracks[trackidx].enable = 1;                       // enable track
+            LOG_TRACE("prase i:%u, trackno:%u, tracktype:%u, mediacode:%u, encode:%u", trackidx,
+                      stinfo.tracks[trackidx].trackno, stinfo.tracks[trackidx].tracktype,
+                      stinfo.tracks[trackidx].mediacode, stinfo.tracks[trackidx].encode);
         }
         // media receiver, receiver frame
         if (ZC_MEDIA_CODE_H264 == stream->trackcode) {
@@ -356,6 +361,10 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
         return rtsp_server_reply_play(rtsp, 500, NULL, NULL, NULL);
     }
 
+    for (unsigned int i = 0; i < stinfo.tracknum; i++) {
+        LOG_TRACE("debugset i:%u, trackno:%u, tracktype:%u, mediacode:%u, encode:%u", i, stinfo.tracks[i].trackno,
+                  stinfo.tracks[i].tracktype, stinfo.tracks[i].mediacode, stinfo.tracks[i].encode);
+    }
     return rtsp_server_reply_record(rtsp, 200, NULL, NULL);
 }
 

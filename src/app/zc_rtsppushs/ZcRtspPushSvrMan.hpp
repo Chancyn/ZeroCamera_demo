@@ -21,8 +21,6 @@ class CRtspPushSvrMan : public CModCli, public CRtspPushServer {
 
  private:
     bool _unInit();
-    int _sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
-    int _sendSMgrSetInfo(unsigned int type, unsigned int chn, const zc_stream_info_t *info);
     static int getStreamInfoCb(void *ptr, unsigned int chn, zc_stream_info_t *info);
     int _getStreamInfoCb(unsigned int chn, zc_stream_info_t *info);
     static int setStreamInfoCb(void *ptr, unsigned int chn, zc_stream_info_t *info);

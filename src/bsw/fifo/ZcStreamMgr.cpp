@@ -298,7 +298,7 @@ int CStreamMgr::_setShmStreamInfo(zc_stream_info_t *info, int idx) {
     ZC_ASSERT(idx < m_total);
     // TODO(zhoucc): check param
     memcpy(&m_infoTab[idx], info, sizeof(zc_stream_info_t));
-
+    _dumpStreamInfo("setstream", info);
     return 0;
 }
 
@@ -476,6 +476,7 @@ int CStreamMgr::HandleCtrl(unsigned int type, void *indata, void *outdata) {
         // copy to out;set and update out info
         memcpy(&out->info, &in->info, sizeof(zc_stream_info_t));
         ret = setShmStreamInfo(&out->info, in->type, in->chn);
+        LOG_WARN("SYS_SMGR_HDL_SETINFO_E type:%u, chn:%u, ret:%u", in->type, in->chn, ret);
         break;
     }
     default:

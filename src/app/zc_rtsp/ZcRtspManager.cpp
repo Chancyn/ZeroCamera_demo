@@ -21,7 +21,7 @@ CRtspManager::~CRtspManager() {
 int CRtspManager::_getStreamInfoCb(unsigned int type, unsigned int chn, zc_stream_info_t *info) {
     LOG_TRACE("get info type:%u, chn:%d", type, chn);
     // TODO(zhoucc): cb
-    return _sendSMgrGetInfo(type, chn, info);
+    return sendSMgrGetInfo(type, chn, info);
 }
 
 int CRtspManager::getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info) {
@@ -117,39 +117,4 @@ static inline void _dumpStreamInfo(const char *user, zc_stream_info_t *info) {
     return;
 }
 #endif
-
-// send get streaminfo
-int CRtspManager::_sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info) {
-    // LOG_TRACE("send register msg into[%s] into", m_name);
-    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_t)] = {0};
-    zc_msg_t *req = reinterpret_cast<zc_msg_t *>(msg_buf);
-    BuildReqMsgHdr(req, ZC_MODID_SYS_E, ZC_MID_SYS_SMGR_E, ZC_MSID_SMGR_GET_E, 0, sizeof(zc_mod_smgr_get_t));
-    zc_mod_smgr_get_t *reqinfo = reinterpret_cast<zc_mod_smgr_get_t *>(req->data);
-    reqinfo->type = type;
-    reqinfo->chn = chn;
-
-    // recv
-    char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t)] = {0};
-    zc_msg_t *rep = reinterpret_cast<zc_msg_t *>(rmsg_buf);
-    size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_get_rep_t);
-    zc_mod_smgr_get_rep_t *repinfo = reinterpret_cast<zc_mod_smgr_get_rep_t *>(rep->data);
-    if (MsgSendTo(req, ZC_SYS_URL_IPC, rep, &rlen)) {
-        if (rep->err != 0) {
-            LOG_ERROR("recv register rep err:%d \n", rep->err);
-            return -1;
-        }
-    } else {
-        // TODO(zhoucc):
-        return -1;
-    }
-
-    memcpy(info, &repinfo->info, sizeof(zc_stream_info_t));
-#if ZC_DEBUG
-    _dumpStreamInfo("recv streaminfo", info);
-    uint64_t now = zc_system_time();
-    LOG_TRACE("smgr getinfo : pid:%d,modid:%d, type:%u,chn:%u, cos1:%llu,%llu", req->pid, req->modid, reqinfo->type,
-              reqinfo->chn, (rep->ts1 - rep->ts), (now - rep->ts));
-#endif
-    return 0;
-}
 }  // namespace zc

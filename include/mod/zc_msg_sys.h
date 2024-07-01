@@ -144,6 +144,10 @@ typedef struct {
     zc_stream_info_t info;
 } zc_mod_smgr_set_t;
 
+typedef struct {
+    zc_stream_info_t info;
+} zc_mod_smgr_set_rep_t;
+
 // ZC_MSID_SMGR_GET_E
 typedef struct {
     ZC_U32 type;     // live/pullc/pushs/pushc type

@@ -23,7 +23,6 @@ class CRtspManager : public CModRtsp, public CRtspServer {
     static int getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info);
     int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_stream_info_t *info);
     bool _unInit();
-    int _sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
  private:
     bool m_init;
     int m_running;

@@ -8,6 +8,7 @@
 #include "zc_mod_base.h"
 #include "zc_msg.h"
 #include "zc_type.h"
+#include "zc_frame.h"
 
 #include "MsgCommReqClient.hpp"
 
@@ -21,9 +22,8 @@ class CModCli  {
     bool MsgSendTo(zc_msg_t *pmsg, const char *urlto, zc_msg_t *prmsg, size_t *buflen);
     bool MsgSendTo(zc_msg_t *pmsg, zc_msg_t *prmsg, size_t *buflen);
     static const char *GetUrlbymodid(ZC_U8 modid);
-
- protected:
-    int _sendSMgrGetInfo(unsigned int type, unsigned int chn);
+    int sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
+    int sendSMgrSetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
 
  private:
     ZC_S32 m_pid;

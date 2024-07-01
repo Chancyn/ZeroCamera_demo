@@ -10,7 +10,8 @@ extern "C" {
 
 #include "zc_type.h"
 #include "zc_stream_mgr.h"
-#include "zc_msg_sys.h"
+// #include "zc_msg_sys.h"
+#include "zc_frame.h"
 
 // handle callback enum
 typedef enum {

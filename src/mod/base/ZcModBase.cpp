@@ -397,7 +397,7 @@ int CModBase::_process_mod() {
     LOG_WARN("process into[%s] into", m_name);
     _sendRegisterMsg(ZC_SYS_REGISTER_E);
     // TODO(zhoucc): check register ret
-    _sendSMgrGetInfo(0, 0);
+    // sendSMgrGetInfo(0, 0, NULL);
     while (State() == Running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         // LOG_INFO("process sleep[%s]", m_name);

@@ -249,8 +249,23 @@ ZC_S32 CMsgProcModSys::_handleRepSysSMgrGet(zc_msg_t *rep, int size) {
 
 ZC_S32 CMsgProcModSys::_handleReqSysSMgrSet(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     LOG_TRACE("handle ReqSMgrSet,iqsize[%d]", iqsize);
-    zc_mod_smgr_set_t *pSet = reinterpret_cast<zc_mod_smgr_set_t *>(req->data);
-    LOG_TRACE("handle Set");
+    ZC_ASSERT(iqsize = sizeof(zc_msg_t) + sizeof(zc_mod_smgr_set_t));
+    ZC_ASSERT(*opsize >= sizeof(zc_msg_t) + sizeof(zc_mod_smgr_set_rep_t));
+    zc_mod_smgr_set_t *reqmsg = reinterpret_cast<zc_mod_smgr_set_t *>(req->data);
+    if (m_cbinfo.streamMgrHandleCb) {
+        zc_sys_smgr_setinfo_in_t stin = {0};
+        zc_sys_smgr_setinfo_out_t stout = {0};
+        stin.type = reqmsg->type;
+        stin.chn = reqmsg->chn;
+        memcpy(&stin.info, &reqmsg->info,  sizeof(zc_stream_info_t));
+        if (m_cbinfo.streamMgrHandleCb(m_cbinfo.streamMgrContext, SYS_SMGR_HDL_SETINFO_E, &stin, &stout) < 0) {
+            return ZC_MSG_ERR_HADNLE_E;
+        }
+        zc_mod_smgr_set_rep_t *repmsg = reinterpret_cast<zc_mod_smgr_set_rep_t *>(rep->data);
+        memcpy(&repmsg->info, &stout.info, sizeof(zc_stream_info_t));
+        *opsize = sizeof(zc_msg_t)+ sizeof(zc_mod_smgr_set_rep_t);
+        return ZC_MSG_SUCCESS_E;
+    }
 
     return 0;
 }
