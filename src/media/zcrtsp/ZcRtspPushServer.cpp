@@ -301,7 +301,7 @@ int CRtspPushServer::_onrecord(rtsp_server_t *rtsp, const char *uri, const char 
     for (it = streams.begin(); it != streams.end(); ++it) {
         std::shared_ptr<pushrtsp_stream_t> &stream = *it;
         // find trackidx
-        if (stream->trackcode >= 0 && (trackidx = findTrackIndex(stream->tracktype, stinfo) > 0)) {
+        if (stream->trackcode >= 0 && ((trackidx = findTrackIndex(stream->tracktype, stinfo)) >= 0)) {
             // update code
             stinfo.tracks[trackidx].encode = stream->encode;
             stinfo.tracks[trackidx].mediacode = stream->trackcode;

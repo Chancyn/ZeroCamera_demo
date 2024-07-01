@@ -239,7 +239,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
         payload = rtsp_client_get_media_payload(rtsp, i);
         code = CRtpReceiver::Encodingtrans2Type(encoding, tracktype, encode);
         // find trackidx
-        if (code >= 0 && (trackidx = findTrackIndex(tracktype, stinfo) > 0)) {
+        if (code >= 0 && ((trackidx = findTrackIndex(tracktype, stinfo)) >= 0)) {
             // update code
             stinfo.tracks[trackidx].encode = encode;
             stinfo.tracks[trackidx].mediacode = code;
