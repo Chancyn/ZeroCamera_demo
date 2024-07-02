@@ -55,27 +55,31 @@ int main(int argc, char **argv) {
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
     LOG_INFO("process[%s,%s], build:[%s]\n", argv[0], pname, g_buildDateTime);
-    zc_stream_mgr_cfg_t cfg;  // TODO(zhoucc): config
-    g_ZCStreamMgrInstance.Init(NULL);
-    g_ZCStreamMgrInstance.Start();
-    zc::CSysManager sys;
+
+    zc::smgr_callback_info_t smgrcbinfo = {
+        .publishMsgCb = zc::CSysManager::PublishMsgCb,
+        .Context = &g_ZCSysManagerInstance,
+    };
+    g_ZCStreamMgrInstance.Init(NULL, &smgrcbinfo);
+
     zc::sys_callback_info_t cbinfo = {
         .streamMgrHandleCb = StreamMgrHandleMsg,
         .streamMgrContext = nullptr,
         .MgrHandleCb = SysMgrHandleMsg,
-        .MgrContext = &sys,
+        .MgrContext = &g_ZCSysManagerInstance,
     };
 
-    sys.Init(&cbinfo);
-    sys.Start();
+    g_ZCSysManagerInstance.Init(&cbinfo);
+    g_ZCStreamMgrInstance.Start();
+    g_ZCSysManagerInstance.Start();
     while (!bExitFlag) {
         usleep(100 * 1000);
         // LOG_TRACE("sleep ");
     }
 
     LOG_ERROR("app loop exit");
-    sys.Stop();
-    sys.UnInit();
+    g_ZCSysManagerInstance.Stop();
+    g_ZCSysManagerInstance.UnInit();
     g_ZCStreamMgrInstance.Stop();
     g_ZCStreamMgrInstance.UnInit();
     zc_log_uninit();

@@ -21,6 +21,12 @@ typedef struct _mgr_shmname {
     shmname_t tabs[ZC_SHMSTREAM_BUTT];
 } mgr_shmname_t;
 
+typedef int (*PublishMsgCb)(void *ptr, ZC_U16 smid, ZC_U16 smsid, void *msg, unsigned int len);
+typedef struct {
+    PublishMsgCb publishMsgCb;
+    void *Context;
+} smgr_callback_info_t;
+
 // TODO(zhoucc): MgrCli; -> Mgr save handle
 class CStreamMgr : public Thread, public Singleton<CStreamMgr> {
  public:
@@ -28,7 +34,7 @@ class CStreamMgr : public Thread, public Singleton<CStreamMgr> {
     virtual ~CStreamMgr();
 
  public:
-    bool Init(zc_stream_mgr_cfg_t *cfg);
+    bool Init(zc_stream_mgr_cfg_t *cfg, smgr_callback_info_t *cbinfo);
     bool UnInit();
     bool Start();
     bool Stop();
@@ -55,6 +61,7 @@ class CStreamMgr : public Thread, public Singleton<CStreamMgr> {
     bool m_init;
     int m_running;
     unsigned int m_total;
+    smgr_callback_info_t m_cbinfo;
     mgr_shmname_t m_nametab;
     zc_stream_mgr_cfg_t m_cfg;
     zc_stream_info_t *m_infoTab;

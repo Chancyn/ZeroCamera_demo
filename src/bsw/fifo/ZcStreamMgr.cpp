@@ -18,10 +18,10 @@
 #include <unistd.h>
 
 #include "mod/sys/zc_sys_smgr_handle.h"
+#include "zc_basic_fun.h"
 #include "zc_frame.h"
 #include "zc_log.h"
 #include "zc_macros.h"
-#include "zc_basic_fun.h"
 
 #include "Thread.hpp"
 #include "ZcShmStream.hpp"
@@ -92,7 +92,9 @@ static inline void _initTrackInfo(zc_meida_track_t *info, unsigned char chn, uns
     return;
 }
 
-CStreamMgr::CStreamMgr() : m_init(false), m_running(0) {}
+CStreamMgr::CStreamMgr() : m_init(false), m_running(0) {
+    memset(&m_cbinfo, 0, sizeof(m_cbinfo));
+}
 
 CStreamMgr::~CStreamMgr() {
     UnInit();
@@ -113,12 +115,13 @@ void CStreamMgr::_initTracksInfo(zc_meida_track_t *info, unsigned char type, uns
     return;
 }
 
-bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg) {
+bool CStreamMgr::Init(zc_stream_mgr_cfg_t *cfg, smgr_callback_info_t *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
         return false;
     }
 
+    memcpy(&m_cbinfo, cbinfo, sizeof(smgr_callback_info_t));
     unsigned char total = 0;
     unsigned char totalpushc = 0;
     unsigned int idx = 0;
@@ -278,8 +281,12 @@ int CStreamMgr::getShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsi
 int CStreamMgr::_setShmStreamInfo(zc_stream_info_t *info, int idx) {
     ZC_ASSERT(idx < m_total);
     // TODO(zhoucc): check param
-    memcpy(&m_infoTab[idx], info, sizeof(zc_stream_info_t));
-    _dumpStreamInfo("setstream", info);
+    if (memcmp(&m_infoTab[idx], info, sizeof(zc_stream_info_t)) != 0) {
+        memcpy(&m_infoTab[idx], info, sizeof(zc_stream_info_t));
+        _dumpStreamInfo("setstream", info);
+        return 1;
+    }
+
     return 0;
 }
 
@@ -288,10 +295,22 @@ int CStreamMgr::setShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsi
     if (idx < 0) {
         return -1;
     }
-    std::lock_guard<std::mutex> locker(m_mutex);
+    int ret = 0;
+    {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        ret = _setShmStreamInfo(info, idx);
+    }
 
-    return _setShmStreamInfo(info, idx);
-}
+    // notify
+    if (m_cbinfo.publishMsgCb && ret > 0) {
+        zc_mod_pub_streamupdate_t msg = {
+            .type = type,
+            .chn = nchn,
+        };
+        m_cbinfo.publishMsgCb(m_cbinfo.Context, ZC_PUBMID_SYS_MAN, ZC_PUBMSID_SYS_MAN_STREAM_UPDATE, &msg, sizeof(msg));
+    }
+    return 0;
+}  // namespace zc
 #if 0
 int CStreamMgr::_createStreamW(int idx) {
     ZC_ASSERT(idx < m_total);

@@ -269,6 +269,24 @@ int CModSysBase::PublishRegister(int regstatus, sys_modcli_status_t *info) {
     return 0;
 }
 
+// send get streaminfo
+int CModSysBase::PublishStreamUpdate(unsigned int chn, unsigned int type) {
+    LOG_TRACE("PublishStreamUpdate");
+    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_pub_streamupdate_t)] = {0};
+    zc_msg_t *sub = reinterpret_cast<zc_msg_t *>(msg_buf);
+    BuildPubMsgHdr(sub, ZC_PUBMID_SYS_MAN, ZC_PUBMSID_SYS_MAN_STREAM_UPDATE, 0, sizeof(zc_mod_pub_streamupdate_t));
+    zc_mod_pub_streamupdate_t *subinfo = reinterpret_cast<zc_mod_pub_streamupdate_t *>(sub->data);
+    subinfo->type = type;
+    subinfo->chn = chn;
+
+    LOG_INFO("pub streamupdate, [%s]pid:%d,modid:%u,regtime:%u,last:%u, url:%s", subinfo->type, subinfo->chn);
+    if (!Publish(sub, sizeof(msg_buf))) {
+        LOG_ERROR("Publish streamupdate err:%d \n");
+    }
+    LOG_TRACE("PublishStreamUpdate ok");
+    return 0;
+}
+
 int CModSysBase::modprocess() {
     // unsigned int ret = 0;
     // unsigned int errcnt = 0;

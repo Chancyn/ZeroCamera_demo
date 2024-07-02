@@ -20,6 +20,7 @@ class CModSysBase : public CModBase, public CModPublish {
     bool unInit();
     bool Start();
     bool Stop();
+    int PublishStreamUpdate(unsigned int chn, unsigned int type);
 
  private:
     bool initPubSvr();
