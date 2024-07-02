@@ -19,7 +19,7 @@
 
 namespace zc {
 CModSys::CModSys()
-    : CModBase(ZC_MODID_SYS_E), m_pMsgProc(new CMsgProcModSys()), m_init(false) {}
+    : CModSysBase(), m_pMsgProc(new CMsgProcModSys()), m_init(false) {}
 
 CModSys::~CModSys() {
     UnInit();

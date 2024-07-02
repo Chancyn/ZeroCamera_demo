@@ -6,11 +6,12 @@
 #include "zc_mod_base.h"
 
 #include "ZcModBase.hpp"
+#include "ZcModSubBase.hpp"
 #include "ZcMsg.hpp"
 #include "rtsp/ZcMsgProcModRtsp.hpp"
 
 namespace zc {
-class CModRtsp : public CModBase {
+class CModRtsp : public CModSubBase {
  public:
     CModRtsp();
     virtual ~CModRtsp();

@@ -5,25 +5,16 @@
 
 #include "zc_mod_base.h"
 
-#include "ZcModSysBase.hpp"
+#include "ZcModBase.hpp"
 #include "ZcMsg.hpp"
-#include "sys/ZcMsgProcModSys.hpp"
 
 namespace zc {
-class CModSys : public CModSysBase {
+class CModSubBase : public CModBase {
  public:
-    CModSys();
-    virtual ~CModSys();
-
- public:
-    virtual bool Init(void *cbinfo);
-    virtual bool UnInit();
+    CModSubBase(ZC_U8 modid);
+    virtual ~CModSubBase();
 
  private:
-    bool _unInit();
-
- private:
-    CMsgProcModSys *m_pMsgProc;
     int m_init;
 };
 }  // namespace zc
