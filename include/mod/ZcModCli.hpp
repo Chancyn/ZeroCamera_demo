@@ -25,12 +25,12 @@ class CModCli  {
     int sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
     int sendSMgrSetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
 
- private:
+ protected:
     ZC_S32 m_pid;
     ZC_U8 m_modid;
     ZC_U32 m_seqno;
     ZC_U32 m_version;
     ZC_CHAR m_url[ZC_URL_SIZE];
-    ZC_CHAR m_name[ZC_MODNAME_SIZE];
+    // ZC_CHAR m_name[ZC_MODNAME_SIZE];
 };
 }  // namespace zc

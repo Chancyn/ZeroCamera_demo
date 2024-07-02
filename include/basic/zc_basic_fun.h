@@ -25,6 +25,8 @@ extern "C" {
 #endif
 
 void zc_debug_dump_binstream(const char *fun, int type, const uint8_t *data, uint32_t len);
+void _dumpTrackInfo(const char *user, zc_meida_track_t *info);
+void _dumpStreamInfo(const char *user, zc_stream_info_t *info);
 //////////////////////////////////////////////////////////////////////////
 ///
 /// implement

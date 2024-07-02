@@ -21,6 +21,7 @@
 #include "zc_frame.h"
 #include "zc_log.h"
 #include "zc_macros.h"
+#include "zc_basic_fun.h"
 
 #include "Thread.hpp"
 #include "ZcShmStream.hpp"
@@ -58,26 +59,6 @@ static const mgr_shmname_t g_nametab = {
             },
         },
 };
-
-// debug dump
-#if ZC_DEBUG_DUMP
-static inline void _dumpTrackInfo(const char *user, zc_meida_track_t *info) {
-    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,en:%u,size:%u,fmaxlen:%u, status:%u,name:%s", user, info->chn,
-              info->trackno, info->tracktype, info->encode, info->enable, info->fifosize, info->framemaxlen,
-              info->status, info->name);
-    return;
-}
-
-static inline void _dumpStreamInfo(const char *user, zc_stream_info_t *info) {
-    LOG_TRACE("[%s] type:%d(%s),idx:%u,ch:%u,tracknum:%u,status:%u", user, info->shmstreamtype,
-              g_nametab.tabs[info->shmstreamtype].name, info->idx, info->chn, info->tracknum, info->status);
-    _dumpTrackInfo("vtrack", &info->tracks[ZC_STREAM_VIDEO]);
-    _dumpTrackInfo("atrack", &info->tracks[ZC_STREAM_AUDIO]);
-    _dumpTrackInfo("mtrack", &info->tracks[ZC_STREAM_META]);
-
-    return;
-}
-#endif
 
 static inline int transEncode2MediaCode(unsigned int encode) {
     int mediacode = -1;

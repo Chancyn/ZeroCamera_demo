@@ -2,6 +2,8 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
+#include <map>
+#include <memory>
 
 #include "zc_mod_base.h"
 
@@ -13,8 +15,25 @@ class CModSysBase : public CModBase {
  public:
     CModSysBase();
     virtual ~CModSysBase();
+    bool init();
+    bool unInit();
 
  private:
-    int m_init;
+    zc_msg_errcode_e checkReqSvrRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    ZC_S32 reqSvrRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
+    bool registerInsert(zc_msg_t *msg);
+    bool unregisterRemove(zc_msg_t *msg);
+    bool updateStatus(zc_msg_t *msg);
+    int updateStatus(ZC_S32 pid);
+    int _sysCheckModCliStatus();
+
+    virtual int modprocess();
+
+ private:
+    bool m_init;
+
+    // ZC_U64 = (pid << 32) | modid;
+    std::map<ZC_U64, std::shared_ptr<sys_modcli_status_t>> m_modmap;  // modclimap
+    std::mutex m_mutex;                                               // map lock
 };
 }  // namespace zc

@@ -64,7 +64,7 @@ CModCli::CModCli(ZC_U8 modid, ZC_U32 version) : m_modid(modid), m_seqno(0), m_ve
     m_pid = getpid();
 
     strncpy(m_url, get_url_bymodid(m_modid), sizeof(m_url) - 1);
-    strncpy(m_name, get_name_bymodid(m_modid), sizeof(m_name) - 1);
+    // strncpy(m_name, get_name_bymodid(m_modid), sizeof(m_name) - 1);
 }
 
 CModCli::~CModCli() {}
@@ -103,25 +103,6 @@ bool CModCli::MsgSendTo(zc_msg_t *pmsg, zc_msg_t *prmsg, size_t *buflen) {
     cli.Open(GetUrlbymodid(pmsg->modidto));
     return cli.SendTo(pmsg, sizeof(zc_msg_t) + pmsg->size, prmsg, buflen);
 }
-
-#if ZC_DEBUG_DUMP
-static inline void _dumpTrackInfo(const char *user, const zc_meida_track_t *info) {
-    LOG_TRACE("[%s] ch:%u,trackno:%u,track:%u,encode:%u,mediacode:%u,en:%u,size:%u,fmaxlen:%u, name:%s", user,
-              info->chn, info->trackno, info->tracktype, info->encode, info->mediacode, info->enable, info->fifosize,
-              info->framemaxlen, info->name);
-    return;
-}
-
-static inline void _dumpStreamInfo(const char *user, const zc_stream_info_t *info) {
-    LOG_TRACE("[%s] type:%d,idx:%u,ch:%u,tracknum:%u,status:%u", user, info->shmstreamtype, info->idx, info->chn,
-              info->tracknum, info->status);
-    _dumpTrackInfo("vtrack", &info->tracks[ZC_STREAM_VIDEO]);
-    _dumpTrackInfo("atrack", &info->tracks[ZC_STREAM_AUDIO]);
-    _dumpTrackInfo("mtrack", &info->tracks[ZC_STREAM_META]);
-
-    return;
-}
-#endif
 
 // send get streaminfo
 int CModCli::sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info) {
