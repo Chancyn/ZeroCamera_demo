@@ -20,6 +20,7 @@ namespace zc {
 typedef enum {
     MODCLI_STATUS_EXPIRED_E = -2,  // expired keepalive
     MODCLI_STATUS_REG_ERR_E = -1,  // register error
+    MODCLI_STATUS_UNREGISTER_E,    // unsigned register success
     MODCLI_STATUS_REGISTERED_E,    // register success
 
     MODCLI_STATUS_BUTT_E,
@@ -32,7 +33,6 @@ typedef struct {
     ZC_U32 regtime;   // last regtime
     ZC_U32 lasttime;  // last keepalive time
     ZC_S32 status;    // status modcli_status_e
-
     ZC_CHAR url[ZC_URL_SIZE];     // process name
     ZC_CHAR pname[ZC_MAX_PNAME];  // process name
 } sys_modcli_status_t;
@@ -48,6 +48,7 @@ class CModBase : public CModComm, public CModCli, public Thread {
  protected:
     void BuildRepMsgHdr(zc_msg_t *rep, zc_msg_t *req);
     zc_msg_errcode_e MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
+    zc_msg_errcode_e MsgSubProc(zc_msg_t *sub, int iqsize);
     bool registerMsgProcMod(CMsgProcMod *msgprocmod);
     bool unregisterMsgProcMod(CMsgProcMod *msgprocmod);
     bool initReqSvr(MsgCommReqSerHandleCb svrcb);

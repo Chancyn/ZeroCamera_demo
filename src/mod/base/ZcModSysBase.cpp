@@ -161,43 +161,53 @@ ZC_S32 CModSysBase::reqSvrRecvReqProc(char *req, int iqsize, char *rep, int *ops
 
 bool CModSysBase::registerInsert(zc_msg_t *msg) {
     ZC_U64 key = ((ZC_U64)msg->pid << 32) | msg->modid;
-    std::lock_guard<std::mutex> locker(m_mutex);
-    auto it = m_modmap.find(key);
-    if (it != m_modmap.end()) {
-        // already register update;do noting
-        LOG_WARN("mod register update,[%s] pid:%d,modid:%u,regtime:%u,last:%u", it->second->pname, it->second->pid,
-                 it->second->modid, it->second->regtime, it->second->lasttime);
-    } else {
-        // insert
-        zc_mod_reg_t *reg = reinterpret_cast<zc_mod_reg_t *>(msg->data);
-        std::shared_ptr<sys_modcli_status_t> cli(new sys_modcli_status_t());
-        cli->status = MODCLI_STATUS_REGISTERED_E;
-        time_t now = time(NULL);
-        cli->regtime = now;
-        cli->lasttime = now;
-        cli->modid = msg->modid;
-        cli->pid = msg->pid;
-        strncpy(cli->pname, reg->pname, sizeof(cli->pname) - 1);
-        strncpy(cli->url, reg->url, sizeof(cli->url) - 1);
-        LOG_INFO("mod register, [%s]pid:%d,modid:%u,regtime:%u,last:%u, url:%s", cli->pname, cli->pid, cli->modid,
-                 cli->regtime, cli->lasttime, cli->url);
-        m_modmap.insert(std::make_pair(key, cli));
+    std::shared_ptr<sys_modcli_status_t> cli;
+    {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        auto it = m_modmap.find(key);
+        if (it != m_modmap.end()) {
+            cli = it->second;
+            // already register update;do noting
+            LOG_WARN("mod register update,[%s] pid:%d,modid:%u,regtime:%u,last:%u", it->second->pname, it->second->pid,
+                     it->second->modid, it->second->regtime, it->second->lasttime);
+        } else {
+            // insert
+            zc_mod_reg_t *reg = reinterpret_cast<zc_mod_reg_t *>(msg->data);
+            cli.reset(new sys_modcli_status_t());
+            cli->status = MODCLI_STATUS_REGISTERED_E;
+            time_t now = time(NULL);
+            cli->regtime = now;
+            cli->lasttime = now;
+            cli->modid = msg->modid;
+            cli->pid = msg->pid;
+            strncpy(cli->pname, reg->pname, sizeof(cli->pname) - 1);
+            strncpy(cli->url, reg->url, sizeof(cli->url) - 1);
+            LOG_INFO("mod register, [%s]pid:%d,modid:%u,regtime:%u,last:%u, url:%s", cli->pname, cli->pid, cli->modid,
+                     cli->regtime, cli->lasttime, cli->url);
+            m_modmap.insert(std::make_pair(key, cli));
+        }
     }
 
+    PublishRegister(MODCLI_STATUS_REGISTERED_E, cli.get());
     return true;
 }
 
 bool CModSysBase::unregisterRemove(zc_msg_t *msg) {
     ZC_U64 key = ((ZC_U64)msg->pid << 32) | msg->modid;
-    std::lock_guard<std::mutex> locker(m_mutex);
-    auto it = m_modmap.find(key);
-    if (it == m_modmap.end()) {
-        return false;
+    std::shared_ptr<sys_modcli_status_t> cli;
+    {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        auto it = m_modmap.find(key);
+        if (it == m_modmap.end()) {
+            return false;
+        }
+        cli = it->second;
+        LOG_INFO("mod unregister remove, [%s]pid:%d,modid:%u,regtime:%u,last:%u", it->second->pname, it->second->pid,
+                 it->second->modid, it->second->regtime, it->second->lasttime);
+        m_modmap.erase(it);
     }
-    LOG_INFO("mod unregister remove, [%s]pid:%d,modid:%u,regtime:%u,last:%u", it->second->pname, it->second->pid,
-             it->second->modid, it->second->regtime, it->second->lasttime);
-    m_modmap.erase(it);
-
+    // pushlish registermsg
+    PublishRegister(MODCLI_STATUS_UNREGISTER_E, cli.get());
     return true;
 }
 
@@ -224,6 +234,7 @@ int CModSysBase::_sysCheckModCliStatus() {
             LOG_ERROR("mod timeout remove, [%s]pid:%d,modid:%u,regtime:%u,last:%u", it->second->pname, it->second->pid,
                       it->second->modid, it->second->regtime, it->second->lasttime);
             // remove it
+            PublishRegister(MODCLI_STATUS_EXPIRED_E, it->second.get());
             it = m_modmap.erase(it);
             // TODO(zhoucc): callback to Mgr
         } else {
@@ -231,6 +242,30 @@ int CModSysBase::_sysCheckModCliStatus() {
         }
     }
 
+    return 0;
+}
+
+// send get streaminfo
+int CModSysBase::PublishRegister(int regstatus, sys_modcli_status_t *info) {
+    LOG_TRACE("PublishRegister");
+    char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_pub_reg_t)] = {0};
+    zc_msg_t *sub = reinterpret_cast<zc_msg_t *>(msg_buf);
+    BuildPubMsgHdr(sub, ZC_PUBMID_SYS_MAN, ZC_PUBMSID_SYS_MAN_REG, 0, sizeof(zc_mod_pub_reg_t));
+    zc_mod_pub_reg_t *subinfo = reinterpret_cast<zc_mod_pub_reg_t *>(sub->data);
+    subinfo->regstatus = regstatus;  // MODCLI_STATUS_REGISTERED_E;
+    subinfo->regtime = info->regtime;
+    subinfo->lasttime = info->lasttime;
+    subinfo->modid = info->modid;
+    subinfo->pid = info->pid;
+    strncpy(subinfo->pname, subinfo->pname, sizeof(subinfo->pname) - 1);
+    strncpy(subinfo->url, subinfo->url, sizeof(subinfo->url) - 1);
+
+    LOG_INFO("pub register, [%s]pid:%d,modid:%u,regtime:%u,last:%u, url:%s", subinfo->pname, subinfo->pid,
+             subinfo->modid, subinfo->regtime, subinfo->lasttime, subinfo->url);
+    if (!Publish(sub, sizeof(msg_buf))) {
+        LOG_ERROR("Publish register err:%d \n");
+    }
+    LOG_TRACE("PublishRegister ok");
     return 0;
 }
 

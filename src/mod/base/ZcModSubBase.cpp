@@ -27,7 +27,9 @@
 #include "ZcType.hpp"
 
 namespace zc {
-CModSubBase::CModSubBase(ZC_U8 modid) : CModBase(modid), CModSubscriber(modid), m_init(false), m_status(false) {}
+// subscriber & sysmod
+CModSubBase::CModSubBase(ZC_U8 modid)
+    : CModBase(modid), CModSubscriber(ZC_MODID_SYS_E), m_init(false), m_status(false) {}
 
 CModSubBase::~CModSubBase() {}
 
@@ -109,7 +111,7 @@ int CModSubBase::subcliRecvProc(char *req, int iqsize) {
     int ret = 0;
     zc_msg_t *submsg = reinterpret_cast<zc_msg_t *>(req);
     CModBase::DumpModMsg(*submsg);
-    // ret = MsgSubProc(submsg, iqsize);
+    ret = MsgSubProc(submsg, iqsize);
     if (ret < 0) {
         LOG_ERROR("proc error ret:%d, id:%hu,%hu, pid:%d,modid:%u", ret, submsg->id, submsg->sid, submsg->pid,
                   submsg->modid);

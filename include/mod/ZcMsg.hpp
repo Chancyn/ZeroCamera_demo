@@ -26,6 +26,20 @@
             } \
         } \
     } while (0);
+// CMsgSubBase raw ptr subscribe pubmid pubmsid
+#define REGISTER_MSGSUB(mod, id, sid, subfun) \
+    do { \
+        auto stdsubrep = std::bind(subfun, this, std::placeholders::_1, std::placeholders::_2); \
+        CMsgSubBase *pmsg = new CMsgSubBase(mod, id, sid, stdsubrep); \
+        ZC_ASSERT(pmsg != nullptr); \
+        if (pmsg) { \
+            if (!registerMsgSub(id, sid, pmsg)) { \
+                LOG_ERROR("insert subscribe id[%d],sid[%d]", id, sid); \
+                ZC_ASSERT(0); \
+                delete pmsg; \
+            } \
+        } \
+    } while (0);
 #else
 // TODO(zhoucc) msg handle CMsgBase shareptr
 #endif
@@ -36,6 +50,7 @@ typedef ZC_S32 (*MsgRepProcCb)(void *pcontext, zc_msg_t *rep, int size);
 #else
 typedef std::function<ZC_S32(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize)> MsgReqProcCb;
 typedef std::function<ZC_S32(zc_msg_t *rep, int size)> MsgRepProcCb;
+typedef std::function<ZC_S32(zc_msg_t *rep, int size)> MsgSubProcCb;
 #endif
 
 namespace zc {
@@ -52,5 +67,19 @@ class CMsgBase {
     ZC_U16 m_sid;
     MsgReqProcCb m_reqcb;
     MsgRepProcCb m_repcb;
+};
+
+class CMsgSubBase {
+ public:
+    //
+    CMsgSubBase(ZC_U8 modid, ZC_U16 id, ZC_U16 sid, MsgSubProcCb subcb);
+    virtual ~CMsgSubBase();
+    virtual ZC_S32 MsgSubProc(zc_msg_t *sub, int size);
+
+ private:
+    ZC_U8 m_modid;
+    ZC_U16 m_id;
+    ZC_U16 m_sid;
+    MsgSubProcCb m_subcb;
 };
 }  // namespace zc

@@ -31,7 +31,7 @@ class CModSysBase : public CModBase, public CModPublish {
     bool updateStatus(zc_msg_t *msg);
     int updateStatus(ZC_S32 pid);
     int _sysCheckModCliStatus();
-
+    int PublishRegister(int regstatus, sys_modcli_status_t *info);
     virtual int modprocess();
 
  private:

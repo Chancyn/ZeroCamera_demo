@@ -128,6 +128,15 @@ zc_msg_errcode_e CModBase::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, 
     return ZC_MSG_ERR_E;
 }
 
+zc_msg_errcode_e CModBase::MsgSubProc(zc_msg_t *sub, int iqsize) {
+    // TODO(zhoucc) find msg procss mod
+    if (m_pmsgmodproc) {
+        return (zc_msg_errcode_e)m_pmsgmodproc->MsgSubProc(sub, iqsize);
+    }
+
+    return ZC_MSG_ERR_E;
+}
+
 bool CModBase::registerMsgProcMod(CMsgProcMod *msgprocmod) {
     // uinit status can register msgprocmod
     if (m_init) {

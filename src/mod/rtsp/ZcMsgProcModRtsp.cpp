@@ -118,6 +118,21 @@ ZC_S32 CMsgProcModRtsp::_handleRepRtspCtrlReqIDR(zc_msg_t *rep, int size) {
     return 0;
 }
 
+/************************************************************************/
+ZC_S32 CMsgProcModRtsp::_handleSubManReg(zc_msg_t *sub, int size) {
+    LOG_TRACE("handle SubManReg,size[%d]", size);
+    zc_mod_pub_reg_t *subinfo = reinterpret_cast<zc_mod_pub_reg_t *>(sub->data);
+    LOG_INFO("pub register, [%s]pid:%d,modid:%u,regtime:%u,last:%u, url:%s", subinfo->pname, subinfo->pid,
+             subinfo->modid, subinfo->regtime, subinfo->lasttime, subinfo->url);
+    return 0;
+}
+
+ZC_S32 CMsgProcModRtsp::_handleSubManStreamUpdate(zc_msg_t *sub, int size) {
+    LOG_TRACE("handle SubManStreamUpdate,size[%d]", size);
+
+    return 0;
+}
+
 bool CMsgProcModRtsp::Init(void *cbinfo) {
     if (m_init) {
         LOG_ERROR("already init");
@@ -137,8 +152,8 @@ bool CMsgProcModRtsp::Init(void *cbinfo) {
                  &CMsgProcModRtsp::_handleRepRtspManShutdown);
 
     // ZC_MID_RTSP_STREAMMGR_E
-    REGISTER_MSG(m_modid, ZC_MID_RTSP_SMGRCLI_E, ZC_MSID_SMGRCLI_CHGNOTIFY_E, &CMsgProcModRtsp::_handleReqRtspSMgrChgNotify,
-                 &CMsgProcModRtsp::_handleRepRtspSMgrChgNotify);
+    REGISTER_MSG(m_modid, ZC_MID_RTSP_SMGRCLI_E, ZC_MSID_SMGRCLI_CHGNOTIFY_E,
+                 &CMsgProcModRtsp::_handleReqRtspSMgrChgNotify, &CMsgProcModRtsp::_handleRepRtspSMgrChgNotify);
 
     // ZC_MID_RTSP_CFG_E
     REGISTER_MSG(m_modid, ZC_MID_RTSP_CFG_E, ZC_MSID_RTSP_CFG_GET_E, &CMsgProcModRtsp::_handleReqRtspCfgGet,
@@ -149,6 +164,13 @@ bool CMsgProcModRtsp::Init(void *cbinfo) {
     // ZC_MID_RTSP_CTRL_E
     REGISTER_MSG(m_modid, ZC_MID_RTSP_CTRL_E, ZC_MSID_RTSP_REQIDR_E, &CMsgProcModRtsp::_handleReqRtspCtrlReqIDR,
                  &CMsgProcModRtsp::_handleRepRtspCtrlReqIDR);
+
+    /**************************************************************************************/
+    // TODO(zhoucc) register all subscribe msg recv callback
+    REGISTER_MSGSUB(m_modid, ZC_PUBMID_SYS_MAN, ZC_PUBMSID_SYS_MAN_REG, &CMsgProcModRtsp::_handleSubManReg);
+
+    REGISTER_MSGSUB(m_modid, ZC_PUBMID_SYS_MAN, ZC_PUBMSID_SYS_MAN_STREAM_UPDATE,
+                    &CMsgProcModRtsp::_handleSubManStreamUpdate);
 
     init();
 

@@ -8,12 +8,12 @@
 extern "C" {
 #endif /*__cplusplus*/
 
+#include "zc_frame.h"
 #include "zc_msg.h"
 #include "zc_type.h"
-#include "zc_frame.h"
 
 #define ZC_SYS_MODNAME "modsys"  // modname
-#
+
 // module system, msg main id
 typedef enum {
     ZC_MID_SYS_MAN_E = 0,  // manager other module
@@ -166,19 +166,52 @@ typedef struct {
 } zc_mod_smgr_getall_t;
 
 typedef struct {
-    ZC_U32 itemcount;     //  0 get one streaminfo,get all streaminfo
-    ZC_U32 itemsize;     // live/pullc/pushs/pushc type
-    ZC_U32 rsv1[8];  // rsv
+    ZC_U32 itemcount;  //  0 get one streaminfo,get all streaminfo
+    ZC_U32 itemsize;   // live/pullc/pushs/pushc type
+    ZC_U32 rsv1[8];    // rsv
 } zc_mod_smgr_getall_rep_t;
 
-
-// pub/sub
+/***********************publish & subcribe msg************************************/
+// pub/sub msg main id
 typedef enum {
-    ZC_PUB_SYS_REG = 0,  // sys recv register msg, publishing to all module
-    ZC_PUB_SYS_EV,
+    ZC_PUBMID_SYS_MAN = 0,  // sys recv mananger register msg, publishing to all module
+    ZC_PUBMID_SYS_EV,
 
-    ZC_PUB_SYS_BUTT,
-} zc_pubmsg_sys_e;
+    ZC_PUBMID_SYS_BUTT,
+} zc_pubmid_sys_e;
+
+typedef enum {
+    ZC_PUBMSID_SYS_MAN_REG = 0,        // sys recv register msg, publishing to other module
+    ZC_PUBMSID_SYS_MAN_STREAM_UPDATE,  // sys stream mananger ecv streaminfo set, publishing to other module
+    ZC_PUBMSID_SYS_MAN_CFG,            // sys recv cfg set, publishing to other module
+
+    ZC_PUBMSID_SYS_MAN_BUTT,
+} zc_pubmsid_sys_man_e;
+
+typedef enum {
+    ZC_PUBMSID_SYS_EV_AI = 0,  // sys recv event msg, publishing to other module
+
+    ZC_PUBMSID_SYS_EV_BUTT,
+} zc_pubmsid_sys_ev_e;
+
+// ZC_PUBMSID_SYS_MAN_REG
+typedef struct {
+    ZC_CHAR url[ZC_URL_SIZE];            // url
+    ZC_S32 regstatus;                    // registerstatus
+    ZC_U32 modid;                        // mod id
+    ZC_S32 pid;                          // pid
+    ZC_U32 ver;                          // mod version
+    ZC_U64 regtime;                      // reg time
+    ZC_U64 lasttime;                     // last msg time
+    ZC_CHAR pname[ZC_MAX_PNAME];         // build time
+} zc_mod_pub_reg_t;
+
+// ZC_PUBMSID_SYS_MAN_STREAM_UPDATE
+typedef struct {
+    ZC_U32 type;     // live/pullc/pushs/pushc type
+    ZC_U32 chn;      // channel
+    ZC_U32 rsv1[6];  // rsv
+} zc_mod_pub_streamupdate_t;
 
 // int zc_msg_func_proc(zc_msg_t *rep, int iqsize, zc_msg_t *rep, int *opsize);
 

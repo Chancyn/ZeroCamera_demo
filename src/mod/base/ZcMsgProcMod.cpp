@@ -36,7 +36,7 @@ ZC_S32 CMsgProcMod::MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *op
 }
 
 ZC_S32 CMsgProcMod::MsgRepProc(zc_msg_t *rep, int size) {
-    if (m_init) {
+    if (!m_init) {
         return -1;
     }
 
@@ -60,13 +60,38 @@ bool CMsgProcMod::registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg) {
     return res.second;
 }
 
+ZC_S32 CMsgProcMod::MsgSubProc(zc_msg_t *sub, int size) {
+    // if (!m_init) {
+    //     return -1;
+    // }
+
+    LOG_TRACE("SubProc into, modid[%u], id[%hu],id[%hu]", m_modid, sub->id, sub->sid);
+    ZC_U32 key = (sub->id << 16) | sub->sid;
+    auto it = m_msgsubmap.find(key);
+    if (it != m_msgsubmap.end()) {
+        return it->second->MsgSubProc(sub, size);
+    }
+
+    return 0;
+}
+
+bool CMsgProcMod::registerMsgSub(ZC_U16 id, ZC_U16 sid, CMsgSubBase *pMsg) {
+    if (m_init || pMsg == nullptr) {
+        return false;
+    }
+    ZC_U32 key = (id << 16) | sid;
+    // m_msgmap.insert(key, pMsg);
+    auto res = m_msgsubmap.insert(std::make_pair(key, pMsg));
+    return res.second;
+}
+
 bool CMsgProcMod::init() {
     if (m_init) {
         return false;
     }
 
     // check map
-    if (m_msgmap.size() <= 0) {
+    if (m_msgmap.size() <= 0 && m_msgsubmap.size()) {
         LOG_ERROR("map size empty, init error");
         return false;
     }
@@ -86,6 +111,15 @@ bool CMsgProcMod::uninit() {
     }
 
     m_msgmap.clear();
+
+    // subscribe msg
+    for (auto it = m_msgsubmap.begin(); it != m_msgsubmap.end();) {
+        ZC_SAFE_DELETE(it->second);
+        it = m_msgsubmap.erase(it);
+    }
+
+    m_msgsubmap.clear();
+
     m_init = false;
     LOG_TRACE("uninit ok");
     return true;

@@ -39,7 +39,7 @@ bool CModPublish::InitPub() {
     return Open(m_puburl);
 }
 
-bool CModPublish::BuildSubMsgHdr(zc_msg_t *pmsg, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size) {
+bool CModPublish::BuildPubMsgHdr(zc_msg_t *pmsg, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size) {
     if (!pmsg) {
         pmsg = reinterpret_cast<zc_msg_t *>(new char[sizeof(zc_msg_t) + size]());
     }

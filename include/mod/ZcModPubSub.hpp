@@ -15,7 +15,7 @@ class CModPublish : public CMsgCommPubServer {
     explicit CModPublish(ZC_U8 modid);
     virtual ~CModPublish();
     bool InitPub();
-    bool BuildSubMsgHdr(zc_msg_t *pmsg, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size);
+    bool BuildPubMsgHdr(zc_msg_t *pmsg, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size);
     bool Publish(void *buf, size_t len);
 
  private:
