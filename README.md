@@ -43,7 +43,7 @@ register注册机制
 TODO:
 1.sysmodule负责看护注册上的子模块sysmodule(注册时提供参数可选)
 2.提供注册证书校验/机制;注册有效期配置...
-3.push-pull通信机制实现
+3.sub-pub通信机制实现
 4.streammgr流fifo管理机制接口实现
 
 ### 4.跨进程音视频fifo设计
