@@ -26,24 +26,29 @@ c.C++11编程规范，大部分代码采用C with class基本语法。对程序�
 3.moudle之间面向消息协议编程，只依赖于制订的协议. \
 4.module之间消息使用nng库req/rep,pub/sub通信模型进程通信 \
 5.其他开发者可以增加进程进行开发对接不同协议 \
+6.zy_sys主模块，支持publish发布消息，其他子模块 subscriber接收消息 \
+(暂时支持: \
+1.其他模块register上之后, sys publish 发布消息给其他各个子模块 \
+2.streaminfo 流信息修改之后，sys publish发布消息给其他各个子模块 \
+)
 
-(暂时考虑多进程)分布式机制，注册服务
+(暂时考虑多进程)分布式机制，注册服务 \
 原因：考虑其他开发者可以增加进程进行开发对接不同协议。而不影响其他进程运行稳定性。
 
-多进程模式:设计进程间通信，模块与模块项目解耦；框架复杂，带来额外的系统资源
+多进程模式:设计进程间通信，模块与模块项目解耦；框架复杂，带来额外的系统资源 \
 单个业务模块崩溃，不影响其他的业务模块，以及整个系统的稳定行
 
 TODO:nng客户端加锁
 #### 3.1 mod模块设计
 register注册机制
-1.其他子模块sysmodule启动后主动注册到sysmodule;
-2.子模块sysmodule注册/注销上之后，sysmodule广播到其他各个模块
-3.sysmodule提供获取已经注册上的子模块sysmodule的获取列表
+1.其他子模块sysmodule启动后主动注册到sysmodule; \
+2.子模块sysmodule注册/注销上之后，sysmodule广播到其他各个模块 \
+3.sysmodule提供获取已经注册上的子模块sysmodule的获取列表 \
+4.sub-pub通信机制实现
 
 TODO:
-1.sysmodule负责看护注册上的子模块sysmodule(注册时提供参数可选)
-2.提供注册证书校验/机制;注册有效期配置...
-3.sub-pub通信机制实现
+1.sysmodule负责看护注册上的子模块sysmodule(注册时提供参数可选) \
+2.提供注册证书校验/机制;注册有效期配置... \
 4.streammgr流fifo管理机制接口实现
 
 ### 4.跨进程音视频fifo设计
