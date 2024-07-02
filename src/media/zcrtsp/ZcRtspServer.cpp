@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <utility>
 
 #include "media/ZcLiveTestWriterSys.hpp"
@@ -82,6 +83,24 @@ int CRtspServer::rtsp_uri_parse(const char *uri, std::string &path) {
 int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
     CRtspServer *psvr = reinterpret_cast<CRtspServer *>(ptr);
     return psvr->_ondescribe(ptr, rtsp, uri);
+}
+
+static const char *g_rtspUrlTab[ZC_SHMSTREAM_PUSHC] = {
+    ZC_RTSP_LIVEURL_CHN_PREFIX,
+    ZC_RTSP_PULLURL_CHN_PREFIX,
+    ZC_RTSP_PUSHURL_CHN_PREFIX,
+};
+
+static inline int _getfilenamebychn(std::string &filename, unsigned int type, unsigned int chn) {
+    if (type >= ZC_SHMSTREAM_PUSHC) {
+        LOG_ERROR("type:%u, error", type);
+        return -1;
+    }
+
+    filename = g_rtspUrlTab[type];
+    filename += std::to_string(chn);
+    LOG_TRACE("type:%u,chn:%u filename:%s", type, chn, filename.c_str());
+    return 0;
 }
 
 int CRtspServer::_findLiveSourceInfo(const char *filename, zc_stream_info_t *info) {
@@ -753,7 +772,22 @@ int CRtspServer::process() {
 }
 
 int CRtspServer::RtspMgrStreamUpdate(unsigned int type, unsigned int chn) {
-    LOG_TRACE("CRtspServer, StreamUpdate type:%d, chn:%u", type, chn);
+    LOG_TRACE("CRtspServer, StreamUpdate type:%u, chn:%u", type, chn);
+    std::string filename;
+    if (_getfilenamebychn(filename, type, chn) < 0) {
+        LOG_ERROR("error _getfilenamebychn, type:%u, chn:%u", type, chn);
+        return -1;
+    }
+    {
+        std::map<std::string, TFileDescription>::const_iterator it;
+        std::lock_guard<std::mutex> locker(m_mutex);
+        it = m_describes.find(filename);
+        if (it != m_describes.end()) {
+            LOG_TRACE("remove, describe type:%u, chn:%u, filename:%s", type, chn, filename.c_str());
+            m_describes.erase(it);
+        }
+    }
+
     return 0;
 }
 
