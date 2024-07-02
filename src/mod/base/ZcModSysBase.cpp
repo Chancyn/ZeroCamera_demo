@@ -26,9 +26,25 @@
 #include "ZcType.hpp"
 
 namespace zc {
-CModSysBase::CModSysBase() : CModBase(ZC_MODID_SYS_E), m_init(false) {}
+CModSysBase::CModSysBase() : CModBase(ZC_MODID_SYS_E), CModPublish(ZC_MODID_SYS_E) {}
 
 CModSysBase::~CModSysBase() {}
+
+bool CModSysBase::initPubSvr() {
+    if (!CModPublish::InitPub()) {
+        LOG_ERROR("initPubSvr error Open");
+        return false;
+    }
+
+    LOG_TRACE("initPubSvr ok");
+    return true;
+}
+
+bool CModSysBase::unInitPubSvr() {
+    CMsgCommPubServer::Close();
+
+    return true;
+}
 
 bool CModSysBase::init() {
     if (m_init) {
@@ -41,6 +57,11 @@ bool CModSysBase::init() {
 
     if (!initReqSvr(svrreq)) {
         LOG_ERROR("InitComm error modid:%d, url:%s", m_modid, m_url);
+        goto _err;
+    }
+
+    if (!initPubSvr()) {
+        LOG_ERROR("PubSvr init error modid:%d, url:%s", m_modid, m_url);
         goto _err;
     }
 
@@ -59,11 +80,24 @@ bool CModSysBase::unInit() {
     }
 
     unInitReqSvr();
+    unInitPubSvr();
     m_init = false;
     LOG_TRACE("unInit ok");
     return false;
 }
 
+bool CModSysBase::Start() {
+    CModBase::Start();
+    // CModSubscriber::Start();
+
+    return true;
+}
+
+bool CModSysBase::Stop() {
+    // CModSubscriber::Stop();
+    CModBase::Stop();
+    return true;
+}
 // sys mod
 zc_msg_errcode_e CModSysBase::checkReqSvrRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize) {
     if (unlikely(_checklicense() < 0)) {

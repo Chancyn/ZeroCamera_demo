@@ -43,6 +43,7 @@ class CModBase : public CModComm, public CModCli, public Thread {
     virtual ~CModBase();
     virtual bool Init(void *cbinfo) = 0;
     virtual bool UnInit() = 0;
+    static void DumpModMsg(const zc_msg_t &msg);
 
  protected:
     void BuildRepMsgHdr(zc_msg_t *rep, zc_msg_t *req);

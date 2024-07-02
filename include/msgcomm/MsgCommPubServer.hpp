@@ -22,7 +22,6 @@ class CMsgCommPubServer {
     bool Send(void *buf, size_t len);
  private:
     void *m_psock;  // nng_socket m_sock;
-    char m_url[ZC_MAX_PATH];
     std::mutex m_mutex;
 };
 }  // namespace zc

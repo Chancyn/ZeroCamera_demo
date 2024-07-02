@@ -37,13 +37,23 @@ CModBase::CModBase(ZC_U8 modid, ZC_U32 version)
 }
 #else
 CModBase::CModBase(ZC_U8 modid, ZC_U32 version)
-    : CModCli(modid), Thread(std::string(CModCli::GetUrlbymodid(modid))), m_init(false){
+    : CModCli(modid), Thread(std::string(CModCli::GetUrlbymodid(modid))), m_init(false) {
     strncpy(m_url, CModCli::GetUrlbymodid(modid), sizeof(m_url) - 1);
-     ZC_PROC_GETNAME(m_pname, sizeof(m_pname));
+    ZC_PROC_GETNAME(m_pname, sizeof(m_pname));
 }
 #endif
 CModBase::~CModBase() {
     unInitReqSvr();
+}
+
+void CModBase::DumpModMsg(const zc_msg_t &msg) {
+    ZC_U64 now = zc_system_time();
+    LOG_TRACE(
+        "dump modmsg hdrlen:%u,size:%u,pid:%d,modid:%u,to:%u,ver:%u,msgtype:%u,seq:%u,id:%u,sid:%u,cos:%u,ts:%llu,",
+        sizeof(zc_msg_t), msg.size, msg.pid, msg.modid, msg.id, msg.modidto, msg.ver, msg.msgtype, msg.seq,
+        msg.id, msg.sid, now - msg.ts, msg.ts);
+
+    return;
 }
 
 void CModBase::BuildRepMsgHdr(zc_msg_t *rep, zc_msg_t *req) {

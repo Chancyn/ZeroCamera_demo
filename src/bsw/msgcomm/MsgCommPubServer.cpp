@@ -27,7 +27,7 @@ namespace zc {
 #define ZC_NNGREPMSG_SENDFLAG (0)
 
 CMsgCommPubServer::CMsgCommPubServer() : m_psock(new nng_socket()) {
-    memset(m_url, 0, sizeof(m_url));
+
 }
 
 CMsgCommPubServer::~CMsgCommPubServer() {
@@ -58,9 +58,8 @@ bool CMsgCommPubServer::Open(const char *url) {
         goto _err_close;
     }
 
-    strncpy(m_url, url, sizeof(m_url) - 1);
     memcpy(m_psock, &nngsock, sizeof(nng_socket));
-    LOG_TRACE("open sock[%d] ok", nngsock.id);
+    LOG_TRACE("open pubsvr:%s m_sock[%d] ok", url, nngsock.id);
     return true;
 _err_close:
     nng_close(nngsock);
@@ -90,7 +89,7 @@ bool CMsgCommPubServer::Send(void *buf, size_t len) {
 #endif
         // LOG_TRACE("into send msg %d %s", psock->id, buf);
         if ((rv = nng_send(*psock, buf, len, 0)) != 0) {
-            LOG_ERROR("pub:%s, send msg error %d %s", m_url, rv, nng_strerror(rv));
+            LOG_ERROR("pub, send msg error %d %s", rv, nng_strerror(rv));
             return false;
         }
         return true;

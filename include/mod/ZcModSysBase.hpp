@@ -5,20 +5,25 @@
 #include <map>
 #include <memory>
 
+#include "ZcModPubSub.hpp"
 #include "zc_mod_base.h"
 
 #include "ZcModBase.hpp"
 #include "ZcMsg.hpp"
 
 namespace zc {
-class CModSysBase : public CModBase {
+class CModSysBase : public CModBase, public CModPublish {
  public:
     CModSysBase();
     virtual ~CModSysBase();
     bool init();
     bool unInit();
+    bool Start();
+    bool Stop();
 
  private:
+    bool initPubSvr();
+    bool unInitPubSvr();
     zc_msg_errcode_e checkReqSvrRecvReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 reqSvrRecvReqProc(char *req, int iqsize, char *rep, int *opsize);
     bool registerInsert(zc_msg_t *msg);

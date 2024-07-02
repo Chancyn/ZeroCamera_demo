@@ -10,6 +10,7 @@
 
 #include <functional>
 
+#include "MsgCommSubClient.hpp"
 #include "rtsp/zc_rtsp_smgr_handle.h"
 #include "zc_basic_fun.h"
 #include "zc_log.h"
@@ -26,9 +27,31 @@
 #include "ZcType.hpp"
 
 namespace zc {
-CModSubBase::CModSubBase(ZC_U8 modid) : CModBase(modid), m_init(false), m_status(false) {}
+CModSubBase::CModSubBase(ZC_U8 modid) : CModBase(modid), CModSubscriber(modid), m_init(false), m_status(false) {}
 
 CModSubBase::~CModSubBase() {}
+
+bool CModSubBase::initSubCli() {
+    auto subrecv = std::bind(&CModSubBase::subcliRecvProc, this, std::placeholders::_1, std::placeholders::_2);
+
+    if (!CModSubscriber::InitSub(subrecv)) {
+        LOG_ERROR("initPubSvr error Open");
+        return false;
+    }
+
+    if (!CModSubscriber::Start()) {
+        LOG_ERROR("initPubSvr error start");
+        return false;
+    }
+    LOG_TRACE("initPubSvr ok");
+    return true;
+}
+
+bool CModSubBase::unInitSubCli() {
+    CMsgCommSubClient::Close();
+
+    return true;
+}
 
 bool CModSubBase::init() {
     if (m_init) {
@@ -41,6 +64,11 @@ bool CModSubBase::init() {
 
     if (!initReqSvr(svrreq)) {
         LOG_ERROR("InitComm error modid:%d, url:%s", m_modid, m_url);
+        goto _err;
+    }
+
+    if (!initSubCli()) {
+        LOG_ERROR("PubCli init error modid:%d", m_modid);
         goto _err;
     }
 
@@ -62,6 +90,34 @@ bool CModSubBase::unInit() {
     m_init = false;
     LOG_TRACE("unInit ok");
     return false;
+}
+
+bool CModSubBase::Start() {
+    CModBase::Start();
+    CModSubscriber::Start();
+
+    return true;
+}
+
+bool CModSubBase::Stop() {
+    CModSubscriber::Stop();
+    CModBase::Stop();
+    return true;
+}
+
+int CModSubBase::subcliRecvProc(char *req, int iqsize) {
+    int ret = 0;
+    zc_msg_t *submsg = reinterpret_cast<zc_msg_t *>(req);
+    CModBase::DumpModMsg(*submsg);
+    // ret = MsgSubProc(submsg, iqsize);
+    if (ret < 0) {
+        LOG_ERROR("proc error ret:%d, id:%hu,%hu, pid:%d,modid:%u", ret, submsg->id, submsg->sid, submsg->pid,
+                  submsg->modid);
+        return 0;
+    }
+    LOG_TRACE("proc ret:%d, id:%hu,%hu, pid:%d,modid:%u", ret, submsg->id, submsg->sid, submsg->pid, submsg->modid);
+
+    return 0;
 }
 
 int CModSubBase::reqSvrRecvReqProc(char *req, int iqsize, char *rep, int *opsize) {

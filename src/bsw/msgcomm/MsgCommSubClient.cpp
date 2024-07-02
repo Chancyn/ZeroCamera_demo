@@ -62,7 +62,7 @@ bool CMsgCommSubClient::Open(const char *url, MsgCommSubCliHandleCb handle) {
 
     m_handle = handle;
     memcpy(m_psock, &nngsock, sizeof(nng_socket));
-    // LOG_TRACE("open m_sock[%d] ok", nngsock.id);
+    LOG_TRACE("open subcli:%s m_sock[%d] ok", url, nngsock.id);
     return true;
 _err_close:
     nng_close(nngsock);
