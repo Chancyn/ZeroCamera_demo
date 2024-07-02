@@ -751,4 +751,10 @@ int CRtspServer::process() {
     LOG_WARN("process exit\n");
     return -1;
 }
+
+int CRtspServer::RtspMgrStreamUpdate(unsigned int type, unsigned int chn) {
+    LOG_TRACE("CRtspServer, StreamUpdate type:%d, chn:%u", type, chn);
+    return 0;
+}
+
 }  // namespace zc

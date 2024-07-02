@@ -67,6 +67,7 @@ class CRtspServer : public Thread {
  public:
     bool Init(rtspsvr_cb_info_t *cbinfo);
     bool UnInit();
+    int RtspMgrStreamUpdate(unsigned int type, unsigned int chn);
 
  private:
     bool _init();

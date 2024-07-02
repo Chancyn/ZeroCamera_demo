@@ -16,6 +16,7 @@ typedef struct {
     RtspStreamMgrHandleMsgCb streamMgrHandleCb;
     void *streamMgrContext;
     RtspMgrHandleMsgCb MgrHandleCb;
+    RtspMgrHandleSubMsgCb MgrHandleSubCb;
     void *MgrContext;
 } rtsp_callback_info_t;
 

@@ -99,4 +99,47 @@ bool CRtspManager::Stop() {
     return true;
 }
 
+// RtspManager handle mod msg callback
+int CRtspManager::RtspMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
+    CRtspManager *pRtsp = reinterpret_cast<CRtspManager *>(ptr);
+    return pRtsp->_rtspMgrHandleMsg(type, indata, outdata);
+}
+
+// RtspManager handle mod msg callback
+int CRtspManager::_rtspMgrHandleMsg(unsigned int type, void *indata, void *outdata) {
+    // LOG_TRACE("RtspMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
+    if (type == 0) {
+        // TODO(zhoucc):
+    }
+
+    return -1;
+}
+
+// RtspManager handle mod subscribe msg callback
+int CRtspManager::RtspMgrHandleSubMsg(void *ptr, unsigned int type, void *indata) {
+    CRtspManager *pRtsp = reinterpret_cast<CRtspManager *>(ptr);
+    return pRtsp->_rtspMgrHandleSubMsg(type, indata);
+}
+
+int CRtspManager::_rtspMgrStreamUpdate(unsigned int type, unsigned int chn) {
+    LOG_TRACE("_rtspMgrHandleSubMsg, type:%d", type);
+    CRtspServer::RtspMgrStreamUpdate(type, chn);
+    return 0;
+}
+
+int CRtspManager::_rtspMgrHandleSubMsg(unsigned int type, void *indata) {
+    LOG_TRACE("_rtspMgrHandleSubMsg, type:%d", type);
+    int ret = -1;
+    switch (type) {
+    case RTSP_MGR_HDL_SUB_STREAMUPDATE_E: {
+        zc_mod_pub_streamupdate_t *info = reinterpret_cast<zc_mod_pub_streamupdate_t *>(indata);
+        ret = _rtspMgrStreamUpdate(info->type, info->chn);
+        break;
+    }
+    default:
+        break;
+    }
+
+    return ret;
+}
 }  // namespace zc

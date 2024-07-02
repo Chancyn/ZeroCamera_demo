@@ -129,7 +129,10 @@ ZC_S32 CMsgProcModRtsp::_handleSubManReg(zc_msg_t *sub, int size) {
 
 ZC_S32 CMsgProcModRtsp::_handleSubManStreamUpdate(zc_msg_t *sub, int size) {
     LOG_TRACE("handle SubManStreamUpdate,size[%d]", size);
-
+    ZC_ASSERT(size >= sizeof(zc_msg_t) + sizeof(zc_mod_pub_streamupdate_t));
+    if (m_cbinfo.MgrHandleSubCb) {
+        m_cbinfo.MgrHandleSubCb(m_cbinfo.MgrContext, RTSP_MGR_HDL_SUB_STREAMUPDATE_E, sub->data);
+    }
     return 0;
 }
 
