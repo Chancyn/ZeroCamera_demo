@@ -10,27 +10,18 @@
 #include "zc_type.h"
 #include "zc_frame.h"
 
-#include "MsgCommReqClient.hpp"
+#include "ZcModReqCli.hpp"
+#include "ZcModPubSub.hpp"
 
 namespace zc {
 
-class CModCli  {
+class CModCli : public CModReqCli, public CModSubscriber {
  public:
     explicit CModCli(ZC_U8 modid, ZC_U32 version = ZC_MSG_VERSION);
     virtual ~CModCli();
-    bool BuildReqMsgHdr(zc_msg_t *pmsg, ZC_U8 modid, ZC_U16 id, ZC_U16 sid, ZC_U8 chn, ZC_U32 size);
-    bool MsgSendTo(zc_msg_t *pmsg, const char *urlto, zc_msg_t *prmsg, size_t *buflen);
-    bool MsgSendTo(zc_msg_t *pmsg, zc_msg_t *prmsg, size_t *buflen);
-    static const char *GetUrlbymodid(ZC_U8 modid);
-    int sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
-    int sendSMgrSetInfo(unsigned int type, unsigned int chn, zc_stream_info_t *info);
-
- protected:
-    ZC_S32 m_pid;
-    ZC_U8 m_modid;
-    ZC_U32 m_seqno;
-    ZC_U32 m_version;
-    ZC_CHAR m_url[ZC_URL_SIZE];
-    // ZC_CHAR m_name[ZC_MODNAME_SIZE];
+    bool initSubCli(MsgCommSubCliHandleCb handl);
+    bool unInitSubCli();
+    bool Init(MsgCommSubCliHandleCb handle);
+    bool UnInit();
 };
 }  // namespace zc

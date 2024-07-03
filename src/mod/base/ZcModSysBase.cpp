@@ -142,7 +142,7 @@ ZC_S32 CModSysBase::reqSvrRecvReqProc(char *req, int iqsize, char *rep, int *ops
         // msg not from sysmod, check register and keeplive status
         ret = checkReqSvrRecvReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, repmsg, opsize);
     } else {
-        // msg from sysmod(or CModCli), no need check register and keeplive status
+        // msg from sysmod(or CModReqCli), no need check register and keeplive status
         ret = MsgReqProc(reinterpret_cast<zc_msg_t *>(req), iqsize, repmsg, opsize);
     }
 

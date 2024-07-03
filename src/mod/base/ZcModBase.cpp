@@ -28,17 +28,17 @@
 namespace zc {
 #if 0
 CModBase::CModBase(ZC_U8 modid, ZC_U32 version)
-    : CModCli(modid), Thread(std::string(CModCli::GetUrlbymodid(modid))), m_init(false),
+    : CModReqCli(modid), Thread(std::string(CModReqCli::GetUrlbymodid(modid))), m_init(false),
       m_modid(modid), m_seqno(0), m_version(version) {
     m_pid = getpid();
-    strncpy(m_url, CModCli::GetUrlbymodid(modid), sizeof(m_url) - 1);
-    strncpy(m_name, CModCli::GetUrlbymodid(modid), sizeof(m_name) - 1);
+    strncpy(m_url, CModReqCli::GetUrlbymodid(modid), sizeof(m_url) - 1);
+    strncpy(m_name, CModReqCli::GetUrlbymodid(modid), sizeof(m_name) - 1);
     ZC_PROC_GETNAME(m_pname, sizeof(m_pname));
 }
 #else
 CModBase::CModBase(ZC_U8 modid, ZC_U32 version)
-    : CModCli(modid), Thread(std::string(CModCli::GetUrlbymodid(modid))), m_init(false) {
-    strncpy(m_url, CModCli::GetUrlbymodid(modid), sizeof(m_url) - 1);
+    : CModReqCli(modid), Thread(std::string(CModReqCli::GetUrlbymodid(modid))), m_init(false) {
+    strncpy(m_url, CModReqCli::GetUrlbymodid(modid), sizeof(m_url) - 1);
     ZC_PROC_GETNAME(m_pname, sizeof(m_pname));
 }
 #endif

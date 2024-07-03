@@ -29,6 +29,7 @@ class CModSubscriber : public CMsgCommSubClient {
     explicit CModSubscriber(ZC_U8 modid);
     virtual ~CModSubscriber();
     bool InitSub(MsgCommSubCliHandleCb handle);
+    bool UnInitSub();
 
  private:
     ZC_U8 m_pubmodid;

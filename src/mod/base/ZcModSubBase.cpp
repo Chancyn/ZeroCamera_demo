@@ -50,7 +50,8 @@ bool CModSubBase::initSubCli() {
 }
 
 bool CModSubBase::unInitSubCli() {
-    CMsgCommSubClient::Close();
+    CModSubscriber::Stop();
+    CModSubscriber::UnInitSub();
 
     return true;
 }

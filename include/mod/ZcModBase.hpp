@@ -37,7 +37,7 @@ typedef struct {
     ZC_CHAR pname[ZC_MAX_PNAME];  // process name
 } sys_modcli_status_t;
 
-class CModBase : public CModComm, public CModCli, public Thread {
+class CModBase : public CModComm, public CModReqCli, public Thread {
  public:
     explicit CModBase(ZC_U8 modid, ZC_U32 version = ZC_MSG_VERSION);
     virtual ~CModBase();

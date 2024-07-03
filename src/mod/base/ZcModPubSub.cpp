@@ -73,4 +73,7 @@ bool CModSubscriber::InitSub(MsgCommSubCliHandleCb handle) {
     return Open(m_puburl, handle);
 }
 
+bool CModSubscriber::UnInitSub() {
+    return Close();
+}
 }  // namespace zc
