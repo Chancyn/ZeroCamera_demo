@@ -2,6 +2,7 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #include <stdio.h>
+#include <string.h>
 
 #include "ZcModCli.hpp"
 #include "zc_basic_fun.h"

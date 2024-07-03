@@ -19,6 +19,15 @@
 
 class CMediaTrack;
 namespace zc {
+typedef int (*TestWGetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
+typedef int (*TestWSetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
+
+typedef struct {
+    TestWGetInfoCb GetInfoCb;
+    TestWSetInfoCb SetInfoCb;
+    void *MgrContext;
+} testwriter_callback_info_t;
+
 class CLiveTestWriterFac {
  public:
     CLiveTestWriterFac() {}
@@ -32,11 +41,17 @@ class CLiveTestWriterSys : public Singleton<CLiveTestWriterSys> {
     virtual ~CLiveTestWriterSys();
 
  public:
-    int Init();
+    int Init(const testwriter_callback_info_t &cbinfo, unsigned int *pCodeTab = nullptr, unsigned int len = 0);
     int UnInit();
 
  private:
+     int setStreamInfo();
+     int init();
+
+ private:
     int m_init;
+    testwriter_callback_info_t m_cbinfo;
+    live_test_info_t m_liveinfotab[ZC_STREAM_VIDEO_MAX_CHN];
     std::vector<ILiveTestWriter *> m_vector;
     std::mutex m_mutex;
 };

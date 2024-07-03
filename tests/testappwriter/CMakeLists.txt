@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 #aux_source_directory(./ DIR_SOURCE_SRCS)
-add_executable(zc_testwriter zc_testwriter_main.cpp)
+add_executable(zc_testwriter zc_testwriter_main.cpp ZcTestWriterMan.cpp)
 foreach(SOURCE_FILE zc_testwriter_main.cpp)
 	get_filename_component(filename ${SOURCE_FILE} NAME)
     set_source_files_properties(
@@ -66,6 +66,8 @@ ${MEDIAFLV}
 ${MEDIAMKV}
 ${MEDIAHTTP}
 ${MEDIASDK}
+mod_base
+msgcomm
 zcfifo
 zccrypto
 zc_log
