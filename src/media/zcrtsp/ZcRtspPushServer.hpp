@@ -25,8 +25,8 @@
 #define ZC_RTSP_MAX_CHN ZC_STREAM_VIDEO_MAX_CHN
 
 namespace zc {
-typedef int (*RtspPushSGetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
-typedef int (*RtspPushSSetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
+typedef int (*RtspPushSGetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
+typedef int (*RtspPushSSetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
 
 typedef struct {
     RtspPushSGetInfoCb GetInfoCb;

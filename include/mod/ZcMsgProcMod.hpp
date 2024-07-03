@@ -29,10 +29,11 @@ class CMsgProcMod {
     virtual bool Init(void *cbinfo) = 0;
     virtual bool UnInit() = 0;
     ZC_S32 MsgReqProc(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
-    ZC_S32 MsgRepProc(zc_msg_t *rep, int size);
-
+    ZC_S32 MsgRepProc(zc_msg_t *rep, int size);    // reserve fun
+    ZC_S32 MsgSubProc(zc_msg_t *rep, int size);    // subscribe msg
  protected:
     bool registerMsg(ZC_U16 id, ZC_U16 sid, CMsgBase *pMsg);
+    bool registerMsgSub(ZC_U16 id, ZC_U16 sid, CMsgSubBase *pMsg);
     bool init();
     bool uninit();
 
@@ -40,6 +41,7 @@ class CMsgProcMod {
     ZC_U8 m_modid;
     ZC_U16 m_idmax;
     std::map<ZC_U32, CMsgBase *> m_msgmap;
+    std::map<ZC_U32, CMsgSubBase *> m_msgsubmap;   // subscribe msg
 
  private:
     int m_init;

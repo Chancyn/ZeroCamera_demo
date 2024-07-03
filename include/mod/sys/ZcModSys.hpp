@@ -5,12 +5,12 @@
 
 #include "zc_mod_base.h"
 
-#include "ZcModBase.hpp"
+#include "ZcModSysBase.hpp"
 #include "ZcMsg.hpp"
 #include "sys/ZcMsgProcModSys.hpp"
 
 namespace zc {
-class CModSys : public CModBase {
+class CModSys : public CModSysBase {
  public:
     CModSys();
     virtual ~CModSys();

@@ -8,7 +8,7 @@
 #include <string>
 
 #include "zc_frame.h"
-#include "media/zc_media_track.h"
+#include "zc_media_track.h"
 #include "zc_type.h"
 
 #include "rtsp-server-internal.h"
@@ -35,7 +35,7 @@
 #define ZC_RTSP_PULLURL_CHN_PREFIX "pull.ch"  // rtpcli pull forwarding prefix url
 
 namespace zc {
-typedef int (*RtspSvrGetStreamInfoCb)(void *ptr, unsigned int type, unsigned int chn, zc_media_info_t *info);
+typedef int (*RtspSvrGetStreamInfoCb)(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info);
 // Cstruct rtsp callback
 typedef struct {
     RtspSvrGetStreamInfoCb getStreamInfoCb;
@@ -67,13 +67,14 @@ class CRtspServer : public Thread {
  public:
     bool Init(rtspsvr_cb_info_t *cbinfo);
     bool UnInit();
+    int RtspMgrStreamUpdate(unsigned int type, unsigned int chn);
 
  private:
     bool _init();
     bool _unInit();
     virtual int process();
     bool _aio_work();
-    int _findLiveSourceInfo(const char *filename, zc_media_info_t *info);
+    int _findLiveSourceInfo(const char *filename, zc_stream_info_t *info);
 
     int rtsp_uri_parse(const char *uri, std::string &path);
 

@@ -18,17 +18,21 @@ class CRtspManager : public CModRtsp, public CRtspServer {
     bool UnInit();
     bool Start();
     bool Stop();
-
+    static int RtspMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata);
+    int _rtspMgrHandleMsg(unsigned int type, void *indata, void *outdata);
+    static int RtspMgrHandleSubMsg(void *ptr, unsigned int type, void *indata);
+    int _rtspMgrHandleSubMsg(unsigned int type, void *indata);
+    int _rtspMgrStreamUpdate(unsigned int type, unsigned int chn);
  private:
-    static int getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_media_info_t *info);
-    int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_media_info_t *info);
+    static int getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info);
+    int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_stream_info_t *info);
     bool _unInit();
-    int _sendSMgrGetInfo(unsigned int type, unsigned int chn, zc_media_info_t *info);
+
  private:
     bool m_init;
     int m_running;
 
     rtsp_callback_info_t m_cbinfo;
-    zc_media_info_t *m_pmediainfo;
+    zc_stream_info_t *m_pmediainfo;
 };
 }  // namespace zc

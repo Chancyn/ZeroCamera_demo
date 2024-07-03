@@ -34,4 +34,20 @@ ZC_S32 CMsgBase::MsgRepProc(zc_msg_t *rep, int size) {
     return -1;
 }
 
+
+CMsgSubBase::CMsgSubBase(ZC_U8 modid, ZC_U16 id, ZC_U16 sid, MsgSubProcCb subcb)
+    : m_modid(modid), m_id(id), m_sid(sid), m_subcb(subcb) {}
+
+CMsgSubBase::~CMsgSubBase() {}
+
+ZC_S32 CMsgSubBase::MsgSubProc(zc_msg_t *sub, int iqsize) {
+    LOG_TRACE("ReqProc into, modid[%u], id[%hu],m_sid[%hu]", m_modid, m_id, m_sid);
+    ZC_ASSERT(sub->id == m_id);
+    ZC_ASSERT(sub->sid == m_sid);
+    if (m_subcb)
+        return m_subcb(sub, iqsize);
+
+    return -1;
+}
+
 }  // namespace zc

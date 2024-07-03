@@ -23,7 +23,7 @@ CMediaReceiverH264::CMediaReceiverH264(const zc_meida_track_t &info) : CMediaRec
     memset(&m_spsinfo, 0, sizeof(m_spsinfo));
     m_pkgcnt = 0;
     m_lasttime = 0;
-    LOG_ERROR("Create Constructor [%p]", m_frame);
+    LOG_TRACE("Create Constructor [%p]", m_frame);
 }
 
 CMediaReceiverH264::~CMediaReceiverH264() {}
@@ -82,8 +82,8 @@ int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
         zc_h26x_sps_info_t spsinfo = {0};
         if (zc_h264_sps_parse((const uint8_t *)packet, bytes, &spsinfo) == 0) {
             if (memcmp(&m_spsinfo, &spsinfo, sizeof(zc_h26x_sps_info_t)) != 0) {
-                LOG_WARN("update h264 wh[%u*%u]->[%u*%u]", spsinfo.width, spsinfo.height, m_spsinfo.width,
-                         m_spsinfo.height);
+                LOG_WARN("update h264 wh[%u*%u]->[%u*%u]", m_spsinfo.width, m_spsinfo.height, spsinfo.width,
+                         spsinfo.height);
                 memcpy(&m_spsinfo, &spsinfo, sizeof(zc_h26x_sps_info_t));
                 m_frame->video.width = spsinfo.width;
                 m_frame->video.height = spsinfo.height;

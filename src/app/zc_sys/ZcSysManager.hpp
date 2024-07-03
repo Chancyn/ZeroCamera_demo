@@ -2,12 +2,13 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
+#include "Singleton.hpp"
 #include "zc_type.h"
 
 #include "sys/ZcModSys.hpp"
 
 namespace zc {
-class CSysManager : public CModSys {
+class CSysManager : public CModSys, public Singleton<CSysManager> {
  public:
     CSysManager();
     virtual ~CSysManager();
@@ -17,7 +18,8 @@ class CSysManager : public CModSys {
     bool UnInit();
     bool Start();
     bool Stop();
-
+    static int PublishMsgCb(void *ptr, ZC_U16 smid, ZC_U16 smsid, void *msg, unsigned int len);
+    int PublishMsg(ZC_U16 smid, ZC_U16 smsid, void *msg, unsigned int len);
  private:
     bool _unInit();
 
@@ -25,4 +27,5 @@ class CSysManager : public CModSys {
     bool m_init;
     int m_running;
 };
+#define g_ZCSysManagerInstance (zc::CSysManager::GetInstance())
 }  // namespace zc

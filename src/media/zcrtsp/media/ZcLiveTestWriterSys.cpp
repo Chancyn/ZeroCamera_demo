@@ -31,11 +31,19 @@ extern "C" uint32_t rtp_ssrc(void);
 
 #if ZC_LIVE_TEST
 namespace zc {
+static const char *g_filesuffix[ZC_FRAME_ENC_BUTT] = {
+    "h264",
+    "h265",
+    "aac",
+    "metabin",
+};
 
 const static live_test_info_t g_livetestinfo[ZC_STREAM_VIDEO_MAX_CHN] = {
-    // {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_STREAM_VIDEO_SHM_PATH, "test.h265"},
-    {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_STREAM_VIDEO_SHM_PATH, "test.h265", "TestWH265_0"},
-    {1, ZC_STREAM_SUB_VIDEO_SIZE, ZC_FRAME_ENC_H264, ZC_STREAM_VIDEO_SHM_PATH, "test.h264", "TestWH264_1"},
+    // {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_STREAM_VIDEO_SHM_PATH, "test"},
+    // test0.h265
+    {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_STREAM_VIDEO_SHM_PATH, "test0", "TestWH265_0"},
+    // test0.h264
+    {1, ZC_STREAM_SUB_VIDEO_SIZE, ZC_FRAME_ENC_H264, ZC_STREAM_VIDEO_SHM_PATH, "test1", "TestWH264_1"},
 };
 
 ILiveTestWriter *CLiveTestWriterFac::CreateLiveTestWriter(int code, const live_test_info_t &info) {
@@ -62,19 +70,12 @@ CLiveTestWriterSys::~CLiveTestWriterSys() {
     UnInit();
 }
 
-int CLiveTestWriterSys::Init() {
-    LOG_TRACE("Init into");
-
-    std::lock_guard<std::mutex> locker(m_mutex);
-    if (m_init != 0) {
-        LOG_ERROR("already ShmAllocWrite");
-        return -1;
-    }
-
+int CLiveTestWriterSys::init() {
+    LOG_TRACE("init into");
     CLiveTestWriterFac fac;
     ILiveTestWriter *tmp = nullptr;
     for (unsigned int i = 0; i < ZC_STREAM_VIDEO_MAX_CHN; i++) {
-        tmp = fac.CreateLiveTestWriter(g_livetestinfo[i].encode, g_livetestinfo[i]);
+        tmp = fac.CreateLiveTestWriter(m_liveinfotab[i].encode, m_liveinfotab[i]);
         ZC_ASSERT(tmp != nullptr);
         if (!tmp) {
             LOG_ERROR("init error");
@@ -89,8 +90,86 @@ int CLiveTestWriterSys::Init() {
 
         m_vector.push_back(tmp);
     }
-    m_init = 1;
+
     LOG_TRACE("Init OK, size[%d]", m_vector.size());
+    return 0;
+}
+
+static int transEncode2MediaCode(unsigned int encode) {
+    int mediacode = -1;
+    if (encode == ZC_FRAME_ENC_H264) {
+        mediacode = ZC_MEDIA_CODE_H264;
+    } else if (encode == ZC_FRAME_ENC_H265) {
+        mediacode = ZC_MEDIA_CODE_H265;
+    } else if (encode == ZC_FRAME_ENC_AAC) {
+        mediacode = ZC_MEDIA_CODE_AAC;
+    } else if (encode == ZC_FRAME_ENC_META_BIN) {
+        mediacode = ZC_MEDIA_CODE_METADATA;
+    }
+
+    return mediacode;
+}
+
+int CLiveTestWriterSys::setStreamInfo() {
+    LOG_TRACE("setStreamInfo into");
+    zc_stream_info_t stinfo[ZC_STREAM_VIDEO_MAX_CHN] = {0};
+    for (unsigned int i = 0; i < ZC_STREAM_VIDEO_MAX_CHN; i++) {
+        if (!m_cbinfo.GetInfoCb || m_cbinfo.GetInfoCb(m_cbinfo.MgrContext, i, &stinfo[i]) < 0) {
+            LOG_ERROR("testwriter m_cbinfo.GetInfoCb ");
+            return 0;
+        }
+    }
+
+    // update streaminfo
+    for (unsigned int i = 0; i < ZC_STREAM_VIDEO_MAX_CHN; i++) {
+        // reset encode video
+        if (stinfo[i].tracks[0].encode != m_liveinfotab[i].encode) {
+            LOG_WARN("update video chn:%u, encode:%u->%u", i, stinfo[i].tracks[0].encode, m_liveinfotab[i].encode);
+            stinfo[i].tracks[0].encode = m_liveinfotab[i].encode;
+            stinfo[i].tracks[0].mediacode = transEncode2MediaCode(stinfo[i].tracks[0].encode);
+        }
+        //
+        if (!m_cbinfo.SetInfoCb || m_cbinfo.SetInfoCb(m_cbinfo.MgrContext, i, &stinfo[i]) < 0) {
+            LOG_ERROR("testwriter m_cbinfo.SetInfoCb ");
+            // return 0;
+        }
+    }
+
+    LOG_TRACE("setStreamInfo end");
+    return 0;
+}
+
+int CLiveTestWriterSys::Init(const testwriter_callback_info_t &cbinfo, unsigned int *pCodeTab, unsigned int len) {
+    LOG_TRACE("Init into");
+    std::lock_guard<std::mutex> locker(m_mutex);
+    if (m_init != 0) {
+        LOG_ERROR("already ShmAllocWrite");
+        return -1;
+    }
+    memcpy(&m_cbinfo, &cbinfo, sizeof(m_cbinfo));
+
+    // init encode type
+    memcpy(&m_liveinfotab, &g_livetestinfo, sizeof(m_liveinfotab));
+    for (unsigned int i = 0; i < ZC_STREAM_VIDEO_MAX_CHN; i++) {
+        int code = g_livetestinfo[i].encode;
+        if (pCodeTab && i < len) {
+            code = (pCodeTab[i]) % ZC_FRAME_ENC_BUTT;
+        }
+        m_liveinfotab[i].encode = code;
+        snprintf(m_liveinfotab[i].filepath, sizeof(m_liveinfotab[i].filepath) - 1, "%s.%s", g_livetestinfo[i].filepath,
+                 g_filesuffix[code]);
+        LOG_TRACE("init testwriter,i:%u,code:%u,%s", i, code, m_liveinfotab[i].filepath);
+    }
+
+    if (init() < 0) {
+        LOG_ERROR("Init error");
+        return -1;
+    }
+
+    setStreamInfo();
+    m_init = 1;
+
+    LOG_TRACE("Init OK");
     return 0;
 }
 

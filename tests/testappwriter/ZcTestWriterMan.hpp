@@ -2,19 +2,18 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
-#include "ZcRtspPushServer.hpp"
 #include "zc_type.h"
 
 #include "ZcModCli.hpp"
 
 namespace zc {
-class CRtspPushSvrMan : public CModCli, public CRtspPushServer {
+class CTestWriterMan : public CModCli {
  public:
-    CRtspPushSvrMan();
-    virtual ~CRtspPushSvrMan();
+    CTestWriterMan();
+    virtual ~CTestWriterMan();
 
  public:
-    bool Init();
+    bool Init(unsigned int *pCodeTab, unsigned int len);
     bool UnInit();
     bool Start();
     bool Stop();
@@ -28,7 +27,7 @@ class CRtspPushSvrMan : public CModCli, public CRtspPushServer {
 
  private:
     bool m_init;
-    int m_running;
-    zc_stream_info_t m_mediainfo;
+    bool m_running;
+    zc_stream_info_t m_mediainfo[ZC_STREAM_VIDEO_MAX_CHN];
 };
 }  // namespace zc

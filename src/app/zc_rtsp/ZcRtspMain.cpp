@@ -46,16 +46,6 @@ static int StreamMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *
     return -1;
 }
 
-// RtspManager handle mod msg callback
-static int RtspMgrHandleMsg(void *ptr, unsigned int type, void *indata, void *outdata) {
-    // LOG_TRACE("RtspMgrCb ptr:%p, type:%d, indata:%d", ptr, type);
-    if (type == 0) {
-        // TODO(zhoucc):
-    }
-
-    return -1;
-}
-
 int main(int argc, char **argv) {
     ZC_PROC_SETNAME(ZC_APP_NAME);
     char pname[ZC_MAX_PNAME] = {0};
@@ -79,7 +69,8 @@ int main(int argc, char **argv) {
     zc::rtsp_callback_info_t cbinfo = {
         .streamMgrHandleCb = StreamMgrHandleMsg,
         .streamMgrContext = nullptr,
-        .MgrHandleCb = RtspMgrHandleMsg,
+        .MgrHandleCb = zc::CRtspManager::RtspMgrHandleMsg,
+        .MgrHandleSubCb = zc::CRtspManager::RtspMgrHandleSubMsg,
         .MgrContext = &rtsp,
     };
 

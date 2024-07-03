@@ -29,7 +29,7 @@ extern "C" {
 // stream with track num, video+audio, ZC_STREAM_BUTT
 #define ZC_STREAMMGR_TRACK_MAX_NUM ZC_STREAM_BUTT  // TODO(zhoucc): just video+audio
 
-#define ZC_SHMSTREAM_TYPE_ALL (0xFFFF)
+#define ZC_SHMSTREAM_ALL (0xFFFF)
 
 // video
 typedef enum {
@@ -53,46 +53,12 @@ typedef enum {
     ZC_STREAM_STATUS_BUTT,
 } zc_stream_status_e;
 
-typedef enum {
-    ZC_SHMSTREAM_TYPE_LIVE = 0,  // live
-    ZC_SHMSTREAM_TYPE_PULLC,     // pull client
-    ZC_SHMSTREAM_TYPE_PUSHS,     // push server
-    ZC_SHMSTREAM_TYPE_PUSHC,     // push client
-
-    ZC_SHMSTREAM_TYPE_BUTT,
-} zc_shmstream_type_e;
 
 typedef struct _zc_stream_mgr_cfg {
-    unsigned char maxchn[ZC_SHMSTREAM_TYPE_BUTT];
+    unsigned char maxchn[ZC_SHMSTREAM_BUTT];
 
     unsigned char decode_maxchn;  // decode support max chn
 } zc_stream_mgr_cfg_t;
-
-// shmstreamcfg
-typedef struct _zc_shmstream_track {
-    unsigned char chn;        // chnno
-    unsigned char trackno;    // tracktype zc_stream_e
-    unsigned char tracktype;  // tracktype zc_stream_e
-    unsigned char encode;     // encode zc_frame_enc_e
-    unsigned char enable;     // enable/disable
-
-    unsigned int fifosize;     // shmfifosize
-    unsigned int framemaxlen;  // frame maxlen
-    int status;                // zc_track_status_e, track status already runnig write opened
-    int rsv[8];
-    char name[32];  // shm path name
-} zc_shmstream_track_t;
-
-// shmstreamcfg
-typedef struct _zc_shmstream_info {
-    unsigned char shmstreamtype;  // live push pull zc_shmstream_type_e
-    unsigned char idx;            // idx
-    unsigned char chn;            // chn num
-    unsigned char tracknum;       // num
-    int status;                   // zc_stream_status_e, status: ide ;
-    int rsv[8];
-    zc_shmstream_track_t tracks[ZC_STREAMMGR_TRACK_MAX_NUM];
-} zc_shmstream_info_t;
 
 // streammgr client info
 typedef struct _zc_streamcli {

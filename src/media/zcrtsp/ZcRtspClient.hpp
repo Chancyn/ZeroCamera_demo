@@ -19,8 +19,8 @@
 
 namespace zc {
 // zhoucc mancallback
-typedef int (*RtspCliGetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
-typedef int (*RtspCliSetInfoCb)(void *ptr, unsigned int chn, zc_media_info_t *data);
+typedef int (*RtspCliGetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
+typedef int (*RtspCliSetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
 
 typedef struct {
     RtspCliGetInfoCb GetInfoCb;

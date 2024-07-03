@@ -27,7 +27,6 @@
 #include "ZcShmStream.hpp"
 #include "ZcType.hpp"
 
-
 // userspace modify................
 
 // userspace modify................
@@ -58,6 +57,7 @@ unsigned int CShmStreamW::Put(const unsigned char *buffer, unsigned int len, voi
 
     zc_frame_t *frame = (zc_frame_t *)buffer;
     if (frame->keyflag) {
+        LOG_TRACE("put encode:%u, size:%u", frame->video.encode, frame->size);
         setKeyPos();
     }
     ret = _put(buffer, len);
@@ -123,7 +123,7 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
         if (frame->video.nalunum == 0) {
             LOG_WARN("no naluinfo, prase frame->size:%d", frame->size);
             zc_h26x_nalu_info_t tmp;
-            memset(&tmp, 0 , sizeof(zc_h26x_nalu_info_t));
+            memset(&tmp, 0, sizeof(zc_h26x_nalu_info_t));
             frame->video.nalunum = zc_h26x_parse_nalu(frame->data, frame->size, &tmp, frame->video.encode);
             for (unsigned int i = 0; i < frame->video.nalunum; i++) {
                 if (tmp.nalus[i].size > 0) {
@@ -132,12 +132,11 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
             }
         }
 
-        info.vinfo.nalunum  = 0;
+        info.vinfo.nalunum = 0;
         for (unsigned int i = 0; i < frame->video.nalunum; i++) {
             pos += prefixlen;
             naluval = *pos;
-            LOG_WARN("IDR frameinfo i:%d,naluval:%u,len:%u, prefixlen:%u", i, naluval, frame->video.nalu[i],
-                     prefixlen);
+            LOG_WARN("IDR frameinfo i:%d,naluval:%u,len:%u, prefixlen:%u", i, naluval, frame->video.nalu[i], prefixlen);
             if (frame->video.nalu[i] > 0 && frame->video.nalu[i] <= ZC_FRAME_NALU_BUFF_MAX_SIZE) {
                 info.vinfo.nalu[info.vinfo.nalunum].type = zc_h26x_nalu_val2type(naluval, frame->video.encode);
                 info.vinfo.nalu[info.vinfo.nalunum].size = frame->video.nalu[i];

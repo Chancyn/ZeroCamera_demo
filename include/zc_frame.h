@@ -9,6 +9,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "zc_type.h"
+#include "zc_media_track.h"
 
 // rtsp-server live shmfifo
 #define ZC_STREAM_VIDEO_SHM_PATH "v_live"
@@ -48,8 +49,9 @@ extern "C" {
 // shmstream type
 typedef enum {
     ZC_SHMSTREAM_LIVE = 0,  // live shmstream,url /live/live.ch0
-    ZC_SHMSTREAM_PUSH,      // push shmstream,url /live/push.ch0
-    ZC_SHMSTREAM_PULL,      // rtspcli pull shmstream, server forwarding url /live/push.ch0
+    ZC_SHMSTREAM_PULLC,     // pull cli shmstream, server forwarding url /live/pull.ch0
+    ZC_SHMSTREAM_PUSHS,     // push server shmstream pushurl:/push/push.ch0, server url:/live/push.ch0
+    ZC_SHMSTREAM_PUSHC,     // push client shmstream
 
     ZC_SHMSTREAM_BUTT,
 } zc_shmstream_e;
@@ -170,6 +172,29 @@ typedef struct _zc_frame_userinfo_ {
         zc_audio_naluinfo_t ainfo;
     };
 } zc_frame_userinfo_t;
+
+// stream mgr
+typedef struct _zc_media_track {
+    unsigned char chn;         // chnno
+    unsigned char trackno;     // tracktype zc_stream_e
+    unsigned char tracktype;   // tracktype zc_stream_e
+    unsigned char encode;      // encode zc_frame_enc_e
+    unsigned int mediacode;    // encode zc_media_code_e for new different CMediaTrackH264
+    unsigned int fifosize;     // shmfifosize
+    unsigned int framemaxlen;  // frame maxlen
+    unsigned char enable;      // enable/disable
+    int status;
+    char name[32];             // shm path name
+} zc_meida_track_t;
+
+typedef struct _zc_stream_info {
+    unsigned char shmstreamtype;  // live push pull zc_shmstream_e
+    unsigned char idx;            // idx
+    unsigned char chn;            // chn num
+    unsigned char tracknum;       // num
+    int status;                   // zc_stream_status_e, status: ide ;
+    zc_meida_track_t tracks[ZC_MEDIA_TRACK_BUTT];
+} zc_stream_info_t;
 
 typedef unsigned int (*stream_puting_cb)(void *u, void *stream);
 typedef unsigned int (*stream_geting_cb)(void *u, void *stream);

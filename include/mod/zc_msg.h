@@ -40,7 +40,6 @@ tcp for test:for debug use tcpdump capture msg; tcpdump -i lo port 8880 port-s0 
 #define ZC_URL_SIZE 128
 #define ZC_DATETIME_STR_SIZE 32   // 2024-04-30 00:00:00
 #define ZC_MSG_ERRDETAIL_SIZE 64  // err detail
-#define ZC_MSG_TRACK_MAX_NUM 4   // ZC_STREAMMGR_TRACK_MAX_NUM
 
 typedef enum {
     ZC_MSG_ERR_RIGHT_E = -8,       // msglen right error

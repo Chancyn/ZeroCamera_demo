@@ -91,8 +91,8 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
         zc_h26x_sps_info_t spsinfo = {0};
         if (zc_h265_sps_parse((const uint8_t *)packet, bytes, &spsinfo) == 0) {
             if (memcmp(&m_spsinfo, &spsinfo, sizeof(zc_h26x_sps_info_t)) != 0) {
-                LOG_WARN("update h265 wh[%u*%u]->[%u*%u]", spsinfo.width, spsinfo.height, m_spsinfo.width,
-                         m_spsinfo.height);
+                LOG_WARN("update h265 wh[%u*%u]->[%u*%u]", m_spsinfo.width, m_spsinfo.height, spsinfo.width,
+                         spsinfo.height);
                 memcpy(&m_spsinfo, &spsinfo, sizeof(zc_h26x_sps_info_t));
                 m_frame->video.width = spsinfo.width;
                 m_frame->video.height = spsinfo.height;

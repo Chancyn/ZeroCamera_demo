@@ -22,7 +22,7 @@
 #include "zc_h26x_sps_parse.h"
 #include "zc_log.h"
 #include "zc_macros.h"
-#include "media/zc_media_track.h"
+#include "zc_media_track.h"
 
 #include "Epoll.hpp"
 #include "ZcRtpReceiver.hpp"
@@ -302,6 +302,21 @@ int CRtpReceiver::Encodingtrans2Type(const char *encoding) {
     }
 
     return -1;
+}
+
+int CRtpReceiver::transEncode2MediaCode(unsigned int encode) {
+    int mediacode = -1;
+    if (encode == ZC_FRAME_ENC_H264) {
+        mediacode = ZC_MEDIA_CODE_H264;
+    } else if (encode == ZC_FRAME_ENC_H265) {
+        mediacode = ZC_MEDIA_CODE_H265;
+    } else if (encode == ZC_FRAME_ENC_AAC) {
+        mediacode = ZC_MEDIA_CODE_AAC;
+    } else if (encode == ZC_FRAME_ENC_META_BIN) {
+        mediacode = ZC_MEDIA_CODE_METADATA;
+    }
+
+    return mediacode;
 }
 
 int CRtpReceiver::Encodingtrans2Type(const char *encoding, unsigned int &tracktype, unsigned int &encode) {

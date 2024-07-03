@@ -16,6 +16,7 @@ typedef struct {
     RtspStreamMgrHandleMsgCb streamMgrHandleCb;
     void *streamMgrContext;
     RtspMgrHandleMsgCb MgrHandleCb;
+    RtspMgrHandleSubMsgCb MgrHandleSubCb;
     void *MgrContext;
 } rtsp_callback_info_t;
 
@@ -53,6 +54,11 @@ class CMsgProcModRtsp : public CMsgProcMod {
     // CtrlReqIDR
     ZC_S32 _handleReqRtspCtrlReqIDR(zc_msg_t *req, int iqsize, zc_msg_t *rep, int *opsize);
     ZC_S32 _handleRepRtspCtrlReqIDR(zc_msg_t *rep, int size);
+
+    /*********************************************************************** */
+    // subscribe
+    ZC_S32 _handleSubManReg(zc_msg_t *sub, int size);
+    ZC_S32 _handleSubManStreamUpdate(zc_msg_t *sub, int size);
 
  private:
     int m_init;

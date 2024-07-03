@@ -17,8 +17,16 @@ typedef enum {
     RTSP_MGR_HDL_BUTT_E,
 } rtsp_mgr_handle_e;
 
+typedef enum {
+    RTSP_MGR_HDL_SUB_STREAMUPDATE_E = 0,
+
+    RTSP_MGR_HDL_SUB_BUTT_E,
+} rtsp_mgr_handle_sub_e;
+
 // RtspManager handle mod msg callback
 typedef int (*RtspMgrHandleMsgCb)(void *ptr, unsigned int type, void *indata, void *outdata);
+// RtspManager handle mod subscribe msg callback rtsp_mgr_handle_sub_e
+typedef int (*RtspMgrHandleSubMsgCb)(void *ptr, unsigned int type, void *indata);
 
 // TODO(zhoucc): handle msg define
 

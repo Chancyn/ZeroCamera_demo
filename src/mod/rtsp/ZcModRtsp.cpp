@@ -19,7 +19,7 @@
 
 namespace zc {
 CModRtsp::CModRtsp()
-    : CModBase(ZC_MODID_RTSP_E), m_pMsgProc(new CMsgProcModRtsp()), m_init(false) {}
+    : CModSubBase(ZC_MODID_RTSP_E), m_pMsgProc(new CMsgProcModRtsp()), m_init(false) {}
 
 CModRtsp::~CModRtsp() {
     _unInit();
