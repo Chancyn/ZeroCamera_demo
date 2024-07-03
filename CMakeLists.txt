@@ -103,10 +103,16 @@ set(MEDIAINTALL ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server)
 set(MEDIARTSPAIO rtspaio)
 set(MEDIARTSPMEDIA rtspmedia)
 set(MEDIAFILEBUF movfilebuf)
+# rtsp
 set(MEDIARTSP rtsp)
 set(MEDIARTSP_LIBPATH ${MEDIAINTALL}/media-server/librtsp/lib)
 set(MEDIARTSP_INC ${MEDIAINTALL}/media-server/librtsp/include)
 #set(MEDIARTSP_INC2 ${MEDIAINTALL}/media-server/librtsp/source/server)
+
+#rtmp
+set(MEDIARTMP rtmp)
+set(MEDIARTMP_LIBPATH ${MEDIAINTALL}/media-server/librtmp/lib)
+set(MEDIARTMP_INC ${MEDIAINTALL}/media-server/librtmp/include)
 
 set(MEDIARTP rtp)
 set(MEDIARTP_LIBPATH ${MEDIAINTALL}/media-server/librtp/lib)

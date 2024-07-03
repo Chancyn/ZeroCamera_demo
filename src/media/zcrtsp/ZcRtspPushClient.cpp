@@ -304,7 +304,7 @@ bool CRtspPushClient::_startconn() {
     // parse url
     struct uri_t *url = uri_parse(tmp, strlen(tmp));
     if (!url)
-        return -1;
+        return false;
 
     url_decode(url->path, strlen(url->path), path, sizeof(path));
     url_decode(url->host, strlen(url->host), host, sizeof(host));
