@@ -6,10 +6,10 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "sys/system.h"
 #include "flv-muxer.h"
 #include "flv-proto.h"
 #include "flv-reader.h"
+#include "sys/system.h"
 #include "zc_frame.h"
 #include "zc_log.h"
 
@@ -19,7 +19,7 @@
 #include "ZcType.hpp"
 
 namespace zc {
-CFlvMuxer::CFlvMuxer() : m_Idr(false), m_pts(0), m_apts(0), m_flv(nullptr) {
+CFlvMuxer::CFlvMuxer() : m_Idr(false), m_status(flv_status_init), m_pts(0), m_apts(0), m_flv(nullptr) {
     memset(&m_info, 0, sizeof(m_info));
     m_vector.clear();
 }
@@ -110,6 +110,7 @@ bool CFlvMuxer::Start() {
     }
 
     Thread::Start();
+    m_status = flv_status_init;
     return true;
 }
 
@@ -145,7 +146,8 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
 
         // sps-pps-vcl
         if (flv_muxer_avc(m_flv, frame->data, frame->size, frame->pts - m_pts, frame->pts - m_pts) < 0) {
-            LOG_ERROR("flv_muxer_avc err.\n");
+            LOG_ERROR("push error, flv_muxer_avc err.\n");
+            return -1;
         }
     } else if (frame->video.encode == ZC_FRAME_ENC_H265) {
         if (!m_pts) {
@@ -158,6 +160,7 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
         // sps-pps-vcl
         if (flv_muxer_hevc(m_flv, frame->data, frame->size, frame->pts - m_pts, frame->pts - m_pts) < 0) {
             LOG_ERROR("flv_muxer_hevc err.\n");
+            return -1;
         }
     } else if (frame->audio.encode == ZC_FRAME_ENC_AAC) {
         if (m_pts) {
@@ -168,6 +171,7 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
 
             if (flv_muxer_aac(m_flv, frame->data, frame->size, frame->pts - m_apts, frame->pts - m_apts) < 0) {
                 LOG_ERROR("flv_muxer_hevc err.\n");
+                return -1;
             }
         }
     }
@@ -207,14 +211,17 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
 #endif
 
         // packet flv
-        _packetFlv(pframe);
+        if (_packetFlv(pframe) < 0) {
+            LOG_WARN("process into\n");
+            return -1;
+        }
     }
 
     return 0;
 }
 
 int CFlvMuxer::_packetProcess() {
-    LOG_WARN("process into\n");
+    LOG_WARN("_packetProcess into");
     CEpoll ep{100};  // set timeout 100ms,for rtspsource thread exit
     int ret = 0;
 
@@ -241,25 +248,29 @@ int CFlvMuxer::_packetProcess() {
                 if (ep[i].events & EPOLLIN) {
                     CShmStreamR *stream = reinterpret_cast<CShmStreamR *>(ep[i].data.ptr);
                     // LOG_TRACE("epoll wait ok ret[%d], tack[%d]", ret, tack);
-                    _getDate2PacketFlv(stream);
+                    if (_getDate2PacketFlv(stream) < 0) {
+                        m_status = flv_status_err;
+                        LOG_ERROR("error _packetProcess exit");
+                        return -1;
+                    }
                 }
             }
         }
     }
 
-    LOG_WARN("process exit\n");
-    return -1;
+    LOG_WARN("_packetProcess exit");
+    return 0;
 }
 
 int CFlvMuxer::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     while (State() == Running) {
         if (_packetProcess() < 0) {
             break;
         }
         system_sleep(1000);
     }
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return -1;
 }
 }  // namespace zc

@@ -22,6 +22,12 @@ typedef struct {
 } zc_flvmuxer_info_t;
 
 class CFlvMuxer : protected Thread {
+    enum flv_status_e {
+        flv_status_err = -1,  // error
+        flv_status_init = 0,  // init
+        flv_status_run,       // running
+    };
+
  public:
     CFlvMuxer();
     virtual ~CFlvMuxer();
@@ -31,6 +37,7 @@ class CFlvMuxer : protected Thread {
     bool Destroy();
     bool Start();
     bool Stop();
+    flv_status_e GetStatus() { return m_status; }
 
  private:
     bool destroyStream();
@@ -43,6 +50,7 @@ class CFlvMuxer : protected Thread {
 
  private:
     bool m_Idr;
+    flv_status_e m_status;
     ZC_U64 m_pts;
     ZC_U64 m_apts;  // audio pts
     unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];
