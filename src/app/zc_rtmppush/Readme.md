@@ -12,7 +12,8 @@ rtmp推流测试
 TODO:(zhoucc)
 后续待完成
 1.aac测试
-2.bug(h264下) [error][tid 1479158] [ZcFlvMuxer.cpp 148][_packetFlv]flv_muxer_avc err.
+2.bug [error][tid 1479158] [ZcFlvMuxer.cpp 148][_packetFlv]flv_muxer_avc err.
+原因，两个rtmppush端推不同流格式到同一个push地址报错;
 
 ## 测试命令
 RTMP push客户端
