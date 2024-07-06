@@ -76,8 +76,7 @@ bool CRtmpPush::UnInit() {
 // rtmp://video-center.alivecdn.com/live/hello?vhost=your.domain
 // rtmp_publish_test("video-center.alivecdn.com", "live", "hello?vhost=your.domain", local-flv-file-name)
 bool CRtmpPush::_startconn() {
-    char tmp[256];
-    char tmp2[128];
+    char rurl[256] = {0};  // rtmp url
     char host[128] = {0};
     char path[128] = {0};
     char app[128] = {0};
@@ -85,18 +84,19 @@ bool CRtmpPush::_startconn() {
     char *pstream = nullptr;
     unsigned short port = 1593;
     int r = 0;
-    strncpy(tmp, m_url, sizeof(tmp) - 1);
+    strncpy(rurl, m_url, sizeof(rurl) - 1);
     struct rtmp_client_handler_t *phandle = nullptr;
     struct rtmp_client_t *rtmp = nullptr;
     // parse url
-    struct uri_t *url = uri_parse(tmp, strlen(tmp));
+    struct uri_t *url = uri_parse(rurl, strlen(rurl));
     if (!url)
         return false;
 
+    // prase port
     url_decode(url->path, strlen(url->path), path, sizeof(path));
     url_decode(url->host, strlen(url->host), host, sizeof(host));
     strncpy(m_host, host, sizeof(host) - 1);
-    pstream = strstr(url->path+1, "/");
+    pstream = strrchr(url->path, '/');
     if (!pstream) {
         LOG_ERROR("rtmppush prase error url:%s path:%s", m_url, url->path);
         uri_free(url);
@@ -104,13 +104,22 @@ bool CRtmpPush::_startconn() {
     }
 
     *pstream = '\0';
-    strncpy(app, url->path+1, sizeof(app) - 1);
+    strncpy(app, url->path + 1, sizeof(app) - 1);
     strncpy(stream, pstream + 1, sizeof(stream) - 1);
+    if (app[0] == '\0' || stream[0] == '\0') {
+        LOG_ERROR("rtmppush prase error url:%s path:%s", m_url, url->path);
+        uri_free(url);
+        return false;
+    }
 
-    if (url->port != 0)
+    if (url->port != 0) {
         port = url->port;
+        snprintf(rurl, sizeof(rurl) - 1, "rtmp://%s:%hu/%s", m_host, port, app);
+    } else {
+        snprintf(rurl, sizeof(rurl) - 1, "rtmp://%s/%s", m_host, app);
+    }
 
-    LOG_TRACE("rtmppush prase url:%s, host:%s, port:%hu, app:%s, stream:%s", m_url, m_host, port, app, stream);
+    LOG_TRACE("rtmppush url:%s, host:%s, port:%hu, app:%s, stream:%s", rurl, m_host, port, app, stream);
     phandle = (struct rtmp_client_handler_t *)malloc(sizeof(struct rtmp_client_handler_t));
     ZC_ASSERT(phandle);
     if (!phandle) {
@@ -125,7 +134,7 @@ bool CRtmpPush::_startconn() {
     m_client.socket = socket_connect_host(host, 1935, 2000);
     socket_setnonblock(m_client.socket, 0);
 
-    rtmp = rtmp_client_create(app, stream, m_url, this, phandle);
+    rtmp = rtmp_client_create(app, stream, rurl, this, phandle);
     if (!rtmp) {
         LOG_ERROR("rtmp rtmp_client_create error");
         ZC_ASSERT(0);
@@ -147,7 +156,7 @@ bool CRtmpPush::_startconn() {
     }
     m_client.status = 1;
     uri_free(url);
-    LOG_ERROR("rtmppush starcomm ok");
+    LOG_TRACE("rtmppush starcomm ok");
     return true;
 _err:
     _stopconn();
