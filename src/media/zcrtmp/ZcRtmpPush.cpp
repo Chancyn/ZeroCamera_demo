@@ -298,12 +298,10 @@ int CRtmpPush::_cliwork() {
 
     while (State() == Running && m_client.status == 1) {
         system_sleep(5);
-        // TODO: check rtsp session activity
     }
 
 _err:
     _stopFlvMuxer();
-    // rtsp_client_teardown(reinterpret_cast<rtsp_client_t *>(m_client.rtsp));
     // stop
     _stopconn();
     return ret;
