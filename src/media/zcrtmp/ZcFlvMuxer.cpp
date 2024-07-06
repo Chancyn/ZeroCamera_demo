@@ -99,6 +99,7 @@ bool CFlvMuxer::Destroy() {
     Stop();
     flv_muxer_destroy(m_flv);
     destroyStream();
+    m_flv = nullptr;
     LOG_TRACE("destroy ok");
     return true;
 }

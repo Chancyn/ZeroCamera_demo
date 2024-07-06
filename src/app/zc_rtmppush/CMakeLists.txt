@@ -44,7 +44,7 @@ ${NNG_LIBPATH}
 )
 
 target_link_libraries(zc_rtmppush PUBLIC
-zcrtsp
+zcrtmp
 ${MEDIARTSPMEDIA}
 zch26x
 ${MEDIAAIO}

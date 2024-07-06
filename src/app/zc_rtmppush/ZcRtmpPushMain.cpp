@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         chn = atoi(argv[2]);
     }
 
-    LOG_TRACE("pushcli url[%s] chn[%d] transport[%d]", argv[1], chn);
+    LOG_TRACE("pushcli url[%s] chn[%d]", argv[1], chn);
     zc::CRtmpPushMan cli;
     if (!cli.Init(type, chn, argv[1])) {
         goto _err;

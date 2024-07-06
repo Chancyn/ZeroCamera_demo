@@ -69,7 +69,7 @@ bool CRtmpPushMan::Start() {
         return false;
     }
 
-    m_running = CRtmpPush::Start();
+    m_running = CRtmpPush::StartCli();
     return m_running;
 }
 
@@ -78,7 +78,7 @@ bool CRtmpPushMan::Stop() {
         return false;
     }
 
-    CRtmpPush::Stop();
+    CRtmpPush::StopCli();
     m_running = false;
     return true;
 }

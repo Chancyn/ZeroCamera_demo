@@ -99,6 +99,8 @@ set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)
 set(ZCRTSP_INC ${CMAKE_SOURCE_DIR}/src/media/zcrtsp)
 set(ZCCODEC_INC ${CMAKE_SOURCE_DIR}/src/media/zccodec)
 
+set(ZCRTMP_INC ${CMAKE_SOURCE_DIR}/src/media/zcrtmp)
+
 set(MEDIAINTALL ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server)
 set(MEDIARTSPAIO rtspaio)
 set(MEDIARTSPMEDIA rtspmedia)

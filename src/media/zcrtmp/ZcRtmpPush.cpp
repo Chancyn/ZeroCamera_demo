@@ -16,7 +16,6 @@
 #include "flv-reader.h"
 #include "ntp-time.h"
 #include "rtmp-client.h"
-#include "sdp.h"
 #include "sockpair.h"
 #include "sockutil.h"
 #include "sys/system.h"
@@ -97,7 +96,7 @@ bool CRtmpPush::_startconn() {
     url_decode(url->path, strlen(url->path), path, sizeof(path));
     url_decode(url->host, strlen(url->host), host, sizeof(host));
     strncpy(m_host, host, sizeof(host) - 1);
-    pstream = strstr(url->path, "/");
+    pstream = strstr(url->path+1, "/");
     if (!pstream) {
         LOG_ERROR("rtmppush prase error url:%s path:%s", m_url, url->path);
         uri_free(url);
@@ -105,13 +104,13 @@ bool CRtmpPush::_startconn() {
     }
 
     *pstream = '\0';
-    strncpy(app, url->path, sizeof(app) - 1);
+    strncpy(app, url->path+1, sizeof(app) - 1);
     strncpy(stream, pstream + 1, sizeof(stream) - 1);
 
     if (url->port != 0)
         port = url->port;
 
-    LOG_ERROR("rtmppush prase url:%s, host:%s, port:%hu, app:%s, stream:%s", m_url, m_host, url->port, app, stream);
+    LOG_TRACE("rtmppush prase url:%s, host:%s, port:%hu, app:%s, stream:%s", m_url, m_host, port, app, stream);
     phandle = (struct rtmp_client_handler_t *)malloc(sizeof(struct rtmp_client_handler_t));
     ZC_ASSERT(phandle);
     if (!phandle) {
@@ -127,10 +126,12 @@ bool CRtmpPush::_startconn() {
     socket_setnonblock(m_client.socket, 0);
 
     rtmp = rtmp_client_create(app, stream, m_url, this, phandle);
-    if (rtmp) {
-        ZC_ASSERT(m_client.rtmp != nullptr);
+    if (!rtmp) {
+        LOG_ERROR("rtmp rtmp_client_create error");
+        ZC_ASSERT(0);
         goto _err;
     }
+
     m_client.rtmp = rtmp;
     if (rtmp_client_start(rtmp, 0) < 0) {
         LOG_ERROR("rtmp rtmp_client_start error");
@@ -148,7 +149,6 @@ bool CRtmpPush::_startconn() {
     uri_free(url);
     LOG_ERROR("rtmppush starcomm ok");
     return true;
-    rtmp_client_push(m_flv, rtmp);
 _err:
     _stopconn();
     uri_free(url);
@@ -210,13 +210,12 @@ int CRtmpPush::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t
         return 0;
     }
 
-    LOG_ERROR("onflvpacket type:%d, len:%u, ts:%u", type, bytes, timestamp);
     int ret = 0;
     if (FLV_TYPE_AUDIO == type) {
         ret = rtmp_client_push_audio(m_client.rtmp, data, bytes, timestamp);
     } else if (FLV_TYPE_VIDEO == type) {
 #if ZC_DEBUG
-        int keyframe = 1 == ((data[0] & 0xF0) >> 4);
+        int keyframe = 1 == (((*(unsigned char *)data) & 0xF0) >> 4);
         if (keyframe)
             LOG_TRACE("type:%02d [A:%d, V:%d, S:%d] key:%d\n", type, FLV_TYPE_AUDIO, FLV_TYPE_VIDEO, FLV_TYPE_SCRIPT,
                       (type == FLV_TYPE_VIDEO) ? keyframe : 0);
@@ -283,12 +282,11 @@ int CRtmpPush::_cliwork() {
         return -1;
     }
 
-    if (_startFlvMuxer()) {
+    if (!_startFlvMuxer()) {
         LOG_ERROR("_startFlvMuxer error");
         goto _err;
     }
 
-    int rret = 0;
     while (State() == Running && m_client.status == 1) {
         system_sleep(5);
         // TODO: check rtsp session activity
