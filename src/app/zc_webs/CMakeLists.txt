@@ -37,6 +37,13 @@ utils
 pthread
 )
 
+if(WITH_OPENSSL)
+target_link_libraries(zc_webs PRIVATE
+ssl
+crypto
+)
+endif()
+
 #asan
 if(WITH_ASAN)
 target_link_libraries(zc_webs PRIVATE

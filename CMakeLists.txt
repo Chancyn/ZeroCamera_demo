@@ -32,7 +32,7 @@ message("build rk3588 ####")
 set(COMPILER_PREFIX "aarch64-none-linux-gnu-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
-#ffmpge
+#ffmpeg
 set(FFMPEG_INC include)
 set(FFMPEG_LIB lib)
 else()
@@ -84,11 +84,17 @@ else()
        message("build with Release")
 endif()
 
+option(WITH_OPENSSL "openssl option"     ON)
+if(WITH_OPENSSL)
+set(OPENSSL_ROOT_DIR ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC})
+find_package(OpenSSL REQUIRED)
+# mongoose ssl mg
+add_definitions(-DMG_TLS=MG_TLS_OPENSSL)
+endif()
+
 #media server
 add_definitions(-D__ERROR__=00*10000000+__LINE__*1000)
 
-#ssl mg
-add_definitions(-DMG_TLS=MG_TLS_BUILTIN)
 
 set(SPDLOG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/include)
 set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib)
@@ -184,7 +190,6 @@ if(WITH_FFMPEG)
     add_definitions(-DWITH_FFMPEG)
 endif()
 
-
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(AVCODEC libavcodec)
 pkg_check_modules(AVFORMAT libavformat)
@@ -195,7 +200,6 @@ pkg_check_modules(AVDEVICE libavdevice)
 
 if(WITH_FFMPEG)
 # 包含ffmpeg头文件
-
 include_directories(zc_testv4l2 PRIVATE
 ${AVDEVICE_INCLUDE_DIRS}
 ${AVFORMAT_INCLUDE_DIRS}
