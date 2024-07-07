@@ -87,6 +87,9 @@ endif()
 #media server
 add_definitions(-D__ERROR__=00*10000000+__LINE__*1000)
 
+#ssl mg
+add_definitions(-DMG_TLS=MG_TLS_BUILTIN)
+
 set(SPDLOG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/include)
 set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib)
 set(NNG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/include)

@@ -39,6 +39,8 @@ c.C++11编程规范，大部分代码采用C with class基本语法。对程序�
 单个业务模块崩溃，不影响其他的业务模块，以及整个系统的稳定行
 
 TODO:nng客户端加锁
+1.bug:zc_sys进程启动之后，重新编译工程，重新执行其他mod，导致正在运行的的zc_sys段错误 "nng:poll:epoll" received signal SIGSEGV, Segmentation fault.(原因comm库文件有变化导致)
+
 #### 3.1 mod模块设计
 register注册机制
 1.其他子模块sysmodule启动后主动注册到sysmodule; \
