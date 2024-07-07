@@ -17,8 +17,8 @@ export CC=${COMPILER_PREFIX}gcc
 export CXX=${COMPILER_PREFIX}g++
 
 #debug
-#export CXXFLAGS=-g
-#export CFLAGS=-g
+export CXXFLAGS=-g
+export CFLAGS=-g
 #export CXXFLAGS='-mcpu=cortex-a53 -mfloat-abi=softfp -mfpu=neon-vfpv4 -mno-unaligned-access -fno-aggressive-loop-optimizations -fPIC -ffunction-sections'
 
 ################################################################################
