@@ -91,7 +91,7 @@ void CWebServer::EventHandlerCb(struct mg_connection *c, int ev, void *ev_data) 
 void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
 #if ZC_SUPPORT_SSL
     if (ev == MG_EV_ACCEPT && m_ssl) {
-        LOG_ERROR("accept ssl");
+        LOG_TRACE("accept ssl");
         struct mg_tls_opts opts = {
 #ifdef TLS_TWOWAY
             .ca = mg_str(s_tls_ca),
@@ -101,10 +101,15 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
         mg_tls_init(c, &opts);
     }
 #endif
-
-    if (ev == MG_EV_HTTP_MSG) {
+    if (ev == MG_EV_OPEN) {
+        // c->is_hexdumping = 1;
+    } else if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *)ev_data;
-        if (mg_match(hm->uri, mg_str("/api/stats"), NULL)) {
+        if (mg_match(hm->uri, mg_str("/websocket"), NULL)) {
+            // Upgrade to websocket. From now on, a connection is a full-duplex
+            // Websocket connection, which will receive MG_EV_WS_MSG events.
+            mg_ws_upgrade(c, hm, NULL);
+        } else if (mg_match(hm->uri, mg_str("/api/stats"), NULL)) {
             // Print some statistics about currently established connections
             mg_printf(c, "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n");
             mg_http_printf_chunk(c, "ID PROTO TYPE      LOCAL           REMOTE\n");
@@ -122,6 +127,10 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
             struct mg_http_serve_opts opts = {.root_dir = m_info.workpath};
             mg_http_serve_dir(c, (struct mg_http_message *)ev_data, &opts);
         }
+    } else if (ev == MG_EV_WS_MSG) {
+        // Got websocket frame. Received data is wm->data. Echo it back!
+        struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
+        mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
     }
 
     return;
