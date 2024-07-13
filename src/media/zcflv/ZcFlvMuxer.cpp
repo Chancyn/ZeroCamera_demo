@@ -9,7 +9,7 @@
 #include "flv-muxer.h"
 #include "flv-proto.h"
 #include "flv-reader.h"
-#include "sys/system.h"
+// #include "sys/system.h"
 #include "zc_frame.h"
 #include "zc_log.h"
 
@@ -268,7 +268,7 @@ int CFlvMuxer::process() {
         if (_packetProcess() < 0) {
             break;
         }
-        system_sleep(1000);
+        usleep(1000);
     }
     LOG_WARN("process exit");
     return -1;

@@ -15,17 +15,22 @@ add_executable(zc_webs ${DIR_SOURCE_SRCS})
 
 #头文件包含
 target_include_directories(zc_webs PRIVATE
+${ZCFLV_INC}
+${MEDIAFLV_INC}
 ${PLAT_BASIC_INC}
 ${UTILSXX_INC}
 ${UTILS_INC}
 )
 
 target_link_directories(zc_webs PRIVATE
+${MEDIAFLV_LIBPATH}
 ${NNG_LIBPATH}
 )
 
 #连接库
 target_link_libraries(zc_webs PRIVATE
+zcflv
+${MEDIAFLV}
 mod_base
 msgcomm
 plat_basic

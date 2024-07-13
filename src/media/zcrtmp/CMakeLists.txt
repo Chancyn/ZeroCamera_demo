@@ -13,6 +13,7 @@ endforeach()
 add_library(zcrtmp STATIC ${DIR_SOURCE_SRCS})
 
 target_include_directories(zcrtmp PRIVATE
+${ZCFLV_INC}
 ${MEDIAAVCODEC_INC}
 ${MEDIAAVBSF_INC}
 ${MEDIAMPEG_INC}

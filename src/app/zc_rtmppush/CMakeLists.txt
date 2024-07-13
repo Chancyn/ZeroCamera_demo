@@ -14,6 +14,7 @@ add_executable(zc_rtmppush ${DIR_SOURCE_SRCS})
 
 target_include_directories(zc_rtmppush PRIVATE
 ${ZCRTMP_INC}
+${ZCFLV_INC}
 ${MEDIAAVCODEC_INC}
 ${MEDIAAVBSF_INC}
 ${MEDIAMPEG_INC}
@@ -45,6 +46,7 @@ ${NNG_LIBPATH}
 
 target_link_libraries(zc_rtmppush PUBLIC
 zcrtmp
+zcflv
 ${MEDIARTSPMEDIA}
 zch26x
 ${MEDIAAIO}
