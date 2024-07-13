@@ -31,6 +31,7 @@ ${NNG_LIBPATH}
 target_link_libraries(zc_webs PRIVATE
 zcflv
 ${MEDIAFLV}
+zcfifo
 mod_base
 msgcomm
 plat_basic

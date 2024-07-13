@@ -15,6 +15,14 @@
 
 namespace zc {
 typedef int (*OnFlvPacketCb)(void *param, int type, const void *data, size_t bytes, uint32_t timestamp);
+
+// FLV Tag Type
+enum flv_tag_type_e {
+    flv_tag_audio = 8,    // FLV_TYPE_AUDIO
+    flv_tag_video = 9,    // FLV_TYPE_VIDEO
+    flv_tag_script = 18,  // FLV_TYPE_SCRIPT
+};
+
 typedef struct {
     zc_stream_info_t streaminfo;
     OnFlvPacketCb onflvpacketcb;

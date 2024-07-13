@@ -1,7 +1,10 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include "Thread.hpp"
 #include "ZcModCli.hpp"
@@ -68,10 +71,11 @@ static zc_webs_info_t g_websinfodeftab[zc_webs_type_butt] = {
 bool CWebServer::m_mgloginit = false;
 
 // modsyscli
-CWebServer::CWebServer(zc_webs_type_e type)
+CWebServer::CWebServer(zc_webs_type_e type, const websvr_cb_info_t &cbinfo)
     : Thread("Webs"), m_init(false), m_running(0), m_type(type), m_mgrhandle(nullptr) {
     memset(&m_info, 0, sizeof(m_info));
     memset(m_addrs, 0, sizeof(m_addrs));
+    memcpy(&m_cbinfo, &cbinfo, sizeof(websvr_cb_info_t));
     if (m_type == zc_webs_type_https || m_type == zc_webs_type_wss) {
         m_ssl = true;
     } else {
@@ -81,6 +85,244 @@ CWebServer::CWebServer(zc_webs_type_e type)
 
 CWebServer::~CWebServer() {
     UnInit();
+}
+
+#pragma pack(push)
+#pragma pack(1)
+typedef struct _flv_tag_hdr {
+    uint8_t type;           // tagtype 1字节，0x08为音频，0x09为视频，0x12为脚本
+    uint8_t data_size[3];   // 3字节，表示Tag数据部分的大小（不包括头部）
+    uint8_t timestamp[3];   // 3字节，表示该Tag的时间戳（相对于第一个Tag的偏移量）
+    uint8_t timestamp_ext;  // 1字节，用于扩展时间戳（高8位），通常与timestamp组合使用
+    uint8_t stream_id[3];   // 1字节，通常为0
+} flv_tag_hdr_t;
+
+typedef struct _flv_file_hdr {
+    uint8_t signature[3];          // 'F', 'L', 'V'
+    uint8_t version;               // 通常是1
+    uint8_t flags;                 // 标志位，用于指示是否包含音频和视频等
+    uint8_t offset[4];             // 从文件开始到第一个FLV标签的偏移量（字节）
+    uint8_t previous_tag_size[4];  // 前一个FLV标签的大小（用于在文件中定位）
+} flv_file_hdr_t;
+#pragma pack(pop)
+
+#define FLV_TAG_LEN (sizeof(flv_tag_hdr_t))       // 11
+#define FLV_HDR_TAG_LEN (sizeof(flv_file_hdr_t))  // 13
+
+static inline void be_write_uint32(uint8_t *ptr, uint32_t val) {
+    ptr[0] = (uint8_t)((val >> 24) & 0xFF);
+    ptr[1] = (uint8_t)((val >> 16) & 0xFF);
+    ptr[2] = (uint8_t)((val >> 8) & 0xFF);
+    ptr[3] = (uint8_t)(val & 0xFF);
+}
+
+static inline void be_write_uint24(uint8_t *buffer, uint32_t value_24) {
+    buffer[0] = (value_24 >> 16) & 0xFF;
+    buffer[1] = (value_24 >> 8) & 0xFF;
+    buffer[2] = value_24 & 0xFF;
+}
+
+static inline void packFlvTagHdr(flv_tag_hdr_t *taghdr, uint8_t type, uint32_t bytes, uint32_t timestamp) {
+#if 1
+    // TagType
+    taghdr->type = type & 0x1F;
+    be_write_uint24(taghdr->data_size, bytes);
+    be_write_uint24(taghdr->timestamp, timestamp);
+    taghdr->timestamp_ext = (timestamp >> 24) & 0xFF;  // Timestamp Extended
+    be_write_uint24(taghdr->stream_id, 0);
+#else
+    uint8_t *tag = reinterpret_cast<uint8_t *>(taghdr);
+    tag[0] = type & 0x1F;
+    // DataSize
+    tag[1] = (bytes >> 16) & 0xFF;
+    tag[2] = (bytes >> 8) & 0xFF;
+    tag[3] = bytes & 0xFF;
+
+    // Timestamp
+    tag[4] = (timestamp >> 16) & 0xFF;
+    tag[5] = (timestamp >> 8) & 0xFF;
+    tag[6] = (timestamp >> 0) & 0xFF;
+    tag[7] = (timestamp >> 24) & 0xFF;  // Timestamp Extended
+
+    // StreamID(Always 0)
+    tag[8] = 0;
+    tag[9] = 0;
+    tag[10] = 0;
+#endif
+    return;
+}
+
+static inline void packFlvFileHdr(flv_file_hdr_t *hdr, bool hasvideo, bool hasaudio) {
+    LOG_WARN("packhdr hdr:%u, tag:%u", sizeof(flv_file_hdr_t), sizeof(flv_tag_hdr_t));
+#if 1
+    hdr->signature[0] = 'F';
+    hdr->signature[1] = 'L';
+    hdr->signature[2] = 'V';
+    hdr->version = 0x01;  // File version
+    hdr->flags = 0;       // Type flags (audio:0x04 & video:0x01)
+    if (hasvideo)
+        hdr->flags |= 0x01;
+    if (hasaudio)
+        hdr->flags |= 0x04;
+    be_write_uint32(hdr->offset, 9);             // Data offset
+    be_write_uint32(hdr->previous_tag_size, 0);  // PreviousTagSize0(Always 0)
+#else
+    uint8_t *buf = reinterpret_cast<uint8_t *>(hdr);
+    buf[0] = 'F';  // FLV signature
+    buf[1] = 'L';
+    buf[2] = 'V';
+    buf[3] = 0x01;                // File version
+    buf[4] = 0x01 | 0x04;         // Type flags (audio:0x04 & video:0x01)
+    be_write_uint32(buf + 5, 9);  // Data offset
+    be_write_uint32(buf + 9, 0);  // PreviousTagSize0(Always 0)
+#endif
+
+    return;
+}
+
+int CWebServer::sendFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+    CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
+    return webs->_sendFlvDataCb(sess, type, data, bytes, timestamp);
+}
+
+int CWebServer::_sendFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+    struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
+    int ret = 0;
+    flv_tag_hdr_t tag;
+    char buf[16];
+    uint32_t previous_tag_len = sizeof(flv_tag_hdr_t) + bytes;
+    // taghdr(11byte) + datalen + previous_tag_len(4byte)
+    snprintf(buf, sizeof(buf) - 1, "%x\r\n", (uint32_t)(previous_tag_len + 4));
+    mg_send(con, buf, strlen(buf));
+    packFlvTagHdr(&tag, type, bytes, timestamp);
+    mg_send(con, &tag, sizeof(flv_tag_hdr_t));
+    mg_send(con, data, bytes);
+    // previous_tag_len = taghdr(11byte) + datalen
+    be_write_uint32(reinterpret_cast<uint8_t *>(&previous_tag_len), previous_tag_len);
+    mg_send(con, &previous_tag_len, 4);
+    mg_send(con, "\r\n", 2);
+    return ret;
+}
+#if 1
+static int _sendFlvHdrCb(void *ptr, void *sess, bool hasvideo, bool hasaudio) {
+    struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
+    int ret = 0;
+    flv_file_hdr_t flvhdr;
+    packFlvFileHdr(&flvhdr, hasvideo, hasaudio);
+    char buf[32] = {0};
+    char *pos = buf;
+    snprintf(buf, sizeof(buf) - 1, "9\r\n");
+    pos += strlen(buf);
+    memcpy(pos, &flvhdr, 9);
+    pos += 9;
+    *pos++ = '\r';
+    *pos++ = '\n';
+    *pos++ = '4';
+    *pos++ = '\r';
+    *pos++ = '\n';
+    memcpy(pos, ((char *)&flvhdr) + 9, 4);
+    pos += 4;
+    *pos++ = '\r';
+    *pos++ = '\n';
+    mg_send(con, buf, pos - buf);
+    return ret;
+}
+#endif
+
+int CWebServer::unInitFlvSess() {
+    std::lock_guard<std::mutex> locker(m_flvsessmutex);
+    auto iter = m_flvsesslist.begin();
+    for (; iter != m_flvsesslist.end();) {
+        ZC_SAFE_DELETE(*iter);
+        iter = m_flvsesslist.erase(iter);
+    }
+
+    return 0;
+}
+
+int CWebServer::httpFlvProcess(struct mg_connection *c, void *ev_data) {
+    LOG_TRACE("http-flv into");
+    int chn = 1;
+    int type = 0;
+    char httphdr[256];
+    char buf[32];
+    char *pos = buf;
+    flv_file_hdr_t flvhdr;
+    zc_flvsess_info_t info = {
+        .sendflvdatacb = sendFlvDataCb,
+        .sendflvhdrcb = _sendFlvHdrCb,
+        .context = this,
+        .connsess = c,
+    };
+
+    // prase channel
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+        LOG_ERROR("get streaminfo error");
+        return -1;
+    }
+
+    // create sess
+    CFlvSess *sess = new CHttpFlvSess();
+    if (!sess) {
+        LOG_ERROR("new http-flv session error");
+        return -1;
+    }
+
+    if (!sess->Open(info)) {
+        LOG_ERROR("http-flv Open error");
+        goto err;
+    }
+
+    if (!sess->StartSendProcess()) {
+        LOG_ERROR("StartSend error");
+        goto err;
+    }
+    snprintf(httphdr, sizeof(httphdr) - 1,
+             "HTTP/1.1 200 OK\r\n"
+             "Connection: Close\r\n"
+             "Content-Type: video/x-flv\r\n"
+             "Server: %s\r\n"
+             "Transfer-Encoding: chunked\r\n\r\n",
+             ZC_HTTP_SERVERNAME);
+
+    mg_printf(c, "%s", httphdr);
+
+#if 0
+    packFlvFileHdr(&flvhdr, true, false);
+    snprintf(buf, sizeof(buf) - 1, "9\r\n");
+    pos += strlen(buf);
+    memcpy(pos, &flvhdr, 9);
+    pos += 9;
+    *pos++ = '\r';
+    *pos++ = '\n';
+    *pos++ = '4';
+    *pos++ = '\r';
+    *pos++ = '\n';
+    memcpy(pos, ((char *)&flvhdr) + 9, 4);
+    pos += 4;
+    *pos++ = '\r';
+    *pos++ = '\n';
+    mg_send(c, buf, pos - buf);
+// #else
+    snprintf(buf, sizeof(buf) - 1, "%x\r\n", sizeof(flv_tag_hdr_t));
+    mg_send(c, buf, strlen(buf));
+    mg_send(c, &flvhdr, sizeof(flv_tag_hdr_t));
+    mg_send(c, "\r\n", 2);
+#endif
+
+    LOG_TRACE("send hdr:%s, body:[%s]", httphdr, buf);
+    // add to session
+    {
+        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        m_flvsesslist.push_back(sess);
+    }
+
+    LOG_WARN("httpFlvProcess ok");
+    return 0;
+err:
+    delete sess;
+    LOG_ERROR("handle http-flv error");
+    return -1;
 }
 
 void CWebServer::EventHandlerCb(struct mg_connection *c, int ev, void *ev_data) {
@@ -121,6 +363,10 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
                                      mg_print_ip, &t->loc, mg_print_ip, &t->rem);
             }
             mg_http_printf_chunk(c, "");  // Don't forget the last empty chunk
+        } else if (mg_match(hm->uri, mg_str("/live/*"), NULL)) {
+            if (httpFlvProcess(c, ev_data) < 0) {
+                mg_http_reply(c, 404, "", "Not found\n");
+            }
         } else if (mg_match(hm->uri, mg_str("/api/f2/*"), NULL)) {
             mg_http_reply(c, 200, "", "{\"result\": \"%.*s\"}\n", (int)hm->uri.len, hm->uri.buf);
         } else {
@@ -174,6 +420,8 @@ bool CWebServer::UnInit() {
         return true;
     }
 
+    // clear flv session
+    unInitFlvSess();
     Stop();
 
     m_init = false;

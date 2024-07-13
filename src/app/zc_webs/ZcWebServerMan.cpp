@@ -66,10 +66,15 @@ bool CWebServerMan::Start() {
         return false;
     }
 
+    websvr_cb_info_t cbinfo = {
+        .getStreamInfoCb = getStreamInfoCb,
+        .MgrContext = this,
+    };
+
     for (unsigned int i = 0; i < _SIZEOFTAB(m_webstab); i++) {
         if (m_supbitmask & (0x1 << i)) {
             ZC_SAFE_DELETE(m_webstab[i]);
-            m_webstab[i] = CWebServerFac::CreateWebServer((zc_webs_type_e)i);
+            m_webstab[i] = CWebServerFac::CreateWebServer((zc_webs_type_e)i, cbinfo);
             m_webstab[i]->Init();
             m_webstab[i]->Start();
         }
@@ -98,5 +103,16 @@ bool CWebServerMan::Stop() {
 
     m_running = false;
     return true;
+}
+
+int CWebServerMan::_getStreamInfoCb(unsigned int type, unsigned int chn, zc_stream_info_t *info) {
+    LOG_TRACE("get info type:%u, chn:%d", type, chn);
+    // TODO(zhoucc): cb
+    return sendSMgrGetInfo(type, chn, info);
+}
+
+int CWebServerMan::getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info) {
+    CWebServerMan *man = reinterpret_cast<CWebServerMan *>(ptr);
+    return man->_getStreamInfoCb(type, chn, info);
 }
 }  // namespace zc

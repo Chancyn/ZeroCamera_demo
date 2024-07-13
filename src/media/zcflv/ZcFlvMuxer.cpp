@@ -268,7 +268,7 @@ int CFlvMuxer::process() {
         if (_packetProcess() < 0) {
             break;
         }
-        usleep(1000);
+        usleep(1000 * 1000);
     }
     LOG_WARN("process exit");
     return -1;

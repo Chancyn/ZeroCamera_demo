@@ -9,7 +9,7 @@
 
 #define ZC_WEBS_BITMASK_ALL (0xFFFF)
 // http
-// #define ZC_WEBS_BITMASK_DEF (0x1 << zc_webs_type_http)
+ #define ZC_WEBS_BITMASK_DEF (0x1 << zc_webs_type_http)
 // http+https
 // #define ZC_WEBS_BITMASK_DEF ((0x1 << zc_webs_type_https) | 0x1)
 // http+ws
@@ -17,7 +17,7 @@
 // https+ws
 // #define ZC_WEBS_BITMASK_DEF ((0x1 << zc_webs_type_wss) | (0x1 << zc_webs_type_https))
 
-#define ZC_WEBS_BITMASK_DEF  ZC_WEBS_BITMASK_ALL
+// #define ZC_WEBS_BITMASK_DEF  ZC_WEBS_BITMASK_ALL
 
 namespace zc {
 class CWebServerMan : public CModCli {
@@ -32,8 +32,8 @@ class CWebServerMan : public CModCli {
     bool Stop();
 
  private:
-   //  static int getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info);
-   //  int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_stream_info_t *info);
+    static int getStreamInfoCb(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info);
+    int _getStreamInfoCb(unsigned int type, unsigned int chn, zc_stream_info_t *info);
 
  private:
     bool m_init;
