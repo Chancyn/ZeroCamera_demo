@@ -61,6 +61,10 @@ class CWebServer : protected Thread, public NonCopyable {
     static int sendFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
     int _sendFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
     int httpFlvProcess(struct mg_connection *c, void *ev_data);
+    static int sendFlvHdrCb(void *ptr, void *sess, bool hasvideo, bool hasaudio);
+    int _sendFlvHdrCb(void *sess, bool hasvideo, bool hasaudio);
+    int _sendFlvHdr(void *sess, bool hasvideo, bool hasaudio);
+
  private:
     int unInitFlvSess();
     static void InitMgLog();

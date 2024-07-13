@@ -1,6 +1,7 @@
 // Copyright(c) 2024-present, zhoucc zhoucc2008@outlook.com contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
+#include <cstdint>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -98,16 +99,15 @@ typedef struct _flv_tag_hdr {
 } flv_tag_hdr_t;
 
 typedef struct _flv_file_hdr {
-    uint8_t signature[3];          // 'F', 'L', 'V'
-    uint8_t version;               // 通常是1
-    uint8_t flags;                 // 标志位，用于指示是否包含音频和视频等
-    uint8_t offset[4];             // 从文件开始到第一个FLV标签的偏移量（字节）
-    uint8_t previous_tag_size[4];  // 前一个FLV标签的大小（用于在文件中定位）
+    uint8_t signature[3];  // 'F', 'L', 'V'
+    uint8_t version;       // 通常是1
+    uint8_t flags;         // 标志位，用于指示是否包含音频和视频等
+    uint8_t offset[4];     // 从文件开始到第一个FLV标签的偏移量（字节）
 } flv_file_hdr_t;
 #pragma pack(pop)
 
 #define FLV_TAG_LEN (sizeof(flv_tag_hdr_t))       // 11
-#define FLV_HDR_TAG_LEN (sizeof(flv_file_hdr_t))  // 13
+#define FLV_HDR_TAG_LEN (sizeof(flv_file_hdr_t))  // 9
 
 static inline void be_write_uint32(uint8_t *ptr, uint32_t val) {
     ptr[0] = (uint8_t)((val >> 24) & 0xFF);
@@ -164,8 +164,7 @@ static inline void packFlvFileHdr(flv_file_hdr_t *hdr, bool hasvideo, bool hasau
         hdr->flags |= 0x01;
     if (hasaudio)
         hdr->flags |= 0x04;
-    be_write_uint32(hdr->offset, 9);             // Data offset
-    be_write_uint32(hdr->previous_tag_size, 0);  // PreviousTagSize0(Always 0)
+    be_write_uint32(hdr->offset, 9);  // Data offset
 #else
     uint8_t *buf = reinterpret_cast<uint8_t *>(hdr);
     buf[0] = 'F';  // FLV signature
@@ -203,13 +202,27 @@ int CWebServer::_sendFlvDataCb(void *sess, int type, const void *data, size_t by
     mg_send(con, "\r\n", 2);
     return ret;
 }
-#if 1
-static int _sendFlvHdrCb(void *ptr, void *sess, bool hasvideo, bool hasaudio) {
+
+int CWebServer::_sendFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
     int ret = 0;
     flv_file_hdr_t flvhdr;
     packFlvFileHdr(&flvhdr, hasvideo, hasaudio);
     char buf[32] = {0};
+
+#if 1
+    // file hdr
+    snprintf(buf, sizeof(buf) - 1, "%x\r\n", (uint32_t)sizeof(flv_file_hdr_t));
+    mg_send(con, buf, strlen(buf));
+    mg_send(con, &flvhdr, sizeof(flv_file_hdr_t));
+    mg_send(con, "\r\n", 2);
+    // previous_tag_len
+    snprintf(buf, sizeof(buf) - 1, "%x\r\n", 4);
+    mg_send(con, buf, strlen(buf));
+    uint32_t previous_tag_len = 0;
+    mg_send(con, &previous_tag_len, 4);
+    mg_send(con, "\r\n", 2);
+#else
     char *pos = buf;
     snprintf(buf, sizeof(buf) - 1, "9\r\n");
     pos += strlen(buf);
@@ -225,9 +238,18 @@ static int _sendFlvHdrCb(void *ptr, void *sess, bool hasvideo, bool hasaudio) {
     *pos++ = '\r';
     *pos++ = '\n';
     mg_send(con, buf, pos - buf);
+#endif
     return ret;
 }
-#endif
+
+int CWebServer::_sendFlvHdrCb(void *sess, bool hasvideo, bool hasaudio) {
+    return _sendFlvHdr(sess, hasvideo, hasaudio);
+}
+
+int CWebServer::sendFlvHdrCb(void *ptr, void *sess, bool hasvideo, bool hasaudio) {
+    CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
+    return webs->_sendFlvHdrCb(sess, hasvideo, hasaudio);
+}
 
 int CWebServer::unInitFlvSess() {
     std::lock_guard<std::mutex> locker(m_flvsessmutex);
@@ -245,12 +267,9 @@ int CWebServer::httpFlvProcess(struct mg_connection *c, void *ev_data) {
     int chn = 1;
     int type = 0;
     char httphdr[256];
-    char buf[32];
-    char *pos = buf;
-    flv_file_hdr_t flvhdr;
     zc_flvsess_info_t info = {
         .sendflvdatacb = sendFlvDataCb,
-        .sendflvhdrcb = _sendFlvHdrCb,
+        .sendflvhdrcb = sendFlvHdrCb,
         .context = this,
         .connsess = c,
     };
@@ -288,29 +307,15 @@ int CWebServer::httpFlvProcess(struct mg_connection *c, void *ev_data) {
     mg_printf(c, "%s", httphdr);
 
 #if 0
-    packFlvFileHdr(&flvhdr, true, false);
-    snprintf(buf, sizeof(buf) - 1, "9\r\n");
-    pos += strlen(buf);
-    memcpy(pos, &flvhdr, 9);
-    pos += 9;
-    *pos++ = '\r';
-    *pos++ = '\n';
-    *pos++ = '4';
-    *pos++ = '\r';
-    *pos++ = '\n';
-    memcpy(pos, ((char *)&flvhdr) + 9, 4);
-    pos += 4;
-    *pos++ = '\r';
-    *pos++ = '\n';
-    mg_send(c, buf, pos - buf);
-// #else
-    snprintf(buf, sizeof(buf) - 1, "%x\r\n", sizeof(flv_tag_hdr_t));
-    mg_send(c, buf, strlen(buf));
-    mg_send(c, &flvhdr, sizeof(flv_tag_hdr_t));
-    mg_send(c, "\r\n", 2);
+    char buf[32];
+    char *pos = buf;
+    flv_file_hdr_t flvhdr;
+
+    // send hdr move to cb
+    _sendFlvHdr(c, true, true);
 #endif
 
-    LOG_TRACE("send hdr:%s, body:[%s]", httphdr, buf);
+    LOG_TRACE("send hdr:%s", httphdr);
     // add to session
     {
         std::lock_guard<std::mutex> locker(m_flvsessmutex);
