@@ -44,4 +44,5 @@ http://192.168.1.166:8000/live/livestream.flv
 ##
 TODO:
 1.websocket-flv
-
+2.http-flv，出错关闭逻辑，清除http-live-session;
+3.http-flv 浏览器播放几十秒之后停止
