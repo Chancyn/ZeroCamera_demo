@@ -69,6 +69,18 @@ static zc_webs_info_t g_websinfodeftab[zc_webs_type_butt] = {
     {0, ZC_WEBS_WSS_PORT_DEF, ZC_WEBS_WORKPATH_DEF},
 };
 
+typedef enum {
+    zc_wakeup_msg_httpflv = 1,  // http-flv
+
+    zc_wakeup_msg_butt,  // max
+} zc_wakeup_msg_type;
+
+typedef struct _zc_wakeup_msg {
+    uint32_t msgtype;  // zc_wakeup_msg_type http-flv
+    uint32_t len;      //
+    uint8_t *data;
+} zc_wakeup_msg_t;
+
 bool CWebServer::m_mgloginit = false;
 
 // modsyscli
@@ -183,22 +195,28 @@ int CWebServer::sendFlvDataCb(void *ptr, void *sess, int type, const void *data,
     return webs->_sendFlvDataCb(sess, type, data, bytes, timestamp);
 }
 
+// TODO(zhoucc): maybe memory leak可能存在内存泄漏
 int CWebServer::_sendFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
     int ret = 0;
-    flv_tag_hdr_t tag;
-    char buf[16];
-    uint32_t previous_tag_len = sizeof(flv_tag_hdr_t) + bytes;
     // taghdr(11byte) + datalen + previous_tag_len(4byte)
-    snprintf(buf, sizeof(buf) - 1, "%x\r\n", (uint32_t)(previous_tag_len + 4));
-    mg_send(con, buf, strlen(buf));
-    packFlvTagHdr(&tag, type, bytes, timestamp);
-    mg_send(con, &tag, sizeof(flv_tag_hdr_t));
-    mg_send(con, data, bytes);
+    uint32_t previous_tag_len = sizeof(flv_tag_hdr_t) + bytes;
+    uint32_t framelen = previous_tag_len + 4;
+    uint8_t *buf = new uint8_t[framelen];  // Big structure, allocate it
+    flv_tag_hdr_t *tag = reinterpret_cast<flv_tag_hdr_t *>(buf);
+    // Sender side:
+    zc_wakeup_msg_t framemsg = {
+        .msgtype = zc_wakeup_msg_httpflv,
+        .len = framelen,
+        .data = buf,
+    };
+    // LOG_WARN("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, framelen, buf, con, con->id);
+    packFlvTagHdr(tag, type, bytes, timestamp);
+    memcpy(buf + sizeof(flv_tag_hdr_t), data, bytes);
     // previous_tag_len = taghdr(11byte) + datalen
     be_write_uint32(reinterpret_cast<uint8_t *>(&previous_tag_len), previous_tag_len);
-    mg_send(con, &previous_tag_len, 4);
-    mg_send(con, "\r\n", 2);
+    memcpy(buf + sizeof(flv_tag_hdr_t) + bytes, &previous_tag_len, 4);
+    mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure
     return ret;
 }
 
@@ -209,7 +227,6 @@ int CWebServer::_sendFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
     packFlvFileHdr(&flvhdr, hasvideo, hasaudio);
     char buf[32] = {0};
 
-#if 1
     // file hdr
     snprintf(buf, sizeof(buf) - 1, "%x\r\n", (uint32_t)sizeof(flv_file_hdr_t));
     mg_send(con, buf, strlen(buf));
@@ -221,28 +238,13 @@ int CWebServer::_sendFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
     uint32_t previous_tag_len = 0;
     mg_send(con, &previous_tag_len, 4);
     mg_send(con, "\r\n", 2);
-#else
-    char *pos = buf;
-    snprintf(buf, sizeof(buf) - 1, "9\r\n");
-    pos += strlen(buf);
-    memcpy(pos, &flvhdr, 9);
-    pos += 9;
-    *pos++ = '\r';
-    *pos++ = '\n';
-    *pos++ = '4';
-    *pos++ = '\r';
-    *pos++ = '\n';
-    memcpy(pos, ((char *)&flvhdr) + 9, 4);
-    pos += 4;
-    *pos++ = '\r';
-    *pos++ = '\n';
-    mg_send(con, buf, pos - buf);
-#endif
+
     return ret;
 }
 
 int CWebServer::_sendFlvHdrCb(void *sess, bool hasvideo, bool hasaudio) {
-    return _sendFlvHdr(sess, hasvideo, hasaudio);
+    // return _sendFlvHdr(sess, hasvideo, hasaudio);
+    return 0;
 }
 
 int CWebServer::sendFlvHdrCb(void *ptr, void *sess, bool hasvideo, bool hasaudio) {
@@ -296,13 +298,13 @@ int CWebServer::handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data)
     }
 
     // create sess
-    CFlvSess *sess = new CHttpFlvSess();
+    CFlvSess *sess = new CHttpFlvSess(info);
     if (!sess) {
         LOG_ERROR("new http-flv session error");
         return -1;
     }
 
-    if (!sess->Open(info)) {
+    if (!sess->Open()) {
         LOG_ERROR("http-flv Open error");
         goto err;
     }
@@ -320,7 +322,7 @@ int CWebServer::handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data)
              ZC_HTTP_SERVERNAME);
 
     mg_printf(c, "%s", httphdr);
-
+    _sendFlvHdr(c, true, false);
     // add to session
     {
         std::lock_guard<std::mutex> locker(m_flvsessmutex);
@@ -363,6 +365,26 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
     case MG_EV_CLOSE: {
         LOG_WARN("MG_EV_CLOSE session c:%p ", c);
         handleCloseHttpFlvSession(c, ev_data);
+        break;
+    }
+    case MG_EV_WRITE: {
+        // LOG_WARN("MG_EV_WRITE session c:%p ", c);
+        break;
+    }
+    case MG_EV_WAKEUP: {
+        struct mg_str *data = (struct mg_str *)ev_data;
+        zc_wakeup_msg_t *framemsg = (zc_wakeup_msg_t *)data->buf;
+        // LOG_WARN("MG_EV_WAKEUP len:%u, type:%u, ptr:%p, session c:%p, id:%lu", framemsg->len, framemsg->msgtype,
+        // framemsg->data,
+        //          c, c->id);
+        if (framemsg->msgtype == zc_wakeup_msg_httpflv && framemsg->len > 0) {
+            mg_printf(c, "%x\r\n", framemsg->len);
+            mg_send(c, framemsg->data, framemsg->len);
+            mg_send(c, "\r\n", 2);
+        }
+
+        if (framemsg->data)
+            delete[] framemsg->data;
         break;
     }
     case MG_EV_HTTP_MSG: {
@@ -411,7 +433,8 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
 void CWebServer::InitMgLog() {
     if (!m_mgloginit) {
         m_mgloginit = true;
-        mg_log_set(MG_LL_DEBUG);  // Set log level
+        // mg_log_set(MG_LL_DEBUG);  // Set log level
+        mg_log_set(MG_LL_INFO);  // Set log level
     }
 
     return;
@@ -473,7 +496,7 @@ bool CWebServer::Start() {
         LOG_ERROR("mg http listen error");
         goto _err;
     }
-
+    mg_wakeup_init(mgr);  // Initialise wakeup socket pair
     m_mgrhandle = mgr;
     Thread::Start();
     LOG_TRACE("mg http listen start ok %s", m_addrs);

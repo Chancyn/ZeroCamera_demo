@@ -199,8 +199,8 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
             }
         }
 
-#if ZC_DEBUG
-        // debug info
+#if 0  // ZC_DEBUG
+       // debug info
         if (pframe->keyflag) {
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);

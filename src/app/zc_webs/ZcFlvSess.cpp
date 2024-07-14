@@ -17,7 +17,9 @@
 
 namespace zc {
 
-CFlvSess::CFlvSess(zc_flvsess_type_e type) : m_type(type), m_status(zc_flvsess_uninit_e), m_bsendhdr(false) {
+CFlvSess::CFlvSess(zc_flvsess_type_e type, const zc_flvsess_info_t &info)
+    : m_type(type), m_status(zc_flvsess_uninit_e), m_bsendhdr(false) {
+    memcpy(&m_info, &info, sizeof(zc_flvsess_info_t));
     return;
 }
 
@@ -25,19 +27,18 @@ CFlvSess::~CFlvSess() {
     return;
 }
 
-bool CFlvSess::Open(const zc_flvsess_info_t &info) {
+bool CFlvSess::Open() {
     if (m_status > zc_flvsess_uninit_e) {
         return false;
     }
 
     zc_flvmuxer_info_t muxerinfo = {
-        .streaminfo = info.streaminfo,
+        .streaminfo = m_info.streaminfo,
         .onflvpacketcb = OnFlvPacketCb,
         .Context = this,
     };
 
     // TODO(zhoucc): check info
-    memcpy(&m_info, &info, sizeof(zc_flvsess_info_t));
     if (!m_flvmuxer.Create(muxerinfo)) {
         LOG_ERROR("flvmuxer create error");
         m_status = zc_flvsess_err_e;

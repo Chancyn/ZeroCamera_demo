@@ -45,9 +45,9 @@ typedef struct _zc_flvsess_info {
 
 class CFlvSess : public NonCopyable {
  public:
-    explicit CFlvSess(zc_flvsess_type_e type);
+    explicit CFlvSess(zc_flvsess_type_e type, const zc_flvsess_info_t &info);
     virtual ~CFlvSess();
-    bool Open(const zc_flvsess_info_t &info);
+    bool Open();
     bool Close();
     bool StartSendProcess();
     void *GetConnSess() { return m_info.connsess; }
@@ -67,13 +67,13 @@ class CFlvSess : public NonCopyable {
 #if ZC_SUPPORT_HTTP_FLV
 class CHttpFlvSess : public CFlvSess {
  public:
-    CHttpFlvSess() : CFlvSess(zc_flvsess_type_http) {}
+    explicit CHttpFlvSess(const zc_flvsess_info_t &info) : CFlvSess(zc_flvsess_type_http, info) {}
     virtual ~CHttpFlvSess() {}
 };
 
 class CWebSocketFlvSess : public CFlvSess {
  public:
-    CWebSocketFlvSess() : CFlvSess(zc_flvsess_type_ws) {}
+    explicit CWebSocketFlvSess(const zc_flvsess_info_t &info) : CFlvSess(zc_flvsess_type_ws, info) {}
     virtual ~CWebSocketFlvSess() {}
 };
 #endif
