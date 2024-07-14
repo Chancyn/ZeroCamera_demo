@@ -18,7 +18,7 @@
 namespace zc {
 
 CFlvSess::CFlvSess(zc_flvsess_type_e type, const zc_flvsess_info_t &info)
-    : m_type(type), m_status(zc_flvsess_uninit_e), m_bsendhdr(false) {
+    : m_type(type), m_status(zc_flvsess_uninit_e) {
     memcpy(&m_info, &info, sizeof(zc_flvsess_info_t));
     return;
 }
@@ -88,11 +88,6 @@ int CFlvSess::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t 
     }
 
     int ret = 0;
-    // send hdr
-    if (!m_bsendhdr) {
-        ret = m_info.sendflvhdrcb(m_info.context, m_info.connsess, true, false);
-        m_bsendhdr = true;
-    }
 #if 1
     ret = m_info.sendflvdatacb(m_info.context, m_info.connsess, type, data, bytes, timestamp);
 #else

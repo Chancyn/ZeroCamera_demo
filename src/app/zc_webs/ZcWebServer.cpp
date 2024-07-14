@@ -242,16 +242,6 @@ int CWebServer::_sendFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
     return ret;
 }
 
-int CWebServer::_sendFlvHdrCb(void *sess, bool hasvideo, bool hasaudio) {
-    // return _sendFlvHdr(sess, hasvideo, hasaudio);
-    return 0;
-}
-
-int CWebServer::sendFlvHdrCb(void *ptr, void *sess, bool hasvideo, bool hasaudio) {
-    CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
-    return webs->_sendFlvHdrCb(sess, hasvideo, hasaudio);
-}
-
 int CWebServer::unInitFlvSess() {
     std::lock_guard<std::mutex> locker(m_flvsessmutex);
     auto iter = m_flvsesslist.begin();
@@ -286,7 +276,6 @@ int CWebServer::handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data)
     char httphdr[256];
     zc_flvsess_info_t info = {
         .sendflvdatacb = sendFlvDataCb,
-        .sendflvhdrcb = sendFlvHdrCb,
         .context = this,
         .connsess = c,
     };

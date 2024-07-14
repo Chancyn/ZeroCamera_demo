@@ -33,12 +33,10 @@ typedef enum {
 } zc_flvsess_status_e;
 
 typedef int (*SendFlvDataCb)(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
-typedef int (*SendFlvHdrCb)(void *ptr, void *sess, bool hasvideo, bool haseaudio);
 
 typedef struct _zc_flvsess_info {
     zc_stream_info_t streaminfo;
     SendFlvDataCb sendflvdatacb;
-    SendFlvHdrCb sendflvhdrcb;
     void *context;   // context
     void *connsess;  // http session
 } zc_flvsess_info_t;
