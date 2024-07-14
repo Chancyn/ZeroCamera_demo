@@ -1,0 +1,18 @@
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:260
+#EXT-X-TARGETDURATION:12
+#EXTINF:10.006, no desc
+livestream-260.ts
+#EXTINF:10.993, no desc
+livestream-261.ts
+#EXTINF:11.002, no desc
+livestream-262.ts
+#EXTINF:10.243, no desc
+livestream-263.ts
+#EXTINF:11.001, no desc
+livestream-264.ts
+#EXTINF:10.795, no desc
+livestream-265.ts
+#EXTINF:3.871, no desc
+livestream-266.ts

@@ -1,0 +1,5 @@
+{
+	"type": "flv",
+	"isLive": true,
+	"url": "http://192.168.1.166:8000/live/livestream.flv"
+}

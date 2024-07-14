@@ -1,0 +1,25 @@
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:10
+#EXT-X-TARGETDURATION:11
+#EXTINF:10.038, no desc
+livestream2-10.ts
+#EXTINF:10.999, no desc
+livestream2-11.ts
+#EXTINF:10.001, no desc
+livestream2-12.ts
+#EXTINF:10.002, no desc
+livestream2-13.ts
+#EXTINF:10.993, no desc
+livestream2-14.ts
+#EXTINF:5.759, no desc
+livestream2-15.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:1.602, no desc
+livestream2-16.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:2.486, no desc
+livestream2-17.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:0.954, no desc
+livestream2-18.ts

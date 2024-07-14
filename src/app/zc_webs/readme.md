@@ -41,8 +41,40 @@ http://192.168.1.166:8000/live/livestream.flv
 
 ```
 
+## flv.js测试
+a. 测试方法ws-flv
+使用flv.js播放测试,ws-flv
+访问测试地址 http://192.168.1.166:8000/flv.js/demo/index.html
+使用 MeidaDataSource配置ws-flv.json文件
+http://192.168.1.166:8000/flv/ws-flv.json
+```
+{
+	"type": "flv",
+	"isLive": true,
+	"url": "ws://192.168.1.166:8000/wslive/live.flv"
+}
+```
+
+b. 测试方法http-flv
+使用flv.js播放测试,http-flv
+访问测试地址 http://192.168.1.166:8000/flv.js/demo/index.html
+使用 MeidaDataSource配置http-flv.json文件
+http://192.168.1.166:8000/flv/http-flv.json
+```
+{
+	"type": "flv",
+	"isLive": true,
+	"url": "http://192.168.1.166:8000/live/live.flv"
+}
+```
+
+
+
+## 完成
+2.http-flv，出错关闭逻辑，清除http-live-session;
+3.http-flv 浏览器播放几十秒之后停止(问题原因发送命令)
+
 ##
 TODO:
 1.websocket-flv
-2.http-flv，出错关闭逻辑，清除http-live-session;
-3.http-flv 浏览器播放几十秒之后停止
+

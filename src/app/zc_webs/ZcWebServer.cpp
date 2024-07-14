@@ -19,6 +19,9 @@
 #include "ZcType.hpp"
 #include "ZcWebServer.hpp"
 
+// #define ZC_HTTP_SERVERNAME "ZeroCamera"  // ser name
+#define ZC_HTTP_SERVERNAME "ZeroCamrea(zhoucc)"     // "SRS/6.0.134(Hang)"  // ser name
+
 namespace zc {
 const char *g_addrprefix[zc_webs_type_butt] = {
     "http://",
@@ -71,6 +74,7 @@ static zc_webs_info_t g_websinfodeftab[zc_webs_type_butt] = {
 
 typedef enum {
     zc_wakeup_msg_httpflv = 1,  // http-flv
+    zc_wakeup_msg_wsflv = 2,  // ws-flv
 
     zc_wakeup_msg_butt,  // max
 } zc_wakeup_msg_type;
@@ -328,6 +332,115 @@ err:
     return -1;
 }
 
+int CWebServer::sendWsFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+    CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
+    return webs->_sendWsFlvDataCb(sess, type, data, bytes, timestamp);
+}
+
+// TODO(zhoucc): maybe memory leak可能存在内存泄漏
+int CWebServer::_sendWsFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+    struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
+    int ret = 0;
+    // taghdr(11byte) + datalen + previous_tag_len(4byte)
+    uint32_t previous_tag_len = sizeof(flv_tag_hdr_t) + bytes;
+    uint32_t framelen = previous_tag_len + 4;
+    uint8_t *buf = new uint8_t[framelen];  // Big structure, allocate it
+    flv_tag_hdr_t *tag = reinterpret_cast<flv_tag_hdr_t *>(buf);
+    // Sender side:
+    zc_wakeup_msg_t framemsg = {
+        .msgtype = zc_wakeup_msg_wsflv,
+        .len = framelen,
+        .data = buf,
+    };
+    // LOG_WARN("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, framelen, buf, con, con->id);
+    packFlvTagHdr(tag, type, bytes, timestamp);
+    memcpy(buf + sizeof(flv_tag_hdr_t), data, bytes);
+    // previous_tag_len = taghdr(11byte) + datalen
+    be_write_uint32(reinterpret_cast<uint8_t *>(&previous_tag_len), previous_tag_len);
+    memcpy(buf + sizeof(flv_tag_hdr_t) + bytes, &previous_tag_len, 4);
+    mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure
+    return ret;
+}
+
+int CWebServer::_sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
+    struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
+    int ret = 0;
+    flv_file_hdr_t flvhdr;
+    packFlvFileHdr(&flvhdr, hasvideo, hasaudio);
+     LOG_TRACE("_sendWsFlvHdr into");
+    // file hdr
+    mg_ws_send(con, &flvhdr, sizeof(flv_file_hdr_t), WEBSOCKET_OP_BINARY);
+    // previous_tag_len
+    uint32_t previous_tag_len = 0;
+    mg_ws_send(con, &previous_tag_len, 4, WEBSOCKET_OP_BINARY);
+
+    return ret;
+}
+
+int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data) {
+    LOG_TRACE("ws-flv into");
+    int chn = 1;
+    int type = 0;
+    char httphdr[256];
+    zc_flvsess_info_t info = {
+        .sendflvdatacb = sendWsFlvDataCb,
+        .context = this,
+        .connsess = c,
+    };
+
+    // prase channel
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+        LOG_ERROR("get streaminfo error");
+        return -1;
+    }
+#if 1
+    // create sess
+    CFlvSess *sess = new CWebSocketFlvSess(info);
+    if (!sess) {
+        LOG_ERROR("new ws-flv session error");
+        return -1;
+    }
+
+    if (!sess->Open()) {
+        LOG_ERROR("ws-flv Open error");
+        goto err;
+    }
+
+    if (!sess->StartSendProcess()) {
+        LOG_ERROR("StartSend error");
+        goto err;
+    }
+
+    #if 0
+    snprintf(httphdr, sizeof(httphdr) - 1,
+             "HTTP/1.1 200 OK\r\n"
+             "Connection: Close\r\n"
+             "Content-Type: video/x-flv\r\n"
+             "Server: %s\r\n"
+             "Transfer-Encoding: chunked\r\n\r\n",
+             ZC_HTTP_SERVERNAME);
+
+    mg_printf(c, "%s", httphdr);
+    #endif
+
+    _sendWsFlvHdr(c, true, false);
+
+    // add to session
+    {
+        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        m_flvsesslist.push_back(sess);
+    }
+#endif
+    // c->user_data = sess;
+
+    LOG_WARN("handleOpenWsFlvSession ok");
+    return 0;
+err:
+    delete sess;
+    LOG_ERROR("handle ws-flv error");
+    return -1;
+}
+
 void CWebServer::EventHandlerCb(struct mg_connection *c, int ev, void *ev_data) {
     CWebServer *webs = reinterpret_cast<CWebServer *>(c->fn_data);
     return webs->EventHandler(c, ev, ev_data);
@@ -366,12 +479,15 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
         // LOG_WARN("MG_EV_WAKEUP len:%u, type:%u, ptr:%p, session c:%p, id:%lu", framemsg->len, framemsg->msgtype,
         // framemsg->data,
         //          c, c->id);
-        if (framemsg->msgtype == zc_wakeup_msg_httpflv && framemsg->len > 0) {
-            mg_printf(c, "%x\r\n", framemsg->len);
-            mg_send(c, framemsg->data, framemsg->len);
-            mg_send(c, "\r\n", 2);
+        if (framemsg->len > 0) {
+            if (framemsg->msgtype == zc_wakeup_msg_httpflv) {
+                mg_printf(c, "%x\r\n", framemsg->len);
+                mg_send(c, framemsg->data, framemsg->len);
+                mg_send(c, "\r\n", 2);
+            } else if (framemsg->msgtype == zc_wakeup_msg_wsflv) {
+                mg_ws_send(c, framemsg->data, framemsg->len, WEBSOCKET_OP_BINARY);
+            }
         }
-
         if (framemsg->data)
             delete[] framemsg->data;
         break;
@@ -398,6 +514,8 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
             if (handleOpenHttpFlvSession(c, ev_data) < 0) {
                 mg_http_reply(c, 404, "", "Not found\n");
             }
+        } else if (mg_match(hm->uri, mg_str("/wslive/*"), NULL)) {
+            mg_ws_upgrade(c, hm, NULL);
         } else if (mg_match(hm->uri, mg_str("/api/f2/*"), NULL)) {
             mg_http_reply(c, 200, "", "{\"result\": \"%.*s\"}\n", (int)hm->uri.len, hm->uri.buf);
         } else {
@@ -406,10 +524,23 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
         }
         break;
     }
+    case MG_EV_WS_OPEN: {
+         LOG_WARN("MG_EV_WS_OPEN session c:%p ", c);
+         if (handleOpenWsFlvSession(c, ev_data) < 0) {
+             mg_http_reply(c, 404, "", "Not found\n");
+         }
+         break;
+    }
+    case MG_EV_WS_CTL: {
+         struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
+         LOG_WARN("MG_EV_WS_CTL session c:%p len:%u, flag:%u", c, wm->data.len, wm->flags);
+         break;
+    }
     case MG_EV_WS_MSG: {
         // Got websocket frame. Received data is wm->data. Echo it back!
         struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
-        mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
+        LOG_WARN("MG_EV_WS_CTL session c:%p len:%u, flag:%u", c, wm->data.len, wm->flags);
+        // mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
         break;
     }
     default:

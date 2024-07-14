@@ -16,11 +16,9 @@
 #define ZC_WEBS_WORKPATH_DEF "./"    // work path
 #define ZC_WEBS_HTTP_PORT_DEF 8000   // 80
 #define ZC_WEBS_HTTPS_PORT_DEF 8443  // http
-#define ZC_WEBS_WS_PORT_DEF 8080     // ws
+#define ZC_WEBS_WS_PORT_DEF 8088     // ws
 #define ZC_WEBS_WSS_PORT_DEF 8444    // wss
 
-// #define ZC_HTTP_SERVERNAME "ZeroCamera"  // ser name
-#define ZC_HTTP_SERVERNAME "SRS/6.0.134(Hang)"  // ser name
 // type
 typedef enum {
     zc_webs_type_http = 0,  // bit0 http
@@ -69,6 +67,10 @@ class CWebServer : protected Thread, public NonCopyable {
     int handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data);
     int _sendFlvHdr(void *sess, bool hasvideo, bool hasaudio);
     int handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data);
+    static int sendWsFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
+    int _sendWsFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
+    int _sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio);
+    int handleOpenWsFlvSession(struct mg_connection *c, void *ev_data);
 
  private:
     static bool m_mgloginit;
