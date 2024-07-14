@@ -59,7 +59,6 @@ class CFlvSess : public NonCopyable {
     zc_flvsess_status_e m_status;  // zc_flvsess_status_e
     CFlvMuxer m_flvmuxer;
     zc_flvsess_info_t m_info;
-    bool m_bsendhdr;  // first
 };
 
 #if ZC_SUPPORT_HTTP_FLV
