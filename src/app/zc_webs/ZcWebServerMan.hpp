@@ -9,11 +9,11 @@
 
 #define ZC_WEBS_BITMASK_ALL (0xFFFF)
 // http
- #define ZC_WEBS_BITMASK_DEF (0x1 << zc_webs_type_http)
+// #define ZC_WEBS_BITMASK_DEF (0x1 << zc_webs_type_http)
 // http+https
 // #define ZC_WEBS_BITMASK_DEF ((0x1 << zc_webs_type_https) | 0x1)
 // http+ws
-// #define ZC_WEBS_BITMASK_DEF ((0x1 << zc_webs_type_ws) | 0x1)
+#define ZC_WEBS_BITMASK_DEF ((0x1 << zc_webs_type_ws) | 0x1)
 // https+ws
 // #define ZC_WEBS_BITMASK_DEF ((0x1 << zc_webs_type_wss) | (0x1 << zc_webs_type_https))
 
