@@ -92,7 +92,9 @@ int CFlvSess::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t 
         ret = m_info.sendflvhdrcb(m_info.context, m_info.connsess, true, false);
         m_bsendhdr = true;
     }
-
+#if 1
+    ret = m_info.sendflvdatacb(m_info.context, m_info.connsess, type, data, bytes, timestamp);
+#else
     if (flv_tag_audio == type) {
         // ret = rtmp_client_push_audio(m_client.rtmp, data, bytes, timestamp);
         ret = m_info.sendflvdatacb(m_info.context, m_info.connsess, type, data, bytes, timestamp);
@@ -100,7 +102,7 @@ int CFlvSess::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t 
 #if ZC_DEBUG
         int keyframe = 1 == (((*(unsigned char *)data) & 0xF0) >> 4);
         if (keyframe)
-            LOG_TRACE("type:%02d [A:%d, V:%d, S:%d] key:%d\n", type, flv_tag_audio, flv_tag_video, flv_tag_script,
+            LOG_TRACE("type:%02d [A:%d, V:%d, S:%d] key:%d", type, flv_tag_audio, flv_tag_video, flv_tag_script,
                       (type == flv_tag_video) ? keyframe : 0);
 #endif
         // ret = rtmp_client_push_video(m_client.rtmp, data, bytes, timestamp);
@@ -112,7 +114,7 @@ int CFlvSess::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t 
         ZC_ASSERT(0);
         ret = 0;  // ignore
     }
-
+#endif
     return ret;
 }
 

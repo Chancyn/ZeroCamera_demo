@@ -192,7 +192,7 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
         // first IDR frame
         if (!m_Idr) {
             if (!pframe->keyflag) {
-                LOG_WARN("drop find IDR frame\n");
+                LOG_WARN("drop , need IDR frame");
                 return 0;
             } else {
                 m_Idr = true;

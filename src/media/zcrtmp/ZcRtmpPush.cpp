@@ -223,10 +223,10 @@ int CRtmpPush::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t
     if (FLV_TYPE_AUDIO == type) {
         ret = rtmp_client_push_audio(m_client.rtmp, data, bytes, timestamp);
     } else if (FLV_TYPE_VIDEO == type) {
-#if ZC_DEBUG
+#if 0 // ZC_DEBUG
         int keyframe = 1 == (((*(unsigned char *)data) & 0xF0) >> 4);
         if (keyframe)
-            LOG_TRACE("type:%02d [A:%d, V:%d, S:%d] key:%d\n", type, FLV_TYPE_AUDIO, FLV_TYPE_VIDEO, FLV_TYPE_SCRIPT,
+            LOG_TRACE("type:%02d [A:%d, V:%d, S:%d] key:%d", type, FLV_TYPE_AUDIO, FLV_TYPE_VIDEO, FLV_TYPE_SCRIPT,
                       (type == FLV_TYPE_VIDEO) ? keyframe : 0);
 #endif
         ret = rtmp_client_push_video(m_client.rtmp, data, bytes, timestamp);

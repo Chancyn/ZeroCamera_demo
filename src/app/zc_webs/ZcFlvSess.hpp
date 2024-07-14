@@ -50,6 +50,7 @@ class CFlvSess : public NonCopyable {
     bool Open(const zc_flvsess_info_t &info);
     bool Close();
     bool StartSendProcess();
+    void *GetConnSess() { return m_info.connsess; }
 
  private:
     static int OnFlvPacketCb(void *param, int type, const void *data, size_t bytes, ZC_U32 timestamp);
@@ -60,7 +61,7 @@ class CFlvSess : public NonCopyable {
     zc_flvsess_status_e m_status;  // zc_flvsess_status_e
     CFlvMuxer m_flvmuxer;
     zc_flvsess_info_t m_info;
-    bool m_bsendhdr;             // first
+    bool m_bsendhdr;  // first
 };
 
 #if ZC_SUPPORT_HTTP_FLV

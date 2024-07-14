@@ -153,7 +153,6 @@ static inline void packFlvTagHdr(flv_tag_hdr_t *taghdr, uint8_t type, uint32_t b
 }
 
 static inline void packFlvFileHdr(flv_file_hdr_t *hdr, bool hasvideo, bool hasaudio) {
-    LOG_WARN("packhdr hdr:%u, tag:%u", sizeof(flv_file_hdr_t), sizeof(flv_tag_hdr_t));
 #if 1
     hdr->signature[0] = 'F';
     hdr->signature[1] = 'L';
@@ -262,7 +261,23 @@ int CWebServer::unInitFlvSess() {
     return 0;
 }
 
-int CWebServer::httpFlvProcess(struct mg_connection *c, void *ev_data) {
+int CWebServer::handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data) {
+    std::lock_guard<std::mutex> locker(m_flvsessmutex);
+    auto iter = m_flvsesslist.begin();
+    for (; iter != m_flvsesslist.end();) {
+        if ((*iter)->GetConnSess() == c) {
+            LOG_WARN("find session c:%p -> flvsess:%p", c, (*iter));
+            ZC_SAFE_DELETE(*iter);
+            iter = m_flvsesslist.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+
+    return 0;
+}
+
+int CWebServer::handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data) {
     LOG_TRACE("http-flv into");
     int chn = 1;
     int type = 0;
@@ -306,23 +321,15 @@ int CWebServer::httpFlvProcess(struct mg_connection *c, void *ev_data) {
 
     mg_printf(c, "%s", httphdr);
 
-#if 0
-    char buf[32];
-    char *pos = buf;
-    flv_file_hdr_t flvhdr;
-
-    // send hdr move to cb
-    _sendFlvHdr(c, true, true);
-#endif
-
-    LOG_TRACE("send hdr:%s", httphdr);
     // add to session
     {
         std::lock_guard<std::mutex> locker(m_flvsessmutex);
         m_flvsesslist.push_back(sess);
     }
 
-    LOG_WARN("httpFlvProcess ok");
+    // c->user_data = sess;
+
+    LOG_WARN("handleOpenHttpFlvSession ok");
     return 0;
 err:
     delete sess;
@@ -348,9 +355,17 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
         mg_tls_init(c, &opts);
     }
 #endif
-    if (ev == MG_EV_OPEN) {
+    switch (ev) {
+    case MG_EV_OPEN: {
         // c->is_hexdumping = 1;
-    } else if (ev == MG_EV_HTTP_MSG) {
+        break;
+    }
+    case MG_EV_CLOSE: {
+        LOG_WARN("MG_EV_CLOSE session c:%p ", c);
+        handleCloseHttpFlvSession(c, ev_data);
+        break;
+    }
+    case MG_EV_HTTP_MSG: {
         struct mg_http_message *hm = (struct mg_http_message *)ev_data;
         if (mg_match(hm->uri, mg_str("/websocket"), NULL)) {
             // Upgrade to websocket. From now on, a connection is a full-duplex
@@ -369,7 +384,7 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
             }
             mg_http_printf_chunk(c, "");  // Don't forget the last empty chunk
         } else if (mg_match(hm->uri, mg_str("/live/*"), NULL)) {
-            if (httpFlvProcess(c, ev_data) < 0) {
+            if (handleOpenHttpFlvSession(c, ev_data) < 0) {
                 mg_http_reply(c, 404, "", "Not found\n");
             }
         } else if (mg_match(hm->uri, mg_str("/api/f2/*"), NULL)) {
@@ -378,10 +393,16 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
             struct mg_http_serve_opts opts = {.root_dir = m_info.workpath};
             mg_http_serve_dir(c, (struct mg_http_message *)ev_data, &opts);
         }
-    } else if (ev == MG_EV_WS_MSG) {
+        break;
+    }
+    case MG_EV_WS_MSG: {
         // Got websocket frame. Received data is wm->data. Echo it back!
         struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
         mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
+        break;
+    }
+    default:
+        break;
     }
 
     return;
