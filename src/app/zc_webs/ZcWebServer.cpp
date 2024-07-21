@@ -74,8 +74,10 @@ static zc_webs_info_t g_websinfodeftab[zc_webs_type_butt] = {
 };
 
 typedef enum {
-    zc_wakeup_msg_httpflv = 1,  // http-flv
-    zc_wakeup_msg_wsflv = 2,    // ws-flv
+    zc_wakeup_msg_httpflv = 1,   // http-flv
+    zc_wakeup_msg_wsflv = 2,     // ws-flv
+    zc_wakeup_msg_httpfmp4 = 1,  // http-fmp4
+    zc_wakeup_msg_wsfmp4 = 2,    // ws-fmp4
 
     zc_wakeup_msg_butt,  // max
 } zc_wakeup_msg_type;
@@ -487,25 +489,23 @@ int CWebServer::sendFmp4DataCb(void *ptr, void *sess, int type, const void *data
 int CWebServer::_sendFmp4DataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
     int ret = 0;
-    // // taghdr(11byte) + datalen + previous_tag_len(4byte)
-    // uint32_t previous_tag_len = sizeof(flv_tag_hdr_t) + bytes;
-    // uint32_t framelen = previous_tag_len + 4;
-    // uint8_t *buf = new uint8_t[framelen];  // Big structure, allocate it
-    // flv_tag_hdr_t *tag = reinterpret_cast<flv_tag_hdr_t *>(buf);
-    // // Sender side:
-    // zc_wakeup_msg_t framemsg = {
-    //     .msgtype = zc_wakeup_msg_httpflv,
-    //     .len = framelen,
-    //     .data = buf,
-    // };
-    // // LOG_WARN("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, framelen, buf, con, con->id);
-    // packFlvTagHdr(tag, type, bytes, timestamp);
-    // memcpy(buf + sizeof(flv_tag_hdr_t), data, bytes);
-    // // previous_tag_len = taghdr(11byte) + datalen
-    // be_write_uint32(reinterpret_cast<uint8_t *>(&previous_tag_len), previous_tag_len);
-    // memcpy(buf + sizeof(flv_tag_hdr_t) + bytes, &previous_tag_len, 4);
-    // mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure
-    // return ret;
+    // taghdr(11byte) + datalen + previous_tag_len(4byte)
+    uint8_t *buf = new uint8_t[bytes];  // Big structure, allocate it
+    // Sender side:
+    zc_wakeup_msg_t framemsg = {
+        .msgtype = zc_wakeup_msg_httpfmp4,
+        .len = (uint32_t)bytes,
+        .data = buf,
+    };
+
+    // LOG_TRACE("write bytes:%u, data:%p, ptr:%p, c:%p, id:%lu", bytes, data, buf, con, con->id);
+
+    if (type)
+        LOG_WARN("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, bytes, buf, con, con->id);
+
+    memcpy(buf, data, bytes);
+    mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure
+    return ret;
 }
 
 int CWebServer::handleOpenHttpMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype,
@@ -571,7 +571,6 @@ int CWebServer::handleOpenHttpFmp4Session(struct mg_connection *c, void *ev_data
              ZC_HTTP_SERVERNAME);
 
     mg_printf(c, "%s", httphdr);
-    // _sendFlvHdr(c, true, false);
     // add to session
     {
         std::lock_guard<std::mutex> locker(m_flvsessmutex);
@@ -680,18 +679,18 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
     case MG_EV_WAKEUP: {
         struct mg_str *data = (struct mg_str *)ev_data;
         zc_wakeup_msg_t *framemsg = (zc_wakeup_msg_t *)data->buf;
-        // LOG_WARN("MG_EV_WAKEUP len:%u, type:%u, ptr:%p, session c:%p, id:%lu", framemsg->len, framemsg->msgtype,
-        // framemsg->data,
-        //          c, c->id);
+        LOG_WARN("MG_EV_WAKEUP len:%u, type:%u, ptr:%p, session c:%p, id:%lu", framemsg->len, framemsg->msgtype,
+                 framemsg->data, c, c->id);
         if (framemsg->len > 0) {
-            if (framemsg->msgtype == zc_wakeup_msg_httpflv) {
+            if (framemsg->msgtype == zc_wakeup_msg_httpflv || framemsg->msgtype == zc_wakeup_msg_httpfmp4) {
                 mg_printf(c, "%x\r\n", framemsg->len);
                 mg_send(c, framemsg->data, framemsg->len);
                 mg_send(c, "\r\n", 2);
-            } else if (framemsg->msgtype == zc_wakeup_msg_wsflv) {
+            } else if (framemsg->msgtype == zc_wakeup_msg_wsflv || framemsg->msgtype == zc_wakeup_msg_wsfmp4) {
                 mg_ws_send(c, framemsg->data, framemsg->len, WEBSOCKET_OP_BINARY);
             }
         }
+
         if (framemsg->data)
             delete[] framemsg->data;
         break;

@@ -17,7 +17,7 @@
 #include "Thread.hpp"
 #include "ZcShmStream.hpp"
 
-#define ZC_FMP4_DEF_PATH "."           // default path
+#define ZC_FMP4_DEF_PATH "."          // default path
 #define ZC_FMP4_PACKING_SUFFIX "mp4"  // suffix file
 // YY-YY-MMDDThhmmss_randidx_def
 #define ZC_FMP4_FRAME_HDR 128  // debug
@@ -50,16 +50,19 @@ class CMovIo {
     virtual int Write(const void *data, uint64_t bytes) = 0;
     virtual int Seek(int64_t offset) = 0;
     virtual int64_t Tell() = 0;
+    virtual const uint8_t *GetDataBufPtr(uint32_t &bytes) = 0;
+
  protected:
     static int ioRead(void *ptr, void *data, uint64_t bytes);
     static int ioWrite(void *ptr, const void *data, uint64_t bytes);
     static int ioSeek(void *ptr, int64_t offset);
     static int64_t ioTell(void *ptr);
+
  protected:
     struct mov_buffer_t m_io;
 };
 
-class CMovBuf : public CMovIo, public NonCopyable{
+class CMovBuf : public CMovIo, public NonCopyable {
  public:
     CMovBuf();
     virtual ~CMovBuf();
@@ -68,11 +71,12 @@ class CMovBuf : public CMovIo, public NonCopyable{
     virtual int Write(const void *data, uint64_t bytes);
     virtual int Seek(int64_t offset);
     virtual int64_t Tell();
+    virtual const uint8_t *GetDataBufPtr(uint32_t &bytes);
 
  private:
     uint8_t *m_buf;
-    size_t m_bytes;
-    size_t m_offset;
+    size_t m_bytes;     // readpos
+    size_t m_offset;    // writepos
     size_t m_capacity;
     size_t m_maxsize;  // max bytes per mp4 file
 };
@@ -87,6 +91,7 @@ class CMovFile : public CMovIo, public NonCopyable {
     virtual int Write(const void *data, uint64_t bytes);
     virtual int Seek(int64_t offset);
     virtual int64_t Tell();
+    virtual const uint8_t *GetDataBufPtr(uint32_t &bytes) { return nullptr; };
 
  private:
     char m_name[ZC_MAX_PATH];
@@ -103,6 +108,7 @@ class CMovBufFile : public CMovIo, public NonCopyable {
     virtual int Write(const void *data, uint64_t bytes);
     virtual int Seek(int64_t offset);
     virtual int64_t Tell();
+    virtual const uint8_t *GetDataBufPtr(uint32_t &bytes);
 
  private:
     char m_name[ZC_MAX_PATH];

@@ -87,7 +87,21 @@ int CMovBuf::Read(void *data, uint64_t bytes) {
     if (m_offset + bytes > m_bytes)
         return E2BIG;
     memcpy(data, m_buf + m_offset, (uint64_t)bytes);
+    m_offset += bytes;
+
     return 0;
+}
+
+const uint8_t * CMovBuf::GetDataBufPtr(uint32_t &bytes) {
+    const uint8_t *ptr = nullptr;
+    LOG_TRACE("getdatabuf ptr: off", m_offset, m_bytes);
+    if (m_bytes < m_offset) {
+        bytes = m_offset - m_bytes;
+        ptr = m_buf + m_bytes;
+        m_bytes = m_offset;
+    }
+
+    return ptr;
 }
 
 int CMovBuf::Write(const void *data, uint64_t bytes) {
@@ -212,11 +226,24 @@ int CMovBufFile::Read(void *data, uint64_t bytes) {
         return E2BIG;
     LOG_WARN("read, offset:%zu, size:%llu", m_offset, bytes);
     memcpy(data, m_buf + m_offset, (uint64_t)bytes);
+    m_offset += bytes;
 
     if (bytes == fread(data, 1, bytes, m_file))
         return 0;
 
     return 0 != ferror(m_file) ? ferror(m_file) : -1 /*EOF*/;
+}
+
+const uint8_t * CMovBufFile::GetDataBufPtr(uint32_t &bytes) {
+    const uint8_t *ptr = nullptr;
+    LOG_TRACE("getdatabuf ptr: off:%zu, byte:%zu", m_offset, m_bytes);
+    if (m_offset > m_bytes) {
+        bytes = m_offset - m_bytes;
+        ptr = m_buf + m_bytes;
+        m_bytes = m_offset;
+    }
+
+    return ptr;
 }
 
 int CMovBufFile::Write(const void *data, uint64_t bytes) {
@@ -239,8 +266,8 @@ int CMovBufFile::Write(const void *data, uint64_t bytes) {
 
     memcpy(m_buf + m_offset, data, bytes);
     m_offset += bytes;
-    if (m_offset > m_bytes)
-        m_bytes = m_offset;
+    //if (m_offset > m_bytes)
+        // m_bytes = m_offset;
 
     return bytes == fwrite(data, 1, bytes, m_file) ? 0 : ferror(m_file);
 }
@@ -257,10 +284,10 @@ int CMovBufFile::Seek(int64_t offset) {
 int64_t CMovBufFile::Tell() {
     // LOG_WARN("tell, offset%zu, %p", m_offset, m_file);
     int64_t fsize = ftell64(m_file);
-    if (fsize != m_offset) {
-        LOG_ERROR("error, fsize, m_offset, fsize:%lld, %zu:", fsize, m_offset);
-        ZC_ASSERT(0);  // for debug
-    }
+    // if (fsize != m_offset) {
+    //     LOG_ERROR("error, fsize, m_offset, fsize:%lld, %zu:", fsize, m_offset);
+    //     ZC_ASSERT(0);  // for debug
+    // }
     return (int64_t)m_offset;
     // return ftell64(m_file);
 }
@@ -364,7 +391,7 @@ bool CFmp4Muxer::Create(const zc_fmp4muxer_info_t &info) {
 
     // debug
     // m_movio = CMovIoFac::CMovIoCreate(fmp4_movio_buffile, info.name);
-    m_movio = CMovIoFac::CMovIoCreate(fmp4_movio_file, info.name);
+    m_movio = CMovIoFac::CMovIoCreate(fmp4_movio_buffile, info.name);
     if (!m_movio) {
         LOG_ERROR("CMovIoCreate error");
         goto _err;
@@ -424,9 +451,12 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
     int update = 0;
     int vcl = 0;
     int n = 0;
+    int ret = -1;
+    int keyflag = 0;
     uint8_t extra_data[64 * 1024];
 
     if (pframe->type == ZC_STREAM_VIDEO) {
+        keyflag = pframe->keyflag;
         if (pframe->video.encode == ZC_FRAME_ENC_H264) {
             struct mpeg4_avc_t avc = {0};
             n = h264_annexbtomp4(&avc, pframe->data, pframe->size, m_framemp4buf, sizeof(m_framemp4buf), &vcl, &update);
@@ -460,7 +490,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             if (m_trackid[ZC_STREAM_VIDEO] != -1) {
                 // LOG_TRACE("H264 [size:%d, n:%d, vlc:%d, track:%d]", pframe->size, n, vcl,
                 // m_trackid[ZC_STREAM_VIDEO]);
-                return fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_VIDEO], m_framemp4buf, n, pframe->pts, pframe->pts,
+                ret = fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_VIDEO], m_framemp4buf, n, pframe->pts, pframe->pts,
                                          pframe->keyflag ? MOV_AV_FLAG_KEYFREAME : 0);
             }
         } else if (pframe->video.encode == ZC_FRAME_ENC_H265) {
@@ -496,7 +526,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             }
 
             if (m_trackid[ZC_STREAM_VIDEO] != -1) {
-                return fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_VIDEO], m_framemp4buf, n, pframe->pts, pframe->pts,
+                ret = fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_VIDEO], m_framemp4buf, n, pframe->pts, pframe->pts,
                                          pframe->keyflag ? MOV_AV_FLAG_KEYFREAME : 0);
             }
         }
@@ -520,12 +550,30 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             // mpeg4_aac_adts_frame_length();
             int framelen = ((_buf[3] & 0x03) << 11) | (_buf[4] << 3) | ((_buf[5] >> 5) & 0x07);
             // printf("AAC framelen:%d\n", framelen);
-            return fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_AUDIO], _buf + 7, framelen - 7, pframe->pts,
+            ret = fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_AUDIO], _buf + 7, framelen - 7, pframe->pts,
                                      pframe->pts, 0);
         }
     }
 
-    return -1;
+    // save segment,and get data to send
+    if (ret >= 0 && fmp4_writer_save_segment(m_fmp4) == 0) {
+        if (m_info.onfmp4packetcb) {
+            // get buf number,
+            const uint8_t *data = nullptr;
+            uint32_t len = 0;
+            data = m_movio->GetDataBufPtr(len);
+            if (keyflag)
+                LOG_TRACE("getdatabuf ptr:%p, %u:", data, len);
+
+            if (data) {
+                m_info.onfmp4packetcb(m_info.Context, keyflag, data, len, 0);
+            }
+        }
+    } else {
+        LOG_ERROR("write,erro, pframe->size:%u", pframe->size);
+    }
+
+    return ret;
 }
 
 int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
