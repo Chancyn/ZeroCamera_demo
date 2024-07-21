@@ -26,6 +26,7 @@
 #include "zc_macros.h"
 
 namespace zc {
+#define ZC_DEBUG_DUMP 1
 
 #define N_SEGMENT (1 * 1024 * 1024)
 #define N_FILESIZE (100 * 1024 * 1024)  // 100M
@@ -94,8 +95,11 @@ int CMovBuf::Read(void *data, uint64_t bytes) {
 
 const uint8_t * CMovBuf::GetDataBufPtr(uint32_t &bytes) {
     const uint8_t *ptr = nullptr;
-    LOG_TRACE("getdatabuf ptr: off", m_offset, m_bytes);
-    if (m_bytes < m_offset) {
+#if ZC_DEBUG_DUMP
+    if (bytes)
+        LOG_TRACE("getdatabuf ptr: off:%zu, byte:%zu", m_offset, m_bytes);
+#endif
+    if (m_offset > m_bytes) {
         bytes = m_offset - m_bytes;
         ptr = m_buf + m_bytes;
         m_bytes = m_offset;
@@ -122,8 +126,10 @@ int CMovBuf::Write(const void *data, uint64_t bytes) {
 
     memcpy(m_buf + m_offset, data, bytes);
     m_offset += bytes;
-    if (m_offset > m_bytes)
-        m_bytes = m_offset;
+
+    // if (m_offset > m_bytes)
+    //     m_bytes = m_offset;
+
     return 0;
 }
 
@@ -236,7 +242,12 @@ int CMovBufFile::Read(void *data, uint64_t bytes) {
 
 const uint8_t * CMovBufFile::GetDataBufPtr(uint32_t &bytes) {
     const uint8_t *ptr = nullptr;
-    LOG_TRACE("getdatabuf ptr: off:%zu, byte:%zu", m_offset, m_bytes);
+
+#if ZC_DEBUG_DUMP
+    if (bytes)
+        LOG_TRACE("getdatabuf ptr: off:%zu, byte:%zu", m_offset, m_bytes);
+#endif
+
     if (m_offset > m_bytes) {
         bytes = m_offset - m_bytes;
         ptr = m_buf + m_bytes;
@@ -562,9 +573,6 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             const uint8_t *data = nullptr;
             uint32_t len = 0;
             data = m_movio->GetDataBufPtr(len);
-            if (keyflag)
-                LOG_TRACE("getdatabuf ptr:%p, %u:", data, len);
-
             if (data) {
                 m_info.onfmp4packetcb(m_info.Context, keyflag, data, len, 0);
             }

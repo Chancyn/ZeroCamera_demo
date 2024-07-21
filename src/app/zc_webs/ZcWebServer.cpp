@@ -510,7 +510,7 @@ int CWebServer::_sendFmp4DataCb(void *sess, int type, const void *data, size_t b
 
 int CWebServer::handleOpenHttpMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype,
                                            zc_shmstream_e type, int chn) {
-    LOG_TRACE("mtype:%d,type:%, chn:%u", mtype, type, chn);
+    LOG_TRACE("mtype:%d,type:%d, chn:%u", mtype, type, chn);
     if (mtype == zc_web_msess_http_flv || mtype == zc_web_msess_ws_flv) {
         return handleOpenHttpFlvSession(c, ev_data, type, chn);
     } else if (mtype == zc_web_msess_http_fmp4 || mtype == zc_web_msess_ws_fmp4) {
@@ -679,8 +679,8 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
     case MG_EV_WAKEUP: {
         struct mg_str *data = (struct mg_str *)ev_data;
         zc_wakeup_msg_t *framemsg = (zc_wakeup_msg_t *)data->buf;
-        LOG_WARN("MG_EV_WAKEUP len:%u, type:%u, ptr:%p, session c:%p, id:%lu", framemsg->len, framemsg->msgtype,
-                 framemsg->data, c, c->id);
+        // LOG_WARN("MG_EV_WAKEUP len:%u, type:%u, ptr:%p, session c:%p, id:%lu", framemsg->len, framemsg->msgtype,
+        //          framemsg->data, c, c->id);
         if (framemsg->len > 0) {
             if (framemsg->msgtype == zc_wakeup_msg_httpflv || framemsg->msgtype == zc_wakeup_msg_httpfmp4) {
                 mg_printf(c, "%x\r\n", framemsg->len);
@@ -718,8 +718,13 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
             zc_web_msess_type_e mtype = zc_web_msess_http_flv;
             zc_shmstream_e type = ZC_SHMSTREAM_LIVE;
             unsigned int chn = 0;
-            if ((zc_prase_mediasess_path(hm->uri.buf, &mtype, &type, &chn) < 0) ||
-                (handleOpenHttpMediaSession(c, ev_data, mtype, type, chn) < 0)) {
+            if (zc_prase_mediasess_path(hm->uri.buf, &mtype, &type, &chn) >= 0) {
+                if (mtype == zc_web_msess_ws_flv || mtype == zc_web_msess_ws_fmp4) {
+                    mg_ws_upgrade(c, hm, NULL);
+                } else if (handleOpenHttpMediaSession(c, ev_data, mtype, type, chn) < 0) {
+                    mg_http_reply(c, 404, "", "Not found\n");
+                }
+            } else {
                 mg_http_reply(c, 404, "", "Not found\n");
             }
         } else if (mg_match(hm->uri, mg_str("/wslive/*"), NULL)) {
@@ -735,7 +740,6 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
     case MG_EV_WS_OPEN: {
         LOG_WARN("MG_EV_WS_OPEN session c:%p ", c);
         struct mg_http_message *hm = (struct mg_http_message *)ev_data;
-#if 1
         LOG_WARN("uri:%s", hm->uri.buf);
         zc_web_msess_type_e mtype = zc_web_msess_http_flv;
         zc_shmstream_e type = ZC_SHMSTREAM_LIVE;
@@ -744,18 +748,6 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
             (handleOpenWsMediaSession(c, ev_data, mtype, type, chn) < 0)) {
             mg_http_reply(c, 404, "", "Not found\n");
         }
-#else
-        if (prasePatheEndsCaseWith(hm->uri.buf, ".mp4")) {
-            // TODO
-            // if (handleOpenWsFmp4Session(c, ev_data) < 0) {
-            //     mg_http_reply(c, 404, "", "Not found\n");
-            // }
-        } else {
-            if (handleOpenWsFlvSession(c, ev_data) < 0) {
-                mg_http_reply(c, 404, "", "Not found\n");
-            }
-        }
-#endif
         break;
     }
     case MG_EV_WS_CTL: {

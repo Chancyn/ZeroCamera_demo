@@ -28,9 +28,9 @@ uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
 uint32_t zc_h265_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *nalus);
 uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu_info_t *info, int type);
 
-int zc_get_livestreampath(char *dst, unsigned int len, zc_shmstream_e type, unsigned int chn);
+const char* zc_get_livestreampath(zc_shmstream_e type);
 // path: live.ch/pushs.ch/pull.ch
-int zc_prase_livestreampath(const char *path,  zc_shmstream_e *type, unsigned int *chn);
+int zc_prase_livestreampath(const char *path,  zc_shmstream_e *type);
 
 #ifdef __cplusplus
 }

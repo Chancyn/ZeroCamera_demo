@@ -20,18 +20,19 @@ namespace zc {
 
 //
 static const char *const g_suffixTab[zc_web_msess_type_butt] = {
-    ".flv",
-    ".ws.flv",
-    ".mp4",
-    ".ws.mp4",
+    "flv",
+    "ws.flv",
+    "mp4",
+    "ws.mp4",
 };
 
 int zc_get_msess_path(char *dst, unsigned int len, zc_web_msess_type_e mtype, zc_shmstream_e type, unsigned int chn) {
-    int ret = zc_get_livestreampath(dst, len, type, chn);
-    if (ret < 0) {
+    int ret = 0;
+    const char *path = zc_get_livestreampath(type);
+    if (!path) {
         return -1;
     }
-    ret += snprintf(dst + ret, len - ret, "%s", g_suffixTab[mtype]);
+    ret += snprintf(dst + ret, len - ret, "%s.ch%d.%s", path, chn, g_suffixTab[mtype]);
     // strcat(dst, g_suffixTab[mtype]);
     LOG_TRACE("mtype:%u, type:%u,chn:%u path:%s", mtype, type, chn, dst);
     return ret;
@@ -39,31 +40,35 @@ int zc_get_msess_path(char *dst, unsigned int len, zc_web_msess_type_e mtype, zc
 
 // path: live.ch/pushs.ch/pull.ch
 int zc_prase_mediasess_path(const char *url, zc_web_msess_type_e *mtype, zc_shmstream_e *type, unsigned int *chn) {
-    if (url == NULL || mtype== NULL || type == NULL || chn == NULL) {
+    if (url == NULL || mtype == NULL || type == NULL || chn == NULL) {
         return -1;
     }
     char path[ZC_MAX_PATH] = {0};
-
-    const char *tmp = strstr(url, "/live/");
-    if (!tmp) {
-        return -1;
-    }
-    tmp += strlen("/live/");
-
-    strncpy(path, tmp, sizeof(path));
+    char mainpath[16] = {0};
+    char livepath[32] = {0};
+    char suffix[16] = {0};
+    strncpy(path, url, sizeof(path));
     char *token = nullptr;
     char *ptr = nullptr;
+    int channel = 0;
     token = strtok_r(path, " ?", &ptr);
-    if (zc_prase_livestreampath(path, type, chn) < 0) {
+
+    if (sscanf(path, "/%16[^/]/%32[^.].ch%d.%16s", mainpath, livepath, &channel, suffix) < 4) {
+        LOG_WARN("prase token:%s", path);
+    }
+
+    if (zc_prase_livestreampath(livepath, type) < 0) {
         return -1;
     }
+
     zc_web_msess_type_e mtypetmp = zc_web_msess_http_flv;
     for (unsigned int i = 0; i < _SIZEOFTAB(g_suffixTab); i++) {
-        if (strstr(path, g_suffixTab[i]) != nullptr) {
+        if (strncasecmp(suffix, g_suffixTab[i], strlen(g_suffixTab[i])) == 0) {
             mtypetmp = (zc_web_msess_type_e)i;
             break;
         }
     }
+    *chn = channel;
     *mtype = mtypetmp;
     LOG_WARN("prase token:%s, mtype:%d, type:%d, chn:%d", path, *mtype, *type, *chn);
     return 0;

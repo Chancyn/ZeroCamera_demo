@@ -148,47 +148,30 @@ static const char *g_streamUrlTab[ZC_SHMSTREAM_BUTT] = {
     ZC_STREAM_PUSHCURL_CHN_PREFIX,
 };
 
-int zc_get_livestreampath(char *dst, unsigned int len, zc_shmstream_e type, unsigned int chn) {
-    if (!dst || len == 0) {
-        return -1;
-    }
+const char* zc_get_livestreampath(zc_shmstream_e type) {
 
     if (type >= ZC_SHMSTREAM_BUTT) {
         LOG_ERROR("type:%u, error", type);
-        return -1;
+        return NULL;
     }
 
-    LOG_TRACE("type:%u,chn:%u filename:%s", type, chn, dst);
-    return snprintf(dst, len, "%s%u", g_streamUrlTab[type], chn);
+    return g_streamUrlTab[type];
 }
 
 // path: live.ch/pushs.ch/pull.ch
-int zc_prase_livestreampath(const char *path, zc_shmstream_e *type, unsigned int *chn) {
-    if (path == NULL || type == NULL || chn == NULL) {
+int zc_prase_livestreampath(const char *path, zc_shmstream_e *type) {
+    if (path == NULL || type == NULL) {
         return -1;
     }
-
-    int chntmp = 0;
-    const char *pchn = NULL;
     for (unsigned int i = 0; i < _SIZEOFTAB(g_streamUrlTab); i++) {
         int len = strlen(g_streamUrlTab[i]);
         if (0 == strncasecmp(path, g_streamUrlTab[i], len)) {
             *type = i;
-            pchn = path + len;
             break;
         }
     }
 
-    if (!pchn) {
-        LOG_ERROR("prase error: path:%s", path);
-        return -1;
-    }
-
-    chntmp = atoi(pchn);
-
-    // prase chn 0; default chn = 0
-    *chn = chntmp < 0 ? 0 : chntmp;
-    LOG_TRACE("%s, type:%d, chn:%d", path, *type, *chn);
+    LOG_TRACE("%s, type:%d", path, *type);
 
     return 0;
 }

@@ -86,28 +86,11 @@ int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri
     return psvr->_ondescribe(ptr, rtsp, uri);
 }
 
-static const char *g_rtspUrlTab[ZC_SHMSTREAM_PUSHC] = {
-    ZC_RTSP_LIVEURL_CHN_PREFIX,
-    ZC_RTSP_PULLURL_CHN_PREFIX,
-    ZC_RTSP_PUSHSURL_CHN_PREFIX,
-};
-
-static inline int _getfilenamebychn(std::string &filename, unsigned int type, unsigned int chn) {
-    if (type >= ZC_SHMSTREAM_PUSHC) {
-        LOG_ERROR("type:%u, error", type);
-        return -1;
-    }
-
-    filename = g_rtspUrlTab[type];
-    filename += std::to_string(chn);
-    LOG_TRACE("type:%u,chn:%u filename:%s", type, chn, filename.c_str());
-    return 0;
-}
-
 int CRtspServer::_findLiveSourceInfo(const char *filename, zc_stream_info_t *info) {
     zc_shmstream_e type = ZC_SHMSTREAM_LIVE;
     unsigned int chn = 0;
-    if (zc_prase_livestreampath(filename, &type, &chn) < 0) {
+    sscanf(filename, "%*[^.].ch%d", &chn);
+    if (zc_prase_livestreampath(filename, &type) < 0) {
         return -1;
     }
 
@@ -759,19 +742,17 @@ int CRtspServer::process() {
 int CRtspServer::RtspMgrStreamUpdate(unsigned int type, unsigned int chn) {
     LOG_TRACE("CRtspServer, StreamUpdate type:%u, chn:%u", type, chn);
     std::string filename;
-#if 1
-    char path[32];
-    if (zc_get_livestreampath(path, sizeof(path), (zc_shmstream_e)type, chn) < 0) {
-        LOG_ERROR("error zc_get_livestreampath, type:%u, chn:%u", type, chn);
+
+    const char *path = zc_get_livestreampath((zc_shmstream_e)type);
+    if (!path) {
+        LOG_ERROR("error zc_get_livestreampath, type:%u, chn:%u", type);
         return -1;
     }
+
     filename = path;
-#else
-    if (_getfilenamebychn(filename, type, chn) < 0) {
-        LOG_ERROR("error _getfilenamebychn, type:%u, chn:%u", type, chn);
-        return -1;
-    }
-#endif
+    filename += ".ch";
+    filename += std::to_string(chn);
+    LOG_TRACE("CRtspServer, StreamUpdate %s", filename.c_str());
     {
         std::map<std::string, TFileDescription>::const_iterator it;
         std::lock_guard<std::mutex> locker(m_mutex);
