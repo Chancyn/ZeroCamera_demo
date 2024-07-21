@@ -62,25 +62,25 @@ _err:
 
 bool CModSys::_unInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     unInit();
     unregisterMsgProcMod(m_pMsgProc);
     m_pMsgProc->UnInit();
 
-    return false;
+    return true;
 }
 
 bool CModSys::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 
 }  // namespace zc

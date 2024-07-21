@@ -64,18 +64,18 @@ _err:
 
 bool CStreamMgrCli::_unInit() {
     Stop();
-    return false;
+    return true;
 }
 
 bool CStreamMgrCli::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 
 int CStreamMgrCli::connectSvr() {

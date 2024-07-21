@@ -71,6 +71,7 @@ int CLiveTestWriterH264::UnInit() {
     Stop();
 
     ZC_SAFE_DELETE(m_fifowriter);
+    return 0;
 }
 
 int CLiveTestWriterH264::Play() {

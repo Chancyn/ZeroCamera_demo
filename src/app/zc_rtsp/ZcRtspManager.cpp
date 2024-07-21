@@ -64,18 +64,18 @@ bool CRtspManager::_unInit() {
     Stop();
     CModRtsp::UnInit();
     CRtspServer::UnInit();
-    return false;
+    return true;
 }
 
 bool CRtspManager::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 bool CRtspManager::Start() {
     if (m_running) {

@@ -79,6 +79,7 @@ int CLiveTestWriterH265::UnInit() {
     Stop();
 
     ZC_SAFE_DELETE(m_fifowriter);
+    return 0;
 }
 
 int CLiveTestWriterH265::Play() {

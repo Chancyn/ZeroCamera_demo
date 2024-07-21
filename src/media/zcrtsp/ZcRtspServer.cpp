@@ -12,8 +12,7 @@
 #include <string>
 #include <utility>
 
-#include "media/ZcLiveTestWriterSys.hpp"
-#include "media/ZcMediaTrack.hpp"
+#include "zc_basic_stream.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 
@@ -38,6 +37,8 @@
 #include "ZcRtspServer.hpp"
 #include "ZcType.hpp"
 #include "media/ZcLiveSource.hpp"
+#include "media/ZcLiveTestWriterSys.hpp"
+#include "media/ZcMediaTrack.hpp"
 
 #include "zc_stream_mgr.h"
 
@@ -88,7 +89,7 @@ int CRtspServer::rtsp_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri
 static const char *g_rtspUrlTab[ZC_SHMSTREAM_PUSHC] = {
     ZC_RTSP_LIVEURL_CHN_PREFIX,
     ZC_RTSP_PULLURL_CHN_PREFIX,
-    ZC_RTSP_PUSHURL_CHN_PREFIX,
+    ZC_RTSP_PUSHSURL_CHN_PREFIX,
 };
 
 static inline int _getfilenamebychn(std::string &filename, unsigned int type, unsigned int chn) {
@@ -104,28 +105,12 @@ static inline int _getfilenamebychn(std::string &filename, unsigned int type, un
 }
 
 int CRtspServer::_findLiveSourceInfo(const char *filename, zc_stream_info_t *info) {
-    int type = 0;
-    int chn = 0;
-    const char *pchn = nullptr;
-    if (0 == strncasecmp(filename, ZC_RTSP_LIVEURL_CHN_PREFIX, strlen(ZC_RTSP_LIVEURL_CHN_PREFIX))) {
-        type = ZC_SHMSTREAM_LIVE;
-        pchn = filename + strlen(ZC_RTSP_LIVEURL_CHN_PREFIX);
-    } else if (0 == strncasecmp(filename, ZC_RTSP_PUSHURL_CHN_PREFIX, strlen(ZC_RTSP_PUSHURL_CHN_PREFIX))) {
-        type = ZC_SHMSTREAM_PUSHS;
-        pchn = filename + strlen(ZC_RTSP_PUSHURL_CHN_PREFIX);
-    } else if (0 == strncasecmp(filename, ZC_RTSP_PULLURL_CHN_PREFIX, strlen(ZC_RTSP_PULLURL_CHN_PREFIX))) {
-        type = ZC_SHMSTREAM_PULLC;
-        pchn = filename + strlen(ZC_RTSP_PULLURL_CHN_PREFIX);
-    } else {
-        LOG_ERROR("%s, error", filename);
+    zc_shmstream_e type = ZC_SHMSTREAM_LIVE;
+    unsigned int chn = 0;
+    if (zc_prase_livestreampath(filename, &type, &chn) < 0) {
         return -1;
     }
 
-    if (pchn)
-        chn = atoi(pchn);
-
-    // prase chn 0; default chn = 0
-    chn = chn < 0 ? 0 : chn;
     LOG_TRACE("%s, type:%d, chn:%d", filename, type, chn);
     if (m_cbinfo.getStreamInfoCb) {
         return m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, info);
@@ -735,18 +720,18 @@ bool CRtspServer::_unInit() {
     m_psvr = nullptr;
     ZC_SAFE_FREE(m_phandle);
     aio_worker_clean(ZC_N_AIO_THREAD);
-    return false;
+    return true;
 }
 
 bool CRtspServer::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 
 bool CRtspServer::_aio_work() {
@@ -774,10 +759,19 @@ int CRtspServer::process() {
 int CRtspServer::RtspMgrStreamUpdate(unsigned int type, unsigned int chn) {
     LOG_TRACE("CRtspServer, StreamUpdate type:%u, chn:%u", type, chn);
     std::string filename;
+#if 1
+    char path[32];
+    if (zc_get_livestreampath(path, sizeof(path), (zc_shmstream_e)type, chn) < 0) {
+        LOG_ERROR("error zc_get_livestreampath, type:%u, chn:%u", type, chn);
+        return -1;
+    }
+    filename = path;
+#else
     if (_getfilenamebychn(filename, type, chn) < 0) {
         LOG_ERROR("error _getfilenamebychn, type:%u, chn:%u", type, chn);
         return -1;
     }
+#endif
     {
         std::map<std::string, TFileDescription>::const_iterator it;
         std::lock_guard<std::mutex> locker(m_mutex);

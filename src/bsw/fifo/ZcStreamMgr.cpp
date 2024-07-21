@@ -202,18 +202,18 @@ _err:
 }
 bool CStreamMgr::_unInit() {
     Stop();
-    return false;
+    return true;
 }
 
 bool CStreamMgr::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 
 int CStreamMgr::_findIdx(zc_shmstream_e type, unsigned int nchn) {

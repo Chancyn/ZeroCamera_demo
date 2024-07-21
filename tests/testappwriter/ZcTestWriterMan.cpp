@@ -96,12 +96,12 @@ _err:
 bool CTestWriterMan::_unInit() {
     Stop();
 
-    return false;
+    return true;
 }
 
 bool CTestWriterMan::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
 #if ZC_LIVE_TEST
@@ -111,7 +111,7 @@ bool CTestWriterMan::UnInit() {
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 
 bool CTestWriterMan::Start() {

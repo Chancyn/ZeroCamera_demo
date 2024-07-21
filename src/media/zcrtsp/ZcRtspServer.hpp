@@ -30,9 +30,10 @@
  * rtspcli get pull stream, rtsp-server forwarding stream url
  * ch1:rtsp://192.168.1.166:8554/live/pull.ch0; chn1:rtsp://192.168.1.166:8554/live/pull.ch1
  */
-#define ZC_RTSP_LIVEURL_CHN_PREFIX "live.ch"  // livestream prefix url
-#define ZC_RTSP_PUSHURL_CHN_PREFIX "push.ch"  // rtsppush prefix url, forwarding stream prefix url
-#define ZC_RTSP_PULLURL_CHN_PREFIX "pull.ch"  // rtpcli pull forwarding prefix url
+#define ZC_RTSP_LIVEURL_CHN_PREFIX ZC_STREAM_LIVEURL_CHN_PREFIX  // livestream prefix url
+#define ZC_RTSP_PUSHSURL_CHN_PREFIX ZC_STREAM_PUSHSURL_CHN_PREFIX  // rtsppush prefix url, forwarding stream prefix url
+#define ZC_RTSP_PULLURL_CHN_PREFIX ZC_STREAM_PULLURL_CHN_PREFIX  // rtpcli pull forwarding prefix url
+#define ZC_RTSP_PUSHCURL_CHN_PREFIX ZC_STREAM_PUSHCURL_CHN_PREFIX  // rtpcli pull forwarding prefix url
 
 namespace zc {
 typedef int (*RtspSvrGetStreamInfoCb)(void *ptr, unsigned int type, unsigned int chn, zc_stream_info_t *info);

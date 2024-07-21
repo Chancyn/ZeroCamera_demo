@@ -85,18 +85,18 @@ bool CRtspPushSvrMan::_unInit() {
     Stop();
     CRtspPushServer::UnInit();
 
-    return false;
+    return true;
 }
 
 bool CRtspPushSvrMan::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 bool CRtspPushSvrMan::Start() {
     if (m_running) {

@@ -2,12 +2,15 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "zc_basic_stream.h"
 #include "zc_h26x_sps_parse.h"
 #include "zc_log.h"
+#include "zc_type.h"
 
-#define ZC_DEBUG_DUMP 0    // debug dump
+#define ZC_DEBUG_DUMP 0  // debug dump
 #if ZC_DEBUG_DUMP
 #include "zc_basic_fun.h"
 #endif
@@ -134,6 +137,58 @@ uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
         return zc_h264_parse_nalu(data, dataSize, info);
     else if (type == ZC_FRAME_ENC_H265)
         return zc_h265_parse_nalu(data, dataSize, info);
+
+    return 0;
+}
+
+static const char *g_streamUrlTab[ZC_SHMSTREAM_BUTT] = {
+    ZC_STREAM_LIVEURL_CHN_PREFIX,
+    ZC_STREAM_PULLURL_CHN_PREFIX,
+    ZC_STREAM_PUSHSURL_CHN_PREFIX,
+    ZC_STREAM_PUSHCURL_CHN_PREFIX,
+};
+
+int zc_get_livestreampath(char *dst, unsigned int len, zc_shmstream_e type, unsigned int chn) {
+    if (!dst || len == 0) {
+        return -1;
+    }
+
+    if (type >= ZC_SHMSTREAM_BUTT) {
+        LOG_ERROR("type:%u, error", type);
+        return -1;
+    }
+
+    LOG_TRACE("type:%u,chn:%u filename:%s", type, chn, dst);
+    return snprintf(dst, len, "%s%u", g_streamUrlTab[type], chn);
+}
+
+// path: live.ch/pushs.ch/pull.ch
+int zc_prase_livestreampath(const char *path, zc_shmstream_e *type, unsigned int *chn) {
+    if (path == NULL || type == NULL || chn == NULL) {
+        return -1;
+    }
+
+    int chntmp = 0;
+    const char *pchn = NULL;
+    for (unsigned int i = 0; i < _SIZEOFTAB(g_streamUrlTab); i++) {
+        int len = strlen(g_streamUrlTab[i]);
+        if (0 == strncasecmp(path, g_streamUrlTab[i], len)) {
+            *type = i;
+            pchn = path + len;
+            break;
+        }
+    }
+
+    if (!pchn) {
+        LOG_ERROR("prase error: path:%s", path);
+        return -1;
+    }
+
+    chntmp = atoi(pchn);
+
+    // prase chn 0; default chn = 0
+    *chn = chntmp < 0 ? 0 : chntmp;
+    LOG_TRACE("%s, type:%d, chn:%d", path, *type, *chn);
 
     return 0;
 }

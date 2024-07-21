@@ -86,13 +86,13 @@ _err:
 
 bool CModSubBase::unInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     unInitReqSvr();
     m_init = false;
     LOG_TRACE("unInit ok");
-    return false;
+    return true;
 }
 
 bool CModSubBase::Start() {

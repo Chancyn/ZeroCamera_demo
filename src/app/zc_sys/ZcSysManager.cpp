@@ -41,22 +41,22 @@ _err:
 
 bool CSysManager::_unInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
     Stop();
     CModSys::UnInit();
-    return false;
+    return true;
 }
 
 bool CSysManager::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 
 bool CSysManager::Start() {

@@ -18,9 +18,10 @@
 
 #include "ZcType.hpp"
 #include "ZcWebServer.hpp"
+#include "zc_type.h"
 
 // #define ZC_HTTP_SERVERNAME "ZeroCamera"  // ser name
-#define ZC_HTTP_SERVERNAME "ZeroCamrea(zhoucc)"     // "SRS/6.0.134(Hang)"  // ser name
+#define ZC_HTTP_SERVERNAME "ZeroCamrea(zhoucc)"  // "SRS/6.0.134(Hang)"  // ser name
 
 namespace zc {
 const char *g_addrprefix[zc_webs_type_butt] = {
@@ -74,7 +75,7 @@ static zc_webs_info_t g_websinfodeftab[zc_webs_type_butt] = {
 
 typedef enum {
     zc_wakeup_msg_httpflv = 1,  // http-flv
-    zc_wakeup_msg_wsflv = 2,  // ws-flv
+    zc_wakeup_msg_wsflv = 2,    // ws-flv
 
     zc_wakeup_msg_butt,  // max
 } zc_wakeup_msg_type;
@@ -86,6 +87,21 @@ typedef struct _zc_wakeup_msg {
 } zc_wakeup_msg_t;
 
 bool CWebServer::m_mgloginit = false;
+
+static inline bool prasePatheEndsCaseWith(const char *url, const char *suffix) {
+    if (!url || !suffix) {
+        return false;
+    }
+
+    char path[ZC_MAX_PATH] = {0};
+    strncpy(path, url, sizeof(path));
+    char *token = nullptr;
+    char *ptr = nullptr;
+
+    token = strtok_r(path, " ?", &ptr);
+    LOG_WARN("token:%s", path);
+    return endsCaseWith(token, suffix);
+}
 
 // modsyscli
 CWebServer::CWebServer(zc_webs_type_e type, const websvr_cb_info_t &cbinfo)
@@ -248,10 +264,20 @@ int CWebServer::_sendFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
 
 int CWebServer::unInitFlvSess() {
     std::lock_guard<std::mutex> locker(m_flvsessmutex);
-    auto iter = m_flvsesslist.begin();
-    for (; iter != m_flvsesslist.end();) {
-        ZC_SAFE_DELETE(*iter);
-        iter = m_flvsesslist.erase(iter);
+    {
+        auto iter = m_flvsesslist.begin();
+        for (; iter != m_flvsesslist.end();) {
+            ZC_SAFE_DELETE(*iter);
+            iter = m_flvsesslist.erase(iter);
+        }
+    }
+
+    {
+        auto iter = m_fmp4sesslist.begin();
+        for (; iter != m_fmp4sesslist.end();) {
+            ZC_SAFE_DELETE(*iter);
+            iter = m_fmp4sesslist.erase(iter);
+        }
     }
 
     return 0;
@@ -259,24 +285,37 @@ int CWebServer::unInitFlvSess() {
 
 int CWebServer::handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data) {
     std::lock_guard<std::mutex> locker(m_flvsessmutex);
-    auto iter = m_flvsesslist.begin();
-    for (; iter != m_flvsesslist.end();) {
-        if ((*iter)->GetConnSess() == c) {
-            LOG_WARN("find session c:%p -> flvsess:%p", c, (*iter));
-            ZC_SAFE_DELETE(*iter);
-            iter = m_flvsesslist.erase(iter);
-        } else {
-            ++iter;
+    {
+        auto iter = m_flvsesslist.begin();
+        for (; iter != m_flvsesslist.end();) {
+            if ((*iter)->GetConnSess() == c) {
+                LOG_WARN("find session c:%p -> flvsess:%p", c, (*iter));
+                ZC_SAFE_DELETE(*iter);
+                iter = m_flvsesslist.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+    }
+
+    {
+        auto iter = m_fmp4sesslist.begin();
+        for (; iter != m_fmp4sesslist.end();) {
+            if ((*iter)->GetConnSess() == c) {
+                LOG_WARN("find session c:%p -> flvsess:%p", c, (*iter));
+                ZC_SAFE_DELETE(*iter);
+                iter = m_fmp4sesslist.erase(iter);
+            } else {
+                ++iter;
+            }
         }
     }
 
     return 0;
 }
 
-int CWebServer::handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data) {
+int CWebServer::handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("http-flv into");
-    int chn = 1;
-    int type = 0;
     char httphdr[256];
     zc_flvsess_info_t info = {
         .sendflvdatacb = sendFlvDataCb,
@@ -367,7 +406,7 @@ int CWebServer::_sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
     int ret = 0;
     flv_file_hdr_t flvhdr;
     packFlvFileHdr(&flvhdr, hasvideo, hasaudio);
-     LOG_TRACE("_sendWsFlvHdr into");
+    LOG_TRACE("_sendWsFlvHdr into");
     // file hdr
     mg_ws_send(con, &flvhdr, sizeof(flv_file_hdr_t), WEBSOCKET_OP_BINARY);
     // previous_tag_len
@@ -377,10 +416,8 @@ int CWebServer::_sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
     return ret;
 }
 
-int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data) {
+int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("ws-flv into");
-    int chn = 1;
-    int type = 0;
     char httphdr[256];
     zc_flvsess_info_t info = {
         .sendflvdatacb = sendWsFlvDataCb,
@@ -411,7 +448,7 @@ int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data) {
         goto err;
     }
 
-    #if 0
+#if 0
     snprintf(httphdr, sizeof(httphdr) - 1,
              "HTTP/1.1 200 OK\r\n"
              "Connection: Close\r\n"
@@ -421,7 +458,7 @@ int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data) {
              ZC_HTTP_SERVERNAME);
 
     mg_printf(c, "%s", httphdr);
-    #endif
+#endif
 
     _sendWsFlvHdr(c, true, false);
 
@@ -438,6 +475,173 @@ int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data) {
 err:
     delete sess;
     LOG_ERROR("handle ws-flv error");
+    return -1;
+}
+
+int CWebServer::sendFmp4DataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+    CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
+    return webs->_sendFmp4DataCb(sess, type, data, bytes, timestamp);
+}
+
+// TODO(zhoucc): maybe memory leak可能存在内存泄漏
+int CWebServer::_sendFmp4DataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+    struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
+    int ret = 0;
+    // // taghdr(11byte) + datalen + previous_tag_len(4byte)
+    // uint32_t previous_tag_len = sizeof(flv_tag_hdr_t) + bytes;
+    // uint32_t framelen = previous_tag_len + 4;
+    // uint8_t *buf = new uint8_t[framelen];  // Big structure, allocate it
+    // flv_tag_hdr_t *tag = reinterpret_cast<flv_tag_hdr_t *>(buf);
+    // // Sender side:
+    // zc_wakeup_msg_t framemsg = {
+    //     .msgtype = zc_wakeup_msg_httpflv,
+    //     .len = framelen,
+    //     .data = buf,
+    // };
+    // // LOG_WARN("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, framelen, buf, con, con->id);
+    // packFlvTagHdr(tag, type, bytes, timestamp);
+    // memcpy(buf + sizeof(flv_tag_hdr_t), data, bytes);
+    // // previous_tag_len = taghdr(11byte) + datalen
+    // be_write_uint32(reinterpret_cast<uint8_t *>(&previous_tag_len), previous_tag_len);
+    // memcpy(buf + sizeof(flv_tag_hdr_t) + bytes, &previous_tag_len, 4);
+    // mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure
+    // return ret;
+}
+
+int CWebServer::handleOpenHttpMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype,
+                                           zc_shmstream_e type, int chn) {
+    LOG_TRACE("mtype:%d,type:%, chn:%u", mtype, type, chn);
+    if (mtype == zc_web_msess_http_flv || mtype == zc_web_msess_ws_flv) {
+        return handleOpenHttpFlvSession(c, ev_data, type, chn);
+    } else if (mtype == zc_web_msess_http_fmp4 || mtype == zc_web_msess_ws_fmp4) {
+        return handleOpenHttpFmp4Session(c, ev_data, type, chn);
+    }
+    return -1;
+}
+
+int CWebServer::handleOpenWsMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype,
+                                         zc_shmstream_e type, int chn) {
+    LOG_TRACE("mtype:%d,type:%, chn:%u", mtype, type, chn);
+    if (mtype == zc_web_msess_http_flv || mtype == zc_web_msess_ws_flv) {
+        return handleOpenWsFlvSession(c, ev_data, type, chn);
+    } else if (mtype == zc_web_msess_http_fmp4 || mtype == zc_web_msess_ws_fmp4) {
+        return handleOpenWsFmp4Session(c, ev_data, type, chn);
+    }
+
+    return -1;
+}
+
+int CWebServer::handleOpenHttpFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
+    LOG_TRACE("http-fmp4 into");
+    char httphdr[256];
+    zc_fmp4sess_info_t info = {
+        .sendfmp4datacb = sendFmp4DataCb,
+        .context = this,
+        .connsess = c,
+    };
+
+    // prase channel
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+        LOG_ERROR("get streaminfo error");
+        return -1;
+    }
+
+    // create sess
+    CFmp4Sess *sess = new CHttpFmp4Sess(info);
+    if (!sess) {
+        LOG_ERROR("new http-fmp4 session error");
+        return -1;
+    }
+
+    if (!sess->Open()) {
+        LOG_ERROR("http-flv Open error");
+        goto err;
+    }
+
+    if (!sess->StartSendProcess()) {
+        LOG_ERROR("StartSend error");
+        goto err;
+    }
+    snprintf(httphdr, sizeof(httphdr) - 1,
+             "HTTP/1.1 200 OK\r\n"
+             "Connection: Close\r\n"
+             "Content-Type: video/mp4; charset=utf-8\r\n"
+             "Server: %s\r\n"
+             "Transfer-Encoding: chunked\r\n\r\n",
+             ZC_HTTP_SERVERNAME);
+
+    mg_printf(c, "%s", httphdr);
+    // _sendFlvHdr(c, true, false);
+    // add to session
+    {
+        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        m_fmp4sesslist.push_back(sess);
+    }
+
+    // c->user_data = sess;
+
+    LOG_WARN("handleOpenHttpFmp4Session ok");
+    return 0;
+err:
+    delete sess;
+    LOG_ERROR("handle http-fmp4 error");
+    return -1;
+}
+
+int CWebServer::handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
+    LOG_TRACE("ws-fmp4 into");
+    char httphdr[256];
+    zc_fmp4sess_info_t info = {
+        .sendfmp4datacb = sendFmp4DataCb,
+        .context = this,
+        .connsess = c,
+    };
+
+    // prase channel
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+        LOG_ERROR("get streaminfo error");
+        return -1;
+    }
+
+    // create sess
+    CFmp4Sess *sess = new CHttpFmp4Sess(info);
+    if (!sess) {
+        LOG_ERROR("new http-fmp4 session error");
+        return -1;
+    }
+
+    if (!sess->Open()) {
+        LOG_ERROR("http-flv Open error");
+        goto err;
+    }
+
+    if (!sess->StartSendProcess()) {
+        LOG_ERROR("StartSend error");
+        goto err;
+    }
+    // snprintf(httphdr, sizeof(httphdr) - 1,
+    //          "HTTP/1.1 200 OK\r\n"
+    //          "Connection: Close\r\n"
+    //          "Content-Type: video/mp4; charset=utf-8\r\n"
+    //          "Server: %s\r\n"
+    //          "Transfer-Encoding: chunked\r\n\r\n",
+    //          ZC_HTTP_SERVERNAME);
+
+    // mg_printf(c, "%s", httphdr);
+    // _sendFlvHdr(c, true, false);
+    // add to session
+    {
+        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        m_fmp4sesslist.push_back(sess);
+    }
+
+    // c->user_data = sess;
+
+    LOG_WARN("handleOpenHttpFmp4Session ok");
+    return 0;
+err:
+    delete sess;
+    LOG_ERROR("handle ws-fmp4 error");
     return -1;
 }
 
@@ -511,7 +715,12 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
             }
             mg_http_printf_chunk(c, "");  // Don't forget the last empty chunk
         } else if (mg_match(hm->uri, mg_str("/live/*"), NULL)) {
-            if (handleOpenHttpFlvSession(c, ev_data) < 0) {
+            LOG_WARN("uri:%s", hm->uri.buf);
+            zc_web_msess_type_e mtype = zc_web_msess_http_flv;
+            zc_shmstream_e type = ZC_SHMSTREAM_LIVE;
+            unsigned int chn = 0;
+            if ((zc_prase_mediasess_path(hm->uri.buf, &mtype, &type, &chn) < 0) ||
+                (handleOpenHttpMediaSession(c, ev_data, mtype, type, chn) < 0)) {
                 mg_http_reply(c, 404, "", "Not found\n");
             }
         } else if (mg_match(hm->uri, mg_str("/wslive/*"), NULL)) {
@@ -525,16 +734,35 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
         break;
     }
     case MG_EV_WS_OPEN: {
-         LOG_WARN("MG_EV_WS_OPEN session c:%p ", c);
-         if (handleOpenWsFlvSession(c, ev_data) < 0) {
-             mg_http_reply(c, 404, "", "Not found\n");
-         }
-         break;
+        LOG_WARN("MG_EV_WS_OPEN session c:%p ", c);
+        struct mg_http_message *hm = (struct mg_http_message *)ev_data;
+#if 1
+        LOG_WARN("uri:%s", hm->uri.buf);
+        zc_web_msess_type_e mtype = zc_web_msess_http_flv;
+        zc_shmstream_e type = ZC_SHMSTREAM_LIVE;
+        unsigned int chn = 0;
+        if ((zc_prase_mediasess_path(hm->uri.buf, &mtype, &type, &chn) < 0) ||
+            (handleOpenWsMediaSession(c, ev_data, mtype, type, chn) < 0)) {
+            mg_http_reply(c, 404, "", "Not found\n");
+        }
+#else
+        if (prasePatheEndsCaseWith(hm->uri.buf, ".mp4")) {
+            // TODO
+            // if (handleOpenWsFmp4Session(c, ev_data) < 0) {
+            //     mg_http_reply(c, 404, "", "Not found\n");
+            // }
+        } else {
+            if (handleOpenWsFlvSession(c, ev_data) < 0) {
+                mg_http_reply(c, 404, "", "Not found\n");
+            }
+        }
+#endif
+        break;
     }
     case MG_EV_WS_CTL: {
-         struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
-         LOG_WARN("MG_EV_WS_CTL session c:%p len:%u, flag:%u", c, wm->data.len, wm->flags);
-         break;
+        struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
+        LOG_WARN("MG_EV_WS_CTL session c:%p len:%u, flag:%u", c, wm->data.len, wm->flags);
+        break;
     }
     case MG_EV_WS_MSG: {
         // Got websocket frame. Received data is wm->data. Echo it back!
@@ -586,15 +814,16 @@ bool CWebServer::Init(zc_webs_info_t *info) {
 
 bool CWebServer::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
-
+    LOG_TRACE("init into");
     // clear flv session
     unInitFlvSess();
     Stop();
 
     m_init = false;
-    return false;
+    LOG_TRACE("init exit");
+    return true;
 }
 
 bool CWebServer::Start() {
@@ -619,6 +848,7 @@ bool CWebServer::Start() {
     mg_wakeup_init(mgr);  // Initialise wakeup socket pair
     m_mgrhandle = mgr;
     Thread::Start();
+    m_running = true;
     LOG_TRACE("mg http listen start ok %s", m_addrs);
     return true;
 _err:
@@ -630,7 +860,7 @@ bool CWebServer::Stop() {
     if (!m_running) {
         return false;
     }
-
+    LOG_TRACE("Stop into\n");
     Thread::Stop();
     struct mg_mgr *mgr = reinterpret_cast<struct mg_mgr *>(m_mgrhandle);
     if (mgr) {
@@ -639,6 +869,7 @@ bool CWebServer::Stop() {
         m_mgrhandle = nullptr;
     }
     m_running = false;
+    LOG_TRACE("Stop exit\n");
     return true;
 }
 

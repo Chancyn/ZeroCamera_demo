@@ -26,6 +26,25 @@ extern "C" {
 #define ZC_STREAM_AUDIOPULL_SHM_PATH "a_pull"  // audio push fifo / or client recv fifo
 #define ZC_STREAM_METAPULL_SHM_PATH "m_pull"
 
+/*
+sever url pathname
+rtsp live url = rtsp://host[:port]/live/live.ch[chnnum]
+http-flv live url = http://host[:port]/live/live.ch[chnnum].flv
+ws-flv live url = ws://host[:port]/wslive/live.ch[chnnum].flv
+http-mp4 live url = http://host[:port]/live/live.ch[chnnum].mp4
+ws-mp4 live url = ws://host[:port]/wslive/live.ch[chnnum].mp4
+for example:
+rtsp://192.168.1.166:8554/live/live.ch0
+rtsp://192.168.1.166/live/pull.ch1
+http://192.168.1.166/live/live.ch0.flv
+http://192.168.1.166/live/pull.ch0.mp4
+*/
+
+#define ZC_STREAM_LIVEURL_CHN_PREFIX "live.ch"  // livestream prefix url
+#define ZC_STREAM_PUSHSURL_CHN_PREFIX "pushs.ch"  // rtsppush prefix url, forwarding stream prefix url
+#define ZC_STREAM_PULLURL_CHN_PREFIX "pull.ch"  // rtpcli pull forwarding prefix url
+#define ZC_STREAM_PUSHCURL_CHN_PREFIX  "pushc.ch"  // rtpcli pull forwarding prefix url
+
 // stream fifo max size
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)
 #define ZC_STREAM_SUB_VIDEO_SIZE (8 * 1024 * 1024)

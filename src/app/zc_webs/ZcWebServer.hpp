@@ -10,6 +10,8 @@
 #include "NonCopyable.hpp"
 #include "Thread.hpp"
 #include "ZcFlvSess.hpp"
+#include "ZcFmp4Sess.hpp"
+#include "ZcWebMSess.hpp"
 
 #define ZC_SUPPORT_SSL 1
 
@@ -64,13 +66,24 @@ class CWebServer : protected Thread, public NonCopyable {
     static void EventHandlerCb(struct mg_connection *c, int ev, void *ev_data);
     static int sendFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
     int _sendFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
-    int handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data);
+    int handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
     int _sendFlvHdr(void *sess, bool hasvideo, bool hasaudio);
     int handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data);
     static int sendWsFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
     int _sendWsFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
     int _sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio);
-    int handleOpenWsFlvSession(struct mg_connection *c, void *ev_data);
+    int handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
+
+    // fmp4
+    static int sendFmp4DataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
+    int _sendFmp4DataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
+    int handleOpenHttpFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
+    int handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
+
+    int handleOpenHttpMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype,
+                                   zc_shmstream_e type, int chn);
+    int handleOpenWsMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype, zc_shmstream_e type,
+                                 int chn);
 
  private:
     static bool m_mgloginit;
@@ -84,6 +97,7 @@ class CWebServer : protected Thread, public NonCopyable {
     void *m_mgrhandle;  // mongoose mgr
     std::mutex m_flvsessmutex;
     std::list<CFlvSess *> m_flvsesslist;
+    std::list<CFmp4Sess *> m_fmp4sesslist;
 };
 
 class CWebServerHttp : public CWebServer {

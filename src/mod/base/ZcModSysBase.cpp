@@ -76,14 +76,14 @@ _err:
 
 bool CModSysBase::unInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     unInitReqSvr();
     unInitPubSvr();
     m_init = false;
     LOG_TRACE("unInit ok");
-    return false;
+    return true;
 }
 
 bool CModSysBase::Start() {

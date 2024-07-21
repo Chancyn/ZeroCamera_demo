@@ -19,7 +19,8 @@
 #include "ZcType.hpp"
 
 namespace zc {
-CFlvMuxer::CFlvMuxer() : m_Idr(false), m_status(flv_status_init), m_pts(0), m_apts(0), m_flv(nullptr) {
+CFlvMuxer::CFlvMuxer()
+    : Thread("flvmuxer"), m_Idr(false), m_status(flv_status_init), m_pts(0), m_apts(0), m_flv(nullptr) {
     memset(&m_info, 0, sizeof(m_info));
     m_vector.clear();
 }

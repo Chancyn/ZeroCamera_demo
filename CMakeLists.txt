@@ -111,6 +111,8 @@ set(ZCCODEC_INC ${CMAKE_SOURCE_DIR}/src/media/zccodec)
 set(ZCFLV_INC ${CMAKE_SOURCE_DIR}/src/media/zcflv)
 set(ZCRTMP_INC ${CMAKE_SOURCE_DIR}/src/media/zcrtmp)
 
+set(ZCFMP4_INC ${CMAKE_SOURCE_DIR}/src/media/zcfmp4)
+
 set(MEDIAINTALL ${CMAKE_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/media_server)
 set(MEDIARTSPAIO rtspaio)
 set(MEDIARTSPMEDIA rtspmedia)

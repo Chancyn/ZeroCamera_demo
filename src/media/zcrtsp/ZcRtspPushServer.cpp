@@ -700,18 +700,18 @@ bool CRtspPushServer::_unInit() {
     m_psvr = nullptr;
     ZC_SAFE_FREE(m_phandle);
     aio_worker_clean(ZC_N_AIO_THREAD);
-    return false;
+    return true;
 }
 
 bool CRtspPushServer::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 
 bool CRtspPushServer::_aio_work() {

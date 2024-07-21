@@ -51,18 +51,18 @@ bool CRtmpPushMan::_unInit() {
     Stop();
     CRtmpPush::UnInit();
 
-    return false;
+    return true;
 }
 
 bool CRtmpPushMan::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 bool CRtmpPushMan::Start() {
     if (m_running) {

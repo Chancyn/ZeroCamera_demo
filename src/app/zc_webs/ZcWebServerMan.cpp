@@ -54,11 +54,11 @@ _err:
 
 bool CWebServerMan::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
     Stop();
     m_init = false;
-    return false;
+    return true;
 }
 
 bool CWebServerMan::Start() {
@@ -80,7 +80,8 @@ bool CWebServerMan::Start() {
         }
     }
 
-    return m_running;
+    m_running = true;
+    return true;
 }
 
 bool CWebServerMan::Stop() {
@@ -90,6 +91,7 @@ bool CWebServerMan::Stop() {
 
     for (unsigned int i = 0; i < _SIZEOFTAB(m_webstab); i++) {
 #if 1
+
         ZC_SAFE_DELETE(m_webstab[i]);
 #else
         if (m_webstab[i]) {

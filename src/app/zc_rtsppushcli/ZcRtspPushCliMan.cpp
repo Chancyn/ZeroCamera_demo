@@ -51,18 +51,18 @@ bool CRtspPushCliMan::_unInit() {
     Stop();
     CRtspPushClient::UnInit();
 
-    return false;
+    return true;
 }
 
 bool CRtspPushCliMan::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 bool CRtspPushCliMan::Start() {
     if (m_running) {

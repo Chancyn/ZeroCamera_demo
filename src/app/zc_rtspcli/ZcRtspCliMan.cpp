@@ -92,18 +92,18 @@ bool CRtspCliMan::_unInit() {
     Stop();
     CRtspClient::UnInit();
 
-    return false;
+    return true;
 }
 
 bool CRtspCliMan::UnInit() {
     if (!m_init) {
-        return true;
+        return false;
     }
 
     _unInit();
 
     m_init = false;
-    return false;
+    return true;
 }
 bool CRtspCliMan::Start() {
     if (m_running) {
