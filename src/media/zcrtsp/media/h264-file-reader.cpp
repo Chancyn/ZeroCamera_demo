@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <algorithm>
+#include "zc_frame.h"
 
 #define H264_NAL(v)	(v & 0x1F)
 
@@ -42,7 +43,7 @@ bool H264FileReader::IsOpened() const
 	return !m_videos.empty();
 }
 
-int H264FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes, bool *idr)
+int H264FileReader::GetNextFrame(int64_t &dts, const uint8_t* &ptr, size_t &bytes, int32_t *idr)
 {
 	if(m_vit == m_videos.end())
 		return -1; // file end
@@ -143,11 +144,15 @@ int H264FileReader::Init()
         {
             if(m_sps.size() > 0) spspps = false; // don't need more sps/pps
 
-			vframe_t frame;
+			vframe_t frame = {0};
 			frame.nalu = nalu;
 			frame.bytes = (long)bytes;
 			frame.time = 40 * count++;
-			frame.idr = 5 == nal_unit_type; // IDR-frame
+			if (NAL_IDR == nal_unit_type) {
+				frame.idr = ZC_FRAME_IDR;// IDR-frame
+			} else {
+				frame.idr = ZC_FRAME_P;// IDR-frame
+			}
 			m_videos.push_back(frame);
 			nalu = pn;
         }

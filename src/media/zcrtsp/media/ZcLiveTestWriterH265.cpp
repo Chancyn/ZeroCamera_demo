@@ -15,18 +15,18 @@
 #include "sys/path.h"
 #include "sys/system.h"
 
+#include "zc_basic_fun.h"
+#include "zc_h26x_sps_parse.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_type.h"
-#include "zc_basic_fun.h"
-#include "zc_h26x_sps_parse.h"
 
 #include "Epoll.hpp"
 #include "ZcLiveTestWriterH265.hpp"
 #include "ZcType.hpp"
 #include "zc_basic_stream.h"
 
-#define ZC_DEBUG_DUMP 0    // debug dump
+#define ZC_DEBUG_DUMP 0  // debug dump
 #if ZC_DEBUG_DUMP
 #include "zc_basic_fun.h"
 #endif
@@ -35,8 +35,19 @@ extern "C" uint32_t rtp_ssrc(void);
 
 #if ZC_LIVE_TEST
 namespace zc {
-enum { NAL_IDR_W_RADL = 19, NAL_IDR_N_LP = 20, NAL_VPS = 32, NAL_SPS = 33, NAL_PPS = 34, NAL_SEI = 39 };
+enum {
+    NAL_BLA_W_LP = 16,
+    NAL_BLA_W_RADL = 17,
+    NAL_BLA_N_LP = 18,
+    NAL_IDR_W_RADL = 19,
+    NAL_IDR_N_LP = 20,
+    NAL_CRA = 21,
 
+    NAL_VPS = 32,
+    NAL_SPS = 33,
+    NAL_PPS = 34,
+    NAL_SEI = 39
+};
 CLiveTestWriterH265::CLiveTestWriterH265(const live_test_info_t &info)
     : Thread(info.threadname), m_status(0), m_reader(nullptr), m_fifowriter(nullptr) {
     m_rtp_clock = 0;
@@ -48,7 +59,7 @@ CLiveTestWriterH265::CLiveTestWriterH265(const live_test_info_t &info)
     if (info.fps == 0) {
         m_info.fps = 60;
     }
-    m_clock_interal = 1000/m_info.fps;
+    m_clock_interal = 1000 / m_info.fps;
     Init();
     Start();
 }
@@ -99,14 +110,14 @@ int CLiveTestWriterH265::_putData2FIFO() {
 #if ZC_LIVE_TEST
     int ret = 0;
     // uint32_t timestamp = 0;
-    time64_t clock = zc_system_clock();//time64_now();
+    time64_t clock = zc_system_clock();  // time64_now();
     if (0 == m_rtp_clock)
         m_rtp_clock = clock;
 
     if (m_rtp_clock + m_clock_interal <= clock) {
         size_t bytes;
         const uint8_t *ptr;
-        bool idr = false;
+        int32_t idr = ZC_FRAME_P;
 
         if ((ret = m_reader->GetNextFrame(m_pos, ptr, bytes, &idr)) == 0) {
             // LOG_TRACE("Put bytes[%d]", bytes);
@@ -121,21 +132,26 @@ int CLiveTestWriterH265::_putData2FIFO() {
             frame.video.width = m_naluinfo.width;
             frame.video.height = m_naluinfo.height;
             frame.keyflag = idr;
-            #if 1
+#if 1
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             frame.utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
             frame.pts = frame.utc;  // m_pos;
-            #else
+#else
             frame.utc = zc_system_time();
             frame.pts = m_rtp_clock;  // m_pos;
-            #endif
+#endif
 
 #if ZC_DUMP_BINSTREAM  // dump
             if (frame.keyflag)
                 zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, ptr, 64);
 #endif
-
+#if 1  // dump/
+            if (frame.keyflag) {
+                LOG_WARN("seq[%d] put IDR:%d len:%d, pts:%u,utc:%u, wh[%u*%u]", frame.seq, frame.keyflag, frame.size,
+                         frame.pts, frame.utc, frame.video.width, frame.video.height);
+            }
+#endif
             test_raw_frame_t raw;
             raw.ptr = ptr;
             raw.len = bytes;
@@ -223,7 +239,7 @@ int CLiveTestWriterH265::process() {
                 goto _err;
             } else if (ret > 0) {
                 ZC_MSLEEP(ret);
-            } else{
+            } else {
                 ZC_MSLEEP(1);
             }
         }

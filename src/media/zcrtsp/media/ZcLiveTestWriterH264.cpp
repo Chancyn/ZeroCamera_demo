@@ -97,7 +97,7 @@ int CLiveTestWriterH264::_putData2FIFO() {
     if (m_rtp_clock + m_clock_interal <= clock) {
         size_t bytes;
         const uint8_t *ptr;
-        bool idr = false;
+        int32_t idr = ZC_FRAME_P;
 
         if ((ret = m_reader->GetNextFrame(m_pos, ptr, bytes, &idr)) == 0) {
             // LOG_TRACE("Put bytes[%d]", bytes);
@@ -122,7 +122,7 @@ int CLiveTestWriterH264::_putData2FIFO() {
             frame.pts = m_rtp_clock;  // m_pos;
 #endif
 
-#if 1  // dump/
+#if 0  // dump/
     if (frame.keyflag) {
         LOG_WARN("seq[%d] put IDR:%d len:%d, pts:%u,utc:%u, wh[%u*%u]", frame.seq, frame.keyflag, frame.size,
         frame.pts, frame.utc, frame.video.width, frame.video.height);
@@ -157,14 +157,14 @@ int CLiveTestWriterH264::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
     for (it = sps.begin(); it != sps.end(); ++it) {
         unsigned int naltype = (*(it->first)) & 0x1F;
         size_t bytes = it->second;
-        LOG_WARN("naluinfo %p, naltype:%d, size:%d", it->first, naltype, bytes);
+        // LOG_WARN("naluinfo %p, naltype:%d, size:%d", it->first, naltype, bytes);
         if (naltype == NAL_SPS) {
             type = ZC_NALU_TYPE_SPS;
             zc_h26x_sps_info_t spsinfo = {0};
             if (zc_h264_sps_parse(it->first, bytes, &spsinfo) == 0) {
                 tmp.width = spsinfo.width;
                 tmp.height = spsinfo.height;
-                LOG_WARN("prase wh [wh:%hu:%hu]", spsinfo.width, spsinfo.height);
+                LOG_TRACE("prase wh [wh:%hu:%hu]", spsinfo.width, spsinfo.height);
             }
         } else if (naltype == NAL_PPS) {
             type = ZC_NALU_TYPE_PPS;
@@ -180,8 +180,9 @@ int CLiveTestWriterH264::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
             memcpy(nalu->data, it->first, bytes);
             nalu->size = bytes;
             nalu->type = type;
+
+#if 0  // dump
             LOG_WARN("fillSdpInfo num:%d, type:%d, size:%d", tmp.nalunum, type, nalu->size);
-#if 1  // dump
             printf("type:%d, len:%u [", type, nalu->size);
             for (int i = 0; i < nalu->size; i++) {
                 printf("%02x ", nalu->data[i]);
