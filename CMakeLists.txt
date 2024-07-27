@@ -90,6 +90,7 @@ set(OPENSSL_ROOT_DIR ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC})
 find_package(OpenSSL REQUIRED)
 # mongoose ssl mg
 add_definitions(-DMG_TLS=MG_TLS_OPENSSL)
+add_definitions(-DWITH_OPENSSL=1)
 endif()
 
 #media server
