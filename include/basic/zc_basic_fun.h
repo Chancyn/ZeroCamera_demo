@@ -24,7 +24,7 @@ extern "C" {
 #define ZC_DUMP_BINSTREAM 0
 #endif
 
-void zc_debug_dump_binstream(const char *fun, int type, const uint8_t *data, uint32_t len);
+void zc_debug_dump_binstream(const char *fun, int type, const uint8_t *data, uint32_t len, uint32_t dumplen);
 void _dumpTrackInfo(const char *user, zc_meida_track_t *info);
 void _dumpStreamInfo(const char *user, zc_stream_info_t *info);
 char* GetTimeStr(char *dst, unsigned int len, time_t *now);

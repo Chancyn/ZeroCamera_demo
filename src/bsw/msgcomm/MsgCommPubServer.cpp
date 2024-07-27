@@ -85,7 +85,7 @@ bool CMsgCommPubServer::Send(void *buf, size_t len) {
     if (psock->id != 0) {
         int rv;
 #if ZC_DUMP_BINSTREAM
-        zc_debug_dump_binstream("pub send", psock->id, (const uint8_t *)buf, len);
+        zc_debug_dump_binstream("pub send", psock->id, (const uint8_t *)buf, len, len);
 #endif
         // LOG_TRACE("into send msg %d %s", psock->id, buf);
         if ((rv = nng_send(*psock, buf, len, 0)) != 0) {

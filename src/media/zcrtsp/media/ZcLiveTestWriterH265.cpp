@@ -143,12 +143,9 @@ int CLiveTestWriterH265::_putData2FIFO() {
 #endif
 
 #if ZC_DUMP_BINSTREAM  // dump
-            if (frame.keyflag)
-                zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, ptr, 64);
-#endif
-#if 1  // dump/
             if (frame.keyflag) {
-                LOG_WARN("seq[%d] put IDR:%d len:%d, pts:%u,utc:%u, wh[%u*%u]", frame.seq, frame.keyflag, frame.size,
+                zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, ptr, bytes, 64);
+                LOG_WARN("putseq:%d,IDR:%d,len:%d,pts:%u,utc:%u,wh[%u*%u]", frame.seq, frame.keyflag, frame.size,
                          frame.pts, frame.utc, frame.video.width, frame.video.height);
             }
 #endif
@@ -180,7 +177,7 @@ int CLiveTestWriterH265::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
     for (it = sps.begin(); it != sps.end(); ++it) {
         unsigned int naltype = ((*(it->first)) & 0x7E) >> 1;
         size_t bytes = it->second;
-        LOG_WARN("naluinfo %p, type:0x%d, size:%d", it->first, naltype, bytes);
+        // LOG_TRACE("naluinfo %p, type:0x%d, size:%d", it->first, naltype, bytes);
 
         if (naltype == NAL_VPS) {
             type = ZC_NALU_TYPE_VPS;
@@ -207,10 +204,10 @@ int CLiveTestWriterH265::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
             memcpy(nalu->data, it->first, bytes);
             nalu->size = bytes;
             nalu->type = type;
-            LOG_WARN("fillSdpInfo num:%d, type:%d, size:%d", tmp.nalunum, type, nalu->size);
 
 #if ZC_DUMP_BINSTREAM  // dump
-            zc_debug_dump_binstream("dump nalu", ZC_FRAME_ENC_H265, nalu->data, nalu->size);
+            LOG_WARN("fillSdpInfo num:%d, type:%d, size:%d", tmp.nalunum, type, nalu->size);
+            zc_debug_dump_binstream("dump nalu", ZC_FRAME_ENC_H265, nalu->data,  nalu->size, nalu->size);
 #endif
             tmp.nalunum++;
             if (tmp.nalunum >= ZC_FRAME_NALU_MAXNUM) {

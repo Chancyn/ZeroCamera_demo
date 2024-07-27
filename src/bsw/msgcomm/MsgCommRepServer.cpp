@@ -99,7 +99,7 @@ void CMsgCommRepServer::runThreadProc() {
             goto _done_err;
         }
 #if ZC_DUMP_BINSTREAM
-        zc_debug_dump_binstream("svrrecv", psock->id, (const uint8_t *)rbuf, rlen);
+        zc_debug_dump_binstream("svrrecv", psock->id, (const uint8_t *)rbuf, rlen, rlen);
 #endif
         // handle
         if (m_handle) {
@@ -112,7 +112,7 @@ void CMsgCommRepServer::runThreadProc() {
             goto _done_err;
         }
 #if ZC_DUMP_BINSTREAM
-        zc_debug_dump_binstream("svrsend", psock->id, (const uint8_t *)sbuf, slen);
+        zc_debug_dump_binstream("svrsend", psock->id, (const uint8_t *)sbuf, slen, slen);
 #endif
     }
 _done_err:

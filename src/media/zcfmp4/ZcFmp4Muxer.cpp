@@ -480,7 +480,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
                 }
                 if (pframe->keyflag && (pframe->video.width == 0 || pframe->video.height == 0)) {
                     zc_h26x_sps_info_t spsinfo = {0};
-                    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H264, avc.sps[0].data, avc.sps[0].bytes);
+                    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H264, avc.sps[0].data, avc.sps[0].bytes, avc.sps[0].bytes);
                     if (zc_h264_sps_parse(avc.sps[0].data, avc.sps[0].bytes, &spsinfo) == 0) {
                         pframe->video.width = spsinfo.width;    // picture width;
                         pframe->video.height = spsinfo.height;  // picture height;
@@ -506,19 +506,22 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             }
         } else if (pframe->video.encode == ZC_FRAME_ENC_H265) {
             struct mpeg4_hevc_t hevc = {0};
+
             n = h265_annexbtomp4(&hevc, pframe->data, pframe->size, m_framemp4buf, sizeof(m_framemp4buf), &vcl,
                                  &update);
             if (m_trackid[ZC_STREAM_VIDEO] == -1) {
-                if (hevc.numOfArrays < 1) {
-                    LOG_WARN("H265 skip wait for key frame");
-                    return 0;
-                }
+                // if (hevc.numOfArrays < 1) {
+                //     LOG_WARN("H265 skip wait for key frame");
+                //     return 0;
+                // }
+                zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, pframe->data, pframe->size, 64);
 
+                LOG_WARN("H265 numOfArrays:%u, keyflag:%u, size:%u", hevc.numOfArrays, pframe->keyflag, pframe->size);
                 if (pframe->keyflag && (pframe->video.width == 0 || pframe->video.height == 0)) {
                     zc_h26x_sps_info_t spsinfo = {0};
                     for (unsigned int i = 0; i < _SIZEOFTAB(hevc.nalu) && i < ZC_FRAME_NALU_MAXNUM; i++) {
-                        zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, hevc.nalu[i].data, hevc.nalu[i].bytes);
-                        if (hevc.nalu[i].type == H265_NAL_UNIT_PPS &&
+                        zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, hevc.nalu[i].data, hevc.nalu[i].bytes, hevc.nalu[i].bytes);
+                        if (hevc.nalu[i].type == H265_NAL_UNIT_SPS &&
                             zc_h265_sps_parse(hevc.nalu[i].data, hevc.nalu[i].bytes, &spsinfo) == 0) {
                             pframe->video.width = spsinfo.width;    // picture width;
                             pframe->video.height = spsinfo.height;  // picture height;
@@ -530,8 +533,8 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
                 int extra_data_size =
                     mpeg4_hevc_decoder_configuration_record_save(&hevc, extra_data, sizeof(extra_data));
                 assert(extra_data_size > 0);  // check buffer length
-                // LOG_INFO("fmp4 => add H265 info->v.w:%d, info->v.h:%d", pframe->video.width, pframe->video.height);
-                m_trackid[ZC_STREAM_VIDEO] = fmp4_writer_add_video(m_fmp4, MOV_OBJECT_H265, pframe->video.width,
+                LOG_INFO("fmp4 => add H265 info->v.w:%d, info->v.h:%d", pframe->video.width, pframe->video.height);
+                m_trackid[ZC_STREAM_VIDEO] = fmp4_writer_add_video(m_fmp4, MOV_OBJECT_HEVC, pframe->video.width,
                                                                    pframe->video.height, extra_data, extra_data_size);
                 fmp4_writer_init_segment(m_fmp4);
             }

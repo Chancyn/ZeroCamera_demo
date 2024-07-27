@@ -101,7 +101,7 @@ void CMsgCommSubClient::runThreadProc() {
             goto _done_err;
         }
 #if ZC_DUMP_BINSTREAM
-        zc_debug_dump_binstream("subcli recv", psock->id, (const uint8_t *)rbuf, rlen);
+        zc_debug_dump_binstream("subcli recv", psock->id, (const uint8_t *)rbuf, rlen, rlen);
 #endif
         // handle
         if (m_handle) {

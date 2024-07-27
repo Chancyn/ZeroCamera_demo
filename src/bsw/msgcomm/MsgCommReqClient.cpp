@@ -108,7 +108,7 @@ bool CMsgCommReqClient::SendTo(void *buf, size_t len, void *rbuf, size_t *rlen) 
     if (psock->id != 0) {
         int rv;
         #if ZC_DUMP_BINSTREAM
-        zc_debug_dump_binstream("clisend", psock->id, (const uint8_t*)buf, len);
+        zc_debug_dump_binstream("clisend", psock->id, (const uint8_t*)buf, len, len);
         #endif
         // LOG_TRACE("into send msg %d %s", psock->id, buf);
         if ((rv = nng_send(*psock, buf, len, 0)) != 0) {
@@ -121,7 +121,7 @@ bool CMsgCommReqClient::SendTo(void *buf, size_t len, void *rbuf, size_t *rlen) 
             return false;
         }
         #if ZC_DUMP_BINSTREAM
-        zc_debug_dump_binstream("clirecv", psock->id, (const uint8_t*)rbuf, *rlen);
+        zc_debug_dump_binstream("clirecv", psock->id, (const uint8_t*)rbuf, *rlen, *rlen);
         #endif
         return true;
     }

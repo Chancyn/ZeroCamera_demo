@@ -72,7 +72,7 @@ uint32_t zc_h264_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
     uint32_t prefixlen = 0x01 == p[2] ? 3 : 4;
     uint32_t nalunum = 0;
 #if ZC_DUMP_BINSTREAM  // dump
-    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H264, p, 64);
+    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H264, p, dataSize, 64);
 #endif
     while (p < end) {
         const unsigned char *pn = search_start_code(p + prefixlen, end);
@@ -106,7 +106,7 @@ uint32_t zc_h265_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
     uint32_t nalunum = 0;
 
 #if ZC_DUMP_BINSTREAM  // dump
-    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, p, 64);
+    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, p, dataSize, 64);
 #endif
 
     while (p < end) {

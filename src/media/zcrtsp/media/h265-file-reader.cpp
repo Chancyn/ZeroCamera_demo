@@ -124,17 +124,7 @@ int H265FileReader::Init() {
         int nal_unit_type = h265_nal_type(p);
         assert(0 <= nal_unit_type);
 
-        if (NAL_VPS == nal_unit_type || NAL_SPS == nal_unit_type || NAL_PPS == nal_unit_type) {
-            if (vpsspspps) {
-                size_t n = 0x01 == p[2] ? 3 : 4;
-                std::pair<const uint8_t *, size_t> pr;
-                pr.first = p + n;
-                pr.second = bytes;
-                m_sps.push_back(pr);
-            }
-        }
-
-        {
+        if (nal_unit_type < NAL_VPS) {
             if (m_sps.size() > 0)
                 vpsspspps = false;  // don't need more vps/sps/pps
 
@@ -157,8 +147,15 @@ int H265FileReader::Init() {
 
             m_videos.push_back(frame);
             nalu = pn;
+        } else if (NAL_VPS == nal_unit_type || NAL_SPS == nal_unit_type || NAL_PPS == nal_unit_type) {
+            if (vpsspspps) {
+                size_t n = 0x01 == p[2] ? 3 : 4;
+                std::pair<const uint8_t *, size_t> pr;
+                pr.first = p + n;
+                pr.second = pn - p - n;
+                m_sps.push_back(pr);
+            }
         }
-
         p = pn;
     }
 
