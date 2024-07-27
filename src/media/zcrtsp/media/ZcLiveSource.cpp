@@ -157,7 +157,7 @@ int CLiveSource::GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const 
 }
 
 int CLiveSource::_sendProcess() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     CEpoll ep{100};  // set timeout 100ms,for rtspsource thread exit
     int ret = 0;
 
@@ -190,31 +190,31 @@ int CLiveSource::_sendProcess() {
         }
     }
 
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return -1;
 }
 
 int CLiveSource::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     int ret = 0;
     while (State() == Running) {
         if (m_status == 1) {
             ret = _sendProcess();
             if (ret < 0) {
-                LOG_WARN("process exit\n");
+                LOG_WARN("process exit");
                 goto _err;
             }
         } else if (m_status >= 0) {
             usleep(100 * 1000);
             continue;
         } else {
-            LOG_WARN("status error m_status[%d]\n", m_status);
+            LOG_WARN("status error m_status[%d]", m_status);
             goto _err;
         }
     }
 _err:
 
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return -1;
 }
 

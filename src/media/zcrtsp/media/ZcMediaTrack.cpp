@@ -205,7 +205,7 @@ int CMediaTrack::GetData2Send() {
         uint64_t now = system_clock();
         m_debug_framecnt++;
         if (now > (m_debug_cnt_lasttime + 1000 * 10)) {
-            LOG_WARN("fps[%.2f],cnt[%u]cos[%llu]",
+            LOG_TRACE("fps[%.2f],cnt[%u]cos[%llu]",
                      (double)(m_debug_framecnt - m_debug_framecnt_last) * 1000 / (now - m_debug_cnt_lasttime),
                      m_debug_framecnt - m_debug_framecnt_last, (now - m_debug_cnt_lasttime) / 1000);
             m_debug_cnt_lasttime = now;

@@ -73,7 +73,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
         goto _err;
     }
 
-    if (m_fiforeader->GetStreamInfo(frameinfo)) {
+    if (m_fiforeader->GetStreamInfo(frameinfo, true)) {
         LOG_ERROR("GetStreamInfo ok");
         // goto _err;
         for (int i = 0; i < frameinfo.vinfo.nalunum; i++) {

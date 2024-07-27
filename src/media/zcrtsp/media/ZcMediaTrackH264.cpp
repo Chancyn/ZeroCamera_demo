@@ -72,9 +72,8 @@ bool CMediaTrackH264::Init(void *pinfo) {
         goto _err;
     }
 
-    if (m_fiforeader->GetStreamInfo(frameinfo)) {
+    if (m_fiforeader->GetStreamInfo(frameinfo, true)) {
         LOG_ERROR("GetStreamInfo ok nalunum:%d", frameinfo.vinfo.nalunum);
-        // goto _err;
         for (int i = 0; i < frameinfo.vinfo.nalunum; i++) {
             // sps pps
             if (frameinfo.vinfo.nalu[i].type >= ZC_NALU_TYPE_SPS && frameinfo.vinfo.nalu[i].type <= ZC_NALU_TYPE_PPS) {

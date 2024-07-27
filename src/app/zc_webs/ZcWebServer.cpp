@@ -501,7 +501,7 @@ int CWebServer::_sendFmp4DataCb(void *sess, int type, const void *data, size_t b
     // LOG_TRACE("write bytes:%u, data:%p, ptr:%p, c:%p, id:%lu", bytes, data, buf, con, con->id);
 
     if (type)
-        LOG_WARN("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, bytes, buf, con, con->id);
+        LOG_TRACE("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, bytes, buf, con, con->id);
 
     memcpy(buf, data, bytes);
     mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure
@@ -851,7 +851,7 @@ bool CWebServer::Stop() {
     if (!m_running) {
         return false;
     }
-    LOG_TRACE("Stop into\n");
+    LOG_TRACE("Stop into");
     Thread::Stop();
     struct mg_mgr *mgr = reinterpret_cast<struct mg_mgr *>(m_mgrhandle);
     if (mgr) {
@@ -860,17 +860,17 @@ bool CWebServer::Stop() {
         m_mgrhandle = nullptr;
     }
     m_running = false;
-    LOG_TRACE("Stop exit\n");
+    LOG_TRACE("Stop exit");
     return true;
 }
 
 int CWebServer::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     struct mg_mgr *mgr = reinterpret_cast<struct mg_mgr *>(m_mgrhandle);
     while (State() == Running /*&&  i < loopcnt*/) {
         mg_mgr_poll(mgr, 1000);
     }
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return -1;
 }
 

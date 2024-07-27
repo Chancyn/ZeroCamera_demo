@@ -67,6 +67,11 @@ bool CMediaTrackAAC::Init(void *pinfo) {
         goto _err;
     }
 
+    if (!m_fiforeader->ShmAlloc()) {
+        LOG_ERROR("ShmAlloc error");
+        goto _err;
+    }
+
     m_rtppacker = rtp_payload_encode_create(RTP_PAYLOAD_MP4A, "mpeg4-generic", (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
     if (!m_rtppacker) {
         LOG_ERROR("Create playload encode error AAC");

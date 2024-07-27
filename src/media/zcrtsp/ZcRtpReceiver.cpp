@@ -32,17 +32,17 @@
 namespace zc {
 
 int CRtpRxThread::process() {
-    LOG_WARN("process into\n");
+    LOG_DEBUG("process into");
     int ret = 0;
     while (State() == Running /*&&  i < loopcnt*/) {
         if ((ret = m_rtprx->RtpReceiver(ZC_RTP_RECIVE_TIMEOUT)) < 0) {
-            LOG_WARN("RtpReceiver error ret[%d]\n", ret);
+            LOG_WARN("RtpReceiver error ret[%d]", ret);
             ret = -1;
             break;
         }
         system_sleep(100);
     }
-    LOG_WARN("process exit\n");
+    LOG_DEBUG("process exit");
     return -1;
 }
 
@@ -134,14 +134,14 @@ int CRtpReceiver::_rtcpRead(socket_t s) {
     }
     r = rtp_demuxer_input(m_rtpctx->demuxer, m_rtpctx->rtcp_buffer, r);
     if (RTCP_BYE == r) {
-        LOG_WARN("finished\n");
+        LOG_WARN("finished");
     }
     fflush(m_rtpctx->fp);
     return r;
 }
 #if 1
 int CRtpReceiver::RtpReceiver(int timeout) {
-    LOG_TRACE("RtpReceiver into\n");
+    LOG_TRACE("RtpReceiver into");
     CEpoll ep{timeout};  // set timeout 100ms,for rtspsource thread exit
     int ret = 0;
 
@@ -169,7 +169,7 @@ int CRtpReceiver::RtpReceiver(int timeout) {
                                 socket_addr_len((const struct sockaddr *)&m_rtpctx->ss[1]));
         ret = ep.Wait();
         if (ret == -1) {
-            LOG_ERROR("epoll error ret[%d]errno [%d]\n", ret, errno);
+            LOG_ERROR("epoll error ret[%d]errno [%d]", ret, errno);
             m_running = RTP_STATUS_ERR;
         } else if (ret > 0) {
             for (int i = 0; i < ret; i++) {
@@ -186,12 +186,12 @@ int CRtpReceiver::RtpReceiver(int timeout) {
         }
     }
 
-    LOG_TRACE("RtpReceiver exit ret[%d], m_running[%d]\n", ret, m_running);
+    LOG_TRACE("RtpReceiver exit ret[%d], m_running[%d]", ret, m_running);
     return -1;
 }
 #else
 int CRtpReceiver::RtpReceiver(int timeout) {
-    LOG_TRACE("RtpReceiver into\n");
+    LOG_TRACE("RtpReceiver into");
     int i, r;
     //	int interval;
     time64_t clock;
@@ -218,7 +218,7 @@ int CRtpReceiver::RtpReceiver(int timeout) {
         if (0 == r) {
             continue;  // timeout
         } else if (r < 0) {
-            LOG_TRACE("epoll error ret[%d]errno [%d]\n", r, errno);
+            LOG_TRACE("epoll error ret[%d]errno [%d]", r, errno);
             m_running = RTP_STATUS_ERR;
             break;
         } else {
@@ -233,7 +233,7 @@ int CRtpReceiver::RtpReceiver(int timeout) {
             }
         }
     }
-    LOG_TRACE("RtpReceiver exit ret[%d], m_running[%d]\n", r, m_running);
+    LOG_TRACE("RtpReceiver exit ret[%d], m_running[%d]", r, m_running);
     return -1;
 }
 #endif

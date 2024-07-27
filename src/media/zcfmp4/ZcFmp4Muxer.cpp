@@ -29,7 +29,7 @@ namespace zc {
 #define ZC_DEBUG_DUMP 1
 
 #define N_SEGMENT (1 * 1024 * 1024)
-#define N_FILESIZE (100 * 1024 * 1024)  // 100M
+#define N_FILEBUF_MAXSIZE (4 * 1024 * 1024)  // 4M
 
 #if defined(_WIN32) || defined(_WIN64)
 #define fseek64 _fseeki64
@@ -69,7 +69,7 @@ CMovBuf::CMovBuf() {
     m_bytes = 0;
     m_offset = 0;
     m_capacity = 0;
-    m_maxsize = N_FILESIZE;
+    m_maxsize = N_FILEBUF_MAXSIZE;
 
     m_io.read = ioRead;
     m_io.write = ioWrite;
@@ -93,7 +93,14 @@ int CMovBuf::Read(void *data, uint64_t bytes) {
     return 0;
 }
 
-const uint8_t * CMovBuf::GetDataBufPtr(uint32_t &bytes) {
+void CMovBuf::ResetDataBufPos()
+{
+    m_offset = 0;
+    m_bytes = 0;
+    return;
+}
+
+const uint8_t *CMovBuf::GetDataBufPtr(uint32_t &bytes) {
     const uint8_t *ptr = nullptr;
 #if ZC_DEBUG_DUMP
     if (bytes)
@@ -195,7 +202,7 @@ CMovBufFile::CMovBufFile(const char *name) {
     m_bytes = 0;
     m_offset = 0;
     m_capacity = 0;
-    m_maxsize = N_FILESIZE;
+    m_maxsize = N_FILEBUF_MAXSIZE;
 
     m_file = fopen(name, "wb+");
     if (m_file) {
@@ -230,7 +237,7 @@ void CMovBufFile::Close() {
 int CMovBufFile::Read(void *data, uint64_t bytes) {
     if (m_offset + bytes > m_bytes)
         return E2BIG;
-    LOG_WARN("read, offset:%zu, size:%llu", m_offset, bytes);
+    // LOG_TRACE("read, offset:%zu, size:%llu", m_offset, bytes);
     memcpy(data, m_buf + m_offset, (uint64_t)bytes);
     m_offset += bytes;
 
@@ -240,7 +247,13 @@ int CMovBufFile::Read(void *data, uint64_t bytes) {
     return 0 != ferror(m_file) ? ferror(m_file) : -1 /*EOF*/;
 }
 
-const uint8_t * CMovBufFile::GetDataBufPtr(uint32_t &bytes) {
+void CMovBufFile::ResetDataBufPos() {
+    m_offset = 0;
+    m_bytes = 0;
+    return;
+}
+
+const uint8_t *CMovBufFile::GetDataBufPtr(uint32_t &bytes) {
     const uint8_t *ptr = nullptr;
 
 #if ZC_DEBUG_DUMP
@@ -262,10 +275,9 @@ int CMovBufFile::Write(const void *data, uint64_t bytes) {
     size_t capacity;
     if (m_offset + bytes > m_maxsize)
         return -E2BIG;
-    // printf("###debug write,cap:%zu,offset%zu,max:%zu, size:%llu\n", m_capacity, m_offset, m_maxsize, bytes);
     // LOG_WARN("write,cap:%zu,offset:%zu,max:%zu, size:%llu", m_capacity, m_offset, m_maxsize, bytes);
     if (m_offset + bytes > m_capacity) {
-        LOG_ERROR("need realloc,cap:%zu,offset%zu,size:%u ", m_capacity, m_offset, bytes);
+        LOG_ERROR("need realloc,cap:%zu,offset%zu,size:%u", m_capacity, m_offset, bytes);
         capacity = m_offset + bytes + N_SEGMENT;
         capacity = capacity > m_maxsize ? m_maxsize : capacity;
         ptr = realloc(m_buf, capacity);
@@ -277,8 +289,8 @@ int CMovBufFile::Write(const void *data, uint64_t bytes) {
 
     memcpy(m_buf + m_offset, data, bytes);
     m_offset += bytes;
-    //if (m_offset > m_bytes)
-        // m_bytes = m_offset;
+    // if (m_offset > m_bytes)
+    //  m_bytes = m_offset;
 
     return bytes == fwrite(data, 1, bytes, m_file) ? 0 : ferror(m_file);
 }
@@ -378,6 +390,13 @@ bool CFmp4Muxer::createStream() {
             delete fiforeader;
             continue;
         }
+
+        // skip2f
+        zc_frame_userinfo_t frameinfo;
+        // Skip2LatestPos();
+        if (fiforeader->GetStreamInfo(frameinfo, true)) {
+            LOG_WARN("Get Streaminfo/jump2latest ok");
+        }
         m_vector.push_back(fiforeader);
     }
 
@@ -448,6 +467,8 @@ bool CFmp4Muxer::Start() {
         return false;
     }
 
+    // find idr;
+
     Thread::Start();
     m_status = fmp4_status_init;
     return true;
@@ -474,13 +495,14 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             if (m_trackid[ZC_STREAM_VIDEO] == -1) {
                 LOG_WARN("H264 [size:%d, n:%d, vlc:%d]", pframe->size, n, vcl);
                 if (avc.nb_sps < 1 || avc.sps[0].bytes < 4) {
-                    LOG_WARN("H264 skip video wait for key frame [idc:%d, nb_sps:%d, sps:%d]\n", avc.chroma_format_idc,
+                    LOG_WARN("H264 skip video wait for key frame [idc:%d, nb_sps:%d, sps:%d]", avc.chroma_format_idc,
                              avc.nb_sps, avc.sps[0].bytes);
                     return 0;
                 }
                 if (pframe->keyflag && (pframe->video.width == 0 || pframe->video.height == 0)) {
                     zc_h26x_sps_info_t spsinfo = {0};
-                    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H264, avc.sps[0].data, avc.sps[0].bytes, avc.sps[0].bytes);
+                    zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H264, avc.sps[0].data, avc.sps[0].bytes,
+                                            avc.sps[0].bytes);
                     if (zc_h264_sps_parse(avc.sps[0].data, avc.sps[0].bytes, &spsinfo) == 0) {
                         pframe->video.width = spsinfo.width;    // picture width;
                         pframe->video.height = spsinfo.height;  // picture height;
@@ -502,7 +524,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
                 // LOG_TRACE("H264 [size:%d, n:%d, vlc:%d, track:%d]", pframe->size, n, vcl,
                 // m_trackid[ZC_STREAM_VIDEO]);
                 ret = fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_VIDEO], m_framemp4buf, n, pframe->pts, pframe->pts,
-                                         pframe->keyflag ? MOV_AV_FLAG_KEYFREAME : 0);
+                                        pframe->keyflag ? MOV_AV_FLAG_KEYFREAME : 0);
             }
         } else if (pframe->video.encode == ZC_FRAME_ENC_H265) {
             struct mpeg4_hevc_t hevc = {0};
@@ -510,17 +532,18 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             n = h265_annexbtomp4(&hevc, pframe->data, pframe->size, m_framemp4buf, sizeof(m_framemp4buf), &vcl,
                                  &update);
             if (m_trackid[ZC_STREAM_VIDEO] == -1) {
-                // if (hevc.numOfArrays < 1) {
-                //     LOG_WARN("H265 skip wait for key frame");
-                //     return 0;
-                // }
-                zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, pframe->data, pframe->size, 64);
+                if (hevc.numOfArrays < 1) {
+                    LOG_WARN("H265 skip wait for key frame");
+                    return 0;
+                }
+                // zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, pframe->data, pframe->size, 64);
 
-                LOG_WARN("H265 numOfArrays:%u, keyflag:%u, size:%u", hevc.numOfArrays, pframe->keyflag, pframe->size);
+                // LOG_WARN("H265 numnalu:%u, keyflag:%u, size:%u", hevc.numOfArrays, pframe->keyflag, pframe->size);
                 if (pframe->keyflag && (pframe->video.width == 0 || pframe->video.height == 0)) {
                     zc_h26x_sps_info_t spsinfo = {0};
                     for (unsigned int i = 0; i < _SIZEOFTAB(hevc.nalu) && i < ZC_FRAME_NALU_MAXNUM; i++) {
-                        zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, hevc.nalu[i].data, hevc.nalu[i].bytes, hevc.nalu[i].bytes);
+                        zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, hevc.nalu[i].data, hevc.nalu[i].bytes,
+                                                hevc.nalu[i].bytes);
                         if (hevc.nalu[i].type == H265_NAL_UNIT_SPS &&
                             zc_h265_sps_parse(hevc.nalu[i].data, hevc.nalu[i].bytes, &spsinfo) == 0) {
                             pframe->video.width = spsinfo.width;    // picture width;
@@ -541,7 +564,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
 
             if (m_trackid[ZC_STREAM_VIDEO] != -1) {
                 ret = fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_VIDEO], m_framemp4buf, n, pframe->pts, pframe->pts,
-                                         pframe->keyflag ? MOV_AV_FLAG_KEYFREAME : 0);
+                                        pframe->keyflag ? MOV_AV_FLAG_KEYFREAME : 0);
             }
         }
     } else if (pframe->type == ZC_STREAM_AUDIO) {
@@ -563,9 +586,9 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             unsigned char *_buf = pframe->data;
             // mpeg4_aac_adts_frame_length();
             int framelen = ((_buf[3] & 0x03) << 11) | (_buf[4] << 3) | ((_buf[5] >> 5) & 0x07);
-            // printf("AAC framelen:%d\n", framelen);
+            // LOG_TRACE("AAC framelen:%d", framelen);
             ret = fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_AUDIO], _buf + 7, framelen - 7, pframe->pts,
-                                     pframe->pts, 0);
+                                    pframe->pts, 0);
         }
     }
 
@@ -579,6 +602,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             if (data) {
                 m_info.onfmp4packetcb(m_info.Context, keyflag, data, len, 0);
             }
+            m_movio->ResetDataBufPos();
         }
     } else {
         LOG_ERROR("write,erro, pframe->size:%u", pframe->size);
@@ -590,12 +614,14 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
 int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
     int ret = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
-    if (stream->Len() > sizeof(zc_frame_t)) {
+    // (stream->Len() > sizeof(zc_frame_t)) {
+    while (State() == Running && (stream->Len() > sizeof(zc_frame_t))) {
         ret = stream->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
         if (ret < sizeof(zc_frame_t)) {
             return -1;
         }
 
+#if 0  // no need anymore
         // first IDR frame
         if (!m_Idr) {
             if (!pframe->keyflag) {
@@ -605,6 +631,7 @@ int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
                 m_Idr = true;
             }
         }
+#endif
 
 #if 1  // ZC_DEBUG
        // debug info
@@ -619,9 +646,11 @@ int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
 
         // packet flv
         if (_write2Fmp4(pframe) < 0) {
-            LOG_WARN("process into\n");
+            LOG_WARN("process into");
             return -1;
         }
+
+        ZC_MSLEEP(1);
     }
 
     return 0;

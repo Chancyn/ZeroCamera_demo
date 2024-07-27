@@ -117,7 +117,7 @@ bool CStreamMgrCli::Stop() {
 }
 
 int CStreamMgrCli::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     int ret = 0;
 
     while (State() == Running) {
@@ -125,7 +125,7 @@ int CStreamMgrCli::process() {
         usleep(10 * 1000);
     }
 _err:
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return ret;
 }
 }  // namespace zc

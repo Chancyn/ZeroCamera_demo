@@ -730,12 +730,12 @@ bool CRtspServer::_aio_work() {
 }
 
 int CRtspServer::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     while (State() == Running /*&&  i < loopcnt*/) {
         _aio_work();
         system_sleep(100);
     }
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return -1;
 }
 

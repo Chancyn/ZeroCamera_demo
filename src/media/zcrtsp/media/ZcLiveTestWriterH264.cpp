@@ -202,7 +202,7 @@ int CLiveTestWriterH264::fillnaluInfo(zc_video_naluinfo_t &sdpinfo) {
 }
 
 int CLiveTestWriterH264::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     int ret = 0;
     ZC_SAFE_DELETE(m_reader);
     m_reader = new H264FileReader(m_info.filepath);
@@ -211,7 +211,7 @@ int CLiveTestWriterH264::process() {
         if (1 /*m_status == 1*/) {
             ret = _putData2FIFO();
             if (ret < 0) {
-                LOG_WARN("process file EOF exit\n");
+                LOG_WARN("process file EOF exit");
                 ret = 0;
                 goto _err;
             } else if (ret > 0) {
@@ -223,7 +223,7 @@ int CLiveTestWriterH264::process() {
     }
 _err:
     ZC_SAFE_DELETE(m_reader);
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return ret;
 }
 

@@ -117,13 +117,12 @@ unsigned int CShmStreamR::_getLatestFrameHdr(unsigned char *buffer, unsigned int
 
 bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) {
     bool flags = false;
-    unsigned char *pos = frame->data;
-    unsigned char naluval = 0;
-    unsigned char prefixlen = 0x01 == frame->data[2] ? 3 : 4;
 
     if (frame->video.encode == ZC_FRAME_ENC_H264 || frame->video.encode == ZC_FRAME_ENC_H265) {
+        unsigned char *pos = frame->data;
+        unsigned char naluval = 0;
+        unsigned char prefixlen = 0x01 == frame->data[2] ? 3 : 4;
         // ZC_ASSERT(frame->keyflag); // TODO(zhoucc):
-        //
         if (frame->video.nalunum == 0) {
             LOG_WARN("no naluinfo, prase frame->size:%d", frame->size);
             zc_h26x_nalu_info_t tmp;
@@ -234,21 +233,30 @@ unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsign
     return ret + hdrlen;
 }
 
-bool CShmStreamR::GetStreamInfo(zc_frame_userinfo_t &info) {
-    unsigned int len = 0;
+bool CShmStreamR::GetStreamInfo(zc_frame_userinfo_t &info, bool skip2lastest /*=false*/) {
     bool ret = false;
-    len = getUserData((unsigned char *)&info, sizeof(zc_frame_userinfo_t));
-    if (len != sizeof(zc_frame_userinfo_t)) {
-        ret = _getLatestFrameInfo(info);
-        if (!ret) {
-            LOG_ERROR("get userdata frameinfo error, try get latest ret:%d", ret);
+    if (!skip2lastest) {
+        // just get info;do't jump to lastest frame
+        unsigned int len = 0;
+        len = getUserData((unsigned char *)&info, sizeof(zc_frame_userinfo_t));
+        if (len == sizeof(zc_frame_userinfo_t)) {
+            LOG_WARN("get userdata frameinfo ok");
+            return ret;
         }
-    } else {
-        LOG_WARN("get userdata frameinfo ok");
-        ret = true;
     }
 
+    ret = _getLatestFrameInfo(info);
+    if (!ret) {
+        LOG_ERROR("get userdata frameinfo error, try get latest ret:%d", ret);
+    }
     return ret;
+}
+
+void CShmStreamR::Skip2LatestPos(bool key) {
+    ShareLock();
+    getLatestPos(key);
+    ShareUnlock();
+    return;
 }
 
 }  // namespace zc

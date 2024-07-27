@@ -499,7 +499,7 @@ int CRtspPushServer::_onclose(void *ptr2) {
     // TODO(zhoucc): notify rtsp connection lost
     //       start a timer to check rtp/rtcp activity
     //       close rtsp media session on expired
-    printf("rtsp close\n");
+    LOG_WARN("rtsp close");
     return 0;
 }
 
@@ -509,7 +509,7 @@ void CRtspPushServer::rtsp_onerror(void *ptr, rtsp_server_t *rtsp, int code) {
 }
 
 void CRtspPushServer::_onerror(rtsp_server_t *rtsp, int code) {
-    LOG_ERROR("rtsp_onerror code=%d, rtsp=%p, rtsp->session=%p,  \n", code, rtsp, rtsp->session);
+    LOG_ERROR("rtsp_onerror code=%d, rtsp=%p, rtsp->session=%p", code, rtsp, rtsp->session);
     TPushSessions::iterator it;
 
     // TODO(zhoucc): Teardown
@@ -533,7 +533,7 @@ void CRtspPushServer::rtsp_onerror2(void *ptr, rtsp_server_t *rtsp, int code, vo
 
 void CRtspPushServer::_onerror2(rtsp_server_t *rtsp, int code, void *ptr2) {
     // ptr2[session]
-    LOG_ERROR("rtsp_onerror2 code=%d, rtsp=%p, rtsp.session=%p, ptr2[%p]\n", code, rtsp, rtsp->session, ptr2);
+    LOG_ERROR("rtsp_onerror2 code=%d, rtsp=%p, rtsp.session=%p, ptr2[%p]", code, rtsp, rtsp->session, ptr2);
     TPushSessions::iterator it;
     std::lock_guard<std::mutex> locker(m_pushmutex);
     // for (it = m_pushsessions.begin(); it != m_pushsessions.end(); ++it) {
@@ -721,12 +721,12 @@ bool CRtspPushServer::_aio_work() {
 }
 
 int CRtspPushServer::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     while (State() == Running /*&&  i < loopcnt*/) {
         _aio_work();
         system_sleep(100);
     }
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return -1;
 }
 }  // namespace zc

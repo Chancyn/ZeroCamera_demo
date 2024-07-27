@@ -110,6 +110,13 @@ bool CFlvMuxer::createStream() {
             delete fiforeader;
             continue;
         }
+
+        zc_frame_userinfo_t frameinfo;
+        // Skip2LatestPos();
+        if (fiforeader->GetStreamInfo(frameinfo, true)) {
+            LOG_WARN("Get Streaminfo/jump2latest ok");
+        }
+
         m_vector.push_back(fiforeader);
     }
 
@@ -196,7 +203,8 @@ int CFlvMuxer::_fillFlvMuxerMeta() {
     metadata.audiosamplerate = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.sample_rate;  // 480000
     metadata.audiosamplesize = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.sample_bits * 8;
     metadata.stereo = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.channels > 1 ? true : false;
-    metadata.videocodecid = flv_vid_h264;// getFlvCodeId((zc_frame_enc_e)m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].encode);
+    metadata.videocodecid =
+        flv_vid_h264;  // getFlvCodeId((zc_frame_enc_e)m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].encode);
     metadata.videodatarate = 64.0;
     metadata.framerate = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.fps;
     metadata.width = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.width;
@@ -254,12 +262,13 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
     int ret = 0;
 
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
-    if (stream->Len() > sizeof(zc_frame_t)) {
+    // if (stream->Len() > sizeof(zc_frame_t)) {
+    while (State() == Running && (stream->Len() > sizeof(zc_frame_t))) {
         ret = stream->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
         if (ret < sizeof(zc_frame_t)) {
             return -1;
         }
-
+#if 0   // no need anymore,first open stream,skip2last keyframe
         // first IDR frame
         if (!m_Idr) {
             if (!pframe->keyflag) {
@@ -269,7 +278,7 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
                 m_Idr = true;
             }
         }
-
+#endif
 #if 0  // ZC_DEBUG
        // debug info
         if (pframe->keyflag) {
@@ -283,7 +292,7 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
 
         // packet flv
         if (_packetFlv(pframe) < 0) {
-            LOG_WARN("process into\n");
+            LOG_WARN("process into");
             return -1;
         }
     }

@@ -462,14 +462,14 @@ _err:
 }
 
 int CRtspPushClient::process() {
-    LOG_WARN("process into\n");
+    LOG_WARN("process into");
     while (State() == Running /*&&  i < loopcnt*/) {
         if (_cliwork() < 0) {
             break;
         }
         system_sleep(1000);
     }
-    LOG_WARN("process exit\n");
+    LOG_WARN("process exit");
     return -1;
 }
 

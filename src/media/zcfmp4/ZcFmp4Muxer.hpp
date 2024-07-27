@@ -50,6 +50,7 @@ class CMovIo {
     virtual int Write(const void *data, uint64_t bytes) = 0;
     virtual int Seek(int64_t offset) = 0;
     virtual int64_t Tell() = 0;
+    virtual void ResetDataBufPos() = 0;
     virtual const uint8_t *GetDataBufPtr(uint32_t &bytes) = 0;
 
  protected:
@@ -71,12 +72,13 @@ class CMovBuf : public CMovIo, public NonCopyable {
     virtual int Write(const void *data, uint64_t bytes);
     virtual int Seek(int64_t offset);
     virtual int64_t Tell();
+    virtual void ResetDataBufPos();
     virtual const uint8_t *GetDataBufPtr(uint32_t &bytes);
 
  private:
     uint8_t *m_buf;
-    size_t m_bytes;     // readpos
-    size_t m_offset;    // writepos
+    size_t m_bytes;   // readpos
+    size_t m_offset;  // writepos
     size_t m_capacity;
     size_t m_maxsize;  // max bytes per mp4 file
 };
@@ -91,6 +93,7 @@ class CMovFile : public CMovIo, public NonCopyable {
     virtual int Write(const void *data, uint64_t bytes);
     virtual int Seek(int64_t offset);
     virtual int64_t Tell();
+    virtual void ResetDataBufPos() { return; }
     virtual const uint8_t *GetDataBufPtr(uint32_t &bytes) { return nullptr; };
 
  private:
@@ -108,6 +111,7 @@ class CMovBufFile : public CMovIo, public NonCopyable {
     virtual int Write(const void *data, uint64_t bytes);
     virtual int Seek(int64_t offset);
     virtual int64_t Tell();
+    virtual void ResetDataBufPos();
     virtual const uint8_t *GetDataBufPtr(uint32_t &bytes);
 
  private:
