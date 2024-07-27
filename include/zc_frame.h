@@ -102,6 +102,8 @@ typedef enum {
     ZC_FRAME_P = 0,
     ZC_FRAME_IDR,
     ZC_FRAME_I,
+    ZC_FRAME_I_BLA,   // hevc BLA
+    ZC_FRAME_I_CRA,   // hevc CRA
 
     ZC_FRAME_BUTT,
 } zc_frame_e;

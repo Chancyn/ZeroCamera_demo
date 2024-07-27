@@ -28,7 +28,7 @@
 extern "C" uint32_t rtp_ssrc(void);
 
 #define VIDEO_BANDWIDTH (4 * 1024)
-#define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
+
 
 namespace zc {
 CLiveSource::CLiveSource(const zc_stream_info_t &info) : Thread("LiveSource"), m_status(0) {

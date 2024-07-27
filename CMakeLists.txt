@@ -84,7 +84,7 @@ else()
        message("build with Release")
 endif()
 
-option(WITH_OPENSSL "openssl option"     ON)
+option(WITH_OPENSSL "openssl option"     OFF)
 if(WITH_OPENSSL)
 set(OPENSSL_ROOT_DIR ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC})
 find_package(OpenSSL REQUIRED)

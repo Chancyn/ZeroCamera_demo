@@ -244,11 +244,9 @@ bool CRtmpPush::_startFlvMuxer() {
     if (!m_flv) {
         return false;
     }
-    zc_flvmuxer_info_t info = {
-        .onflvpacketcb = onFlvPacketCb,
-        .Context = this,
-    };
-
+    zc_flvmuxer_info_t info = {};
+    info.onflvpacketcb = onFlvPacketCb;
+    info.Context = this;
     memcpy(&info.streaminfo, &m_info, sizeof(zc_stream_info_t));
 
     if (!m_flv->Create(info)) {
