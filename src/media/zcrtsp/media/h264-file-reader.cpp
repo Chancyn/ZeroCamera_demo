@@ -1,4 +1,5 @@
 #include "h264-file-reader.h"
+#include "zc_log.h"
 #include <assert.h>
 #include <string.h>
 #include <algorithm>
@@ -128,10 +129,12 @@ int H264FileReader::Init()
 	const uint8_t* end = m_ptr + m_capacity;
     const uint8_t* nalu = search_start_code(m_ptr, end);
 	const uint8_t* p = nalu;
+	uint32_t prefixlen = 0x01 == p[2] ? 3 : 4;
 
 	while (p < end)
 	{
-        const unsigned char* pn = search_start_code(p + 4, end);
+        // const unsigned char* pn = search_start_code(p + 4, end);
+		const unsigned char* pn = search_start_code(p + 3, end);  // to 00 00 01
 		size_t bytes = pn - nalu;
 
         int nal_unit_type = h264_nal_type(p);
@@ -152,10 +155,10 @@ int H264FileReader::Init()
         {
             if(spspps)
             {
-                size_t n = 0x01 == p[2] ? 3 : 4;
 				std::pair<const uint8_t*, size_t> pr;
-				pr.first = p + n;
-				pr.second = bytes;
+				pr.first = p + prefixlen;
+				pr.second = pn - p - prefixlen;
+				// LOG_WARN("i:%d,type:0x%0x bytes:%d", m_sps.size(), nal_unit_type, pr.second);
 				m_sps.push_back(pr);
             }
         }
