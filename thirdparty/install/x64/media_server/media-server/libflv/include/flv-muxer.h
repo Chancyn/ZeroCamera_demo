@@ -63,6 +63,8 @@ struct flv_metadata_t
 	int interval; // frame interval
 	int width;
 	int height;
+	char server[32];		// servername
+	char server_ver[64];	//server version
 };
 
 int flv_muxer_metadata(flv_muxer_t* muxer, const struct flv_metadata_t* metadata);

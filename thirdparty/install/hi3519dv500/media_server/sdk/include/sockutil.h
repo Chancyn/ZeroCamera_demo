@@ -9,8 +9,8 @@
 
 #if defined(OS_WINDOWS)
 #define SOCKET_TIMEDOUT -WSAETIMEDOUT
-#define iov_base buf
-#define iov_len  len
+#define iov_base buf  
+#define iov_len  len 
 #else
 #define SOCKET_TIMEDOUT -ETIMEDOUT
 #endif
@@ -230,7 +230,7 @@ static inline socket_t socket_udp_bind_addr(IN const struct sockaddr* addr, int 
 /// @param[in] backlog the maximum length to which the queue of pending connections for socket may grow
 /// @param[in] reuse 1-enable reuse addr
 /// @param[in] dual 1-enable ipv6 dual stack
-/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok
+/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok 
 static inline socket_t socket_tcp_listen(IN int family, IN const char* ipv4_or_ipv6_or_dns, IN u_short port, IN int backlog, int reuse, int dual)
 {
 	int r;
@@ -252,7 +252,7 @@ static inline socket_t socket_tcp_listen(IN int family, IN const char* ipv4_or_i
 	for (ptr = addr; 0 != r && ptr != NULL; ptr = ptr->ai_next)
 	{
 		assert(AF_INET == ptr->ai_family || AF_INET6 == ptr->ai_family);
-
+		
 		// fixed ios getaddrinfo don't set port if nodename is ipv4 address
 		socket_addr_setport(ptr->ai_addr, (socklen_t)ptr->ai_addrlen, port);
 
@@ -276,7 +276,7 @@ static inline socket_t socket_tcp_listen(IN int family, IN const char* ipv4_or_i
 /// @param[in] ipv4_or_dns socket bind local address, NULL-bind any address
 /// @param[in] port bind local port
 /// @param[in] backlog the maximum length to which the queue of pending connections for socket may grow
-/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok
+/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok 
 static inline socket_t socket_tcp_listen_ipv4(IN const char* ipv4_or_dns, IN u_short port, IN int backlog)
 {
 	return socket_tcp_listen(AF_INET, ipv4_or_dns, port, backlog, 0, 0);
@@ -287,7 +287,7 @@ static inline socket_t socket_tcp_listen_ipv4(IN const char* ipv4_or_dns, IN u_s
 /// @param[in] port bind local port
 /// @param[in] backlog the maximum length to which the queue of pending connections for socket may grow
 /// @param[in] ipv4 0-ipv6 only, 1-ipv6 dual stack
-/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok
+/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok 
 static inline socket_t socket_tcp_listen_ipv6(IN const char* ipv4_or_ipv6_or_dns, IN u_short port, IN int backlog, IN int ipv4)
 {
 	return socket_tcp_listen(AF_INET6, ipv4_or_ipv6_or_dns, port, backlog, 0, ipv4);
@@ -299,7 +299,7 @@ static inline socket_t socket_tcp_listen_ipv6(IN const char* ipv4_or_ipv6_or_dns
 /// @param[in] port bind local port
 /// @param[in] reuse 1-enable reuse addr
 /// @param[in] dual 1-enable ipv6 dual stack
-/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok
+/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok 
 static inline socket_t socket_udp_bind(IN int family, IN const char* ipv4_or_ipv6_or_dns, IN u_short port, int reuse, int dual)
 {
 	socket_t sock;
@@ -335,7 +335,7 @@ static inline socket_t socket_udp_bind(IN int family, IN const char* ipv4_or_ipv
 /// create a new IPv4 UDP socket and bind with ip/port
 /// @param[in] ipv4_or_dns socket bind local address, NULL-bind any address
 /// @param[in] port bind local port
-/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok
+/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok 
 static inline socket_t socket_udp_bind_ipv4(IN const char* ipv4_or_dns, IN u_short port)
 {
 	return socket_udp_bind(AF_INET, ipv4_or_dns, port, 0, 0);
@@ -345,7 +345,7 @@ static inline socket_t socket_udp_bind_ipv4(IN const char* ipv4_or_dns, IN u_sho
 /// @param[in] ipv4_or_ipv6_or_dns socket bind local address, NULL-bind any address
 /// @param[in] port bind local port
 /// @param[in] ipv4 0-ipv6 only, 1-ipv6 dual stack
-/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok
+/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok 
 static inline socket_t socket_udp_bind_ipv6(IN const char* ipv4_or_ipv6_or_dns, IN u_short port, IN int ipv4)
 {
 	return socket_udp_bind(AF_INET6, ipv4_or_ipv6_or_dns, port, 0, ipv4);
@@ -382,7 +382,7 @@ static inline int socket_udp_multicast(IN socket_t sock, IN const char* group, I
         assert(0);
         r = -1;
     }
-
+    
     return r;
 }
 
@@ -391,11 +391,11 @@ static inline int socket_udp_multicast(IN socket_t sock, IN const char* group, I
 /// @param[out] addr struct sockaddr_in for IPv4
 /// @param[out] addrlen addr length in bytes
 /// @param[in] timeout timeout in millisecond
-/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok
+/// @return socket_invalid-error, use socket_geterror() to get error code, other-ok  
 static inline socket_t socket_accept_by_time(IN socket_t socket, OUT struct sockaddr_storage* addr, OUT socklen_t* addrlen, IN int timeout)
 {
 	int ret;
-
+	
 	assert(socket_invalid != socket);
 	ret = socket_select_read(socket, timeout);
 	if (socket_error == ret)
@@ -599,7 +599,7 @@ static inline int socket_recvfrom_addr(IN socket_t sock, OUT socket_bufvec_t* ve
 {
 	int r;
 	char control[64];
-
+	
 #if defined(OS_WINDOWS) && _WIN32_WINNT >= 0x0600
 	WSACMSGHDR* cmsg;
 	struct in_pktinfo* pktinfo;
@@ -647,7 +647,7 @@ static inline int socket_recvfrom_addr(IN socket_t sock, OUT socket_bufvec_t* ve
 	}
 
 	return bytes;
-
+	
 #elif defined(OS_LINUX) || defined(OS_MAC)
 	struct msghdr hdr;
 	struct cmsghdr *cmsg;
