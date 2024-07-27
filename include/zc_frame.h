@@ -8,8 +8,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "zc_type.h"
 #include "zc_media_track.h"
+#include "zc_type.h"
 
 // rtsp-server live shmfifo
 #define ZC_STREAM_VIDEO_SHM_PATH "v_live"
@@ -40,10 +40,10 @@ http://192.168.1.166/live/live.ch0.flv
 http://192.168.1.166/live/pull.ch0.mp4
 */
 
-#define ZC_STREAM_LIVEURL_CHN_PREFIX "live"  // livestream prefix url
+#define ZC_STREAM_LIVEURL_CHN_PREFIX "live"    // livestream prefix url
 #define ZC_STREAM_PUSHSURL_CHN_PREFIX "pushs"  // rtsppush prefix url, forwarding stream prefix url
-#define ZC_STREAM_PULLURL_CHN_PREFIX "pull"  // rtpcli pull forwarding prefix url
-#define ZC_STREAM_PUSHCURL_CHN_PREFIX  "pushc"  // rtpcli pull forwarding prefix url
+#define ZC_STREAM_PULLURL_CHN_PREFIX "pull"    // rtpcli pull forwarding prefix url
+#define ZC_STREAM_PUSHCURL_CHN_PREFIX "pushc"  // rtpcli pull forwarding prefix url
 
 // stream fifo max size
 #define ZC_STREAM_MAIN_VIDEO_SIZE (8 * 1024 * 1024)
@@ -56,14 +56,18 @@ http://192.168.1.166/live/pull.ch0.mp4
 #define ZC_STREAM_MAXFRAME_SIZE_A (2 * 1024)       // audio frame
 #define ZC_STREAM_MAXFRAME_SIZE_M (2 * 1024)       // meta frame
 
-#define ZC_STREAM_TEST_CHN (1)       // test chns
-#define ZC_STREAM_VIDEO_MAX_CHN (2)  // video stream max chn
-#define ZC_FRAME_NALU_MAXNUM (6)   // max nalu size
-#define ZC_FRAME_NALU_BUFF_MAX_SIZE (256)   // sdp buffer max size
+#define ZC_STREAM_TEST_CHN (1)             // test chns
+#define ZC_STREAM_VIDEO_MAX_CHN (2)        // video stream max chn
+#define ZC_FRAME_NALU_MAXNUM (6)           // max nalu size
+#define ZC_FRAME_NALU_BUFF_MAX_SIZE (256)  // sdp buffer max size
 
 #define ZC_FRAME_VIDEO_MAGIC (0x5A435645)  // "ZCVE"
 #define ZC_FRAME_AUDIO_MAGIC (0x5A434155)  // "ZCAU"
 #define ZC_FRAME_META_MAGIC (0x5A434D54)   // "ZCME"
+
+#define ZC_AUDIO_CHN (2)  // channel
+#define ZC_AUDIO_FREQUENCE (48000)     // frequence
+
 
 // shmstream type
 typedef enum {
@@ -109,19 +113,26 @@ typedef enum {
     ZC_NALU_TYPE_PPS,
     ZC_NALU_TYPE_SEI,
 
-    ZC_NALU_TYPE_UNKNOWN = 0xFF,     // unknown, no need
+    ZC_NALU_TYPE_UNKNOWN = 0xFF,  // unknown, no need
 } zc_nalu_type_e;
 
+// zc h26x nalu type
+typedef enum {
+    ZC_AUDIO_SAMPLE_BIT_16 = 2,  // 16bit
+
+    ZC_AUDIO_SAMPLE_BUTT,  //
+} zc_audio_sample_bits_e;
+
 typedef struct {
-    ZC_U32 type;                                // zc_nalu_type_e
-    ZC_U32 size;                                // size not contain 0x00, 0x00, 0x00, 0x01
-    ZC_U8 data[ZC_FRAME_NALU_BUFF_MAX_SIZE];    // nalu info for create sdp
+    ZC_U32 type;                              // zc_nalu_type_e
+    ZC_U32 size;                              // size not contain 0x00, 0x00, 0x00, 0x01
+    ZC_U8 data[ZC_FRAME_NALU_BUFF_MAX_SIZE];  // nalu info for create sdp
 } zc_nalu_t;
 
 // video nalu for package sdp
 typedef struct {
-    ZC_U16 width;                         // picture width;
-    ZC_U16 height;                        // picture height;
+    ZC_U16 width;   // picture width;
+    ZC_U16 height;  // picture height;
     ZC_U16 fps;
     ZC_U16 nalunum;
     zc_nalu_t nalu[ZC_FRAME_NALU_MAXNUM];  // res;
@@ -134,13 +145,13 @@ typedef struct {
 
 // video frame info
 typedef struct {
-    ZC_U8 encode;                         // zc_frame_enc_e
-    ZC_U8 frame;                          // zc_frame_e
-    ZC_U8 nalunum;                        // nalu number;
-    ZC_U8 res[1];                         // res;
-    ZC_U16 width;                         // picture width;
-    ZC_U16 height;                        // picture height;
-    ZC_U32 nalu[ZC_FRAME_NALU_MAXNUM];    // size not contain 0x00, 0x00, 0x00, 0x01 nalu info for create sdp
+    ZC_U8 encode;                       // zc_frame_enc_e
+    ZC_U8 frame;                        // zc_frame_e
+    ZC_U8 nalunum;                      // nalu number;
+    ZC_U8 res[1];                       // res;
+    ZC_U16 width;                       // picture width;
+    ZC_U16 height;                      // picture height;
+    ZC_U32 nalu[ZC_FRAME_NALU_MAXNUM];  // size not contain 0x00, 0x00, 0x00, 0x01 nalu info for create sdp
 } zc_frame_video_t;
 
 // audio frame info
@@ -167,10 +178,11 @@ typedef struct _zc_frame_ {
     ZC_U32 size;    // data size;
     ZC_U8 type;     // zc_stream_e
     ZC_U8 keyflag;  // idr flag;
-    ZC_U16 seq;     // seqno;
+    ZC_U8 res0[2];
     ZC_U32 utc;     // localtime ms;
     ZC_U32 pts;     // timestamp ms;
-    ZC_U32 res[4];  // rsv
+    ZC_U32 seq;     // seqno;           // zhoucc
+    ZC_U32 res[3];  // rsv
     union {
         zc_frame_video_t video;
         zc_frame_audio_t audio;
@@ -181,11 +193,11 @@ typedef struct _zc_frame_ {
 
 // shmstream userbuf,
 typedef struct _zc_frame_userinfo_ {
-    ZC_U32 setflag;   // set flag
-    ZC_U8 type;       // zc_stream_e
-    ZC_U8 encode;     // zc_frame_enc_e
-    ZC_U8 rsv[2];     // rsv
-    ZC_U32 rsv1[4];   // rsv
+    ZC_U32 setflag;  // set flag
+    ZC_U8 type;      // zc_stream_e
+    ZC_U8 encode;    // zc_frame_enc_e
+    ZC_U8 rsv[2];    // rsv
+    ZC_U32 rsv1[4];  // rsv
     union {
         zc_video_naluinfo_t vinfo;
         zc_audio_naluinfo_t ainfo;
@@ -193,6 +205,22 @@ typedef struct _zc_frame_userinfo_ {
 } zc_frame_userinfo_t;
 
 // stream mgr
+// video nalu for package sdp
+typedef struct {
+    ZC_U16 width;   // picture width;
+    ZC_U16 height;  // picture height;
+    ZC_U16 fps;
+    ZC_U16 rsv;      // rsv
+    ZC_U32 rsv1[4];  // rsv
+} zc_video_trackinfo_t;
+
+// audio info channel,samplerate...
+typedef struct {
+    ZC_U8 channels;      ///< number of audio channels
+    ZC_U8 sample_bits;   ///< bits per sample 0,ZC_AUDIO_SAMPLE_BIT_16
+    ZC_U16 sample_rate;  ///< samples per second(frequency)
+} zc_audio_trackinfo_t;
+
 typedef struct _zc_media_track {
     unsigned char chn;         // chnno
     unsigned char trackno;     // tracktype zc_stream_e
@@ -202,8 +230,12 @@ typedef struct _zc_media_track {
     unsigned int fifosize;     // shmfifosize
     unsigned int framemaxlen;  // frame maxlen
     unsigned char enable;      // enable/disable
+    union {
+        zc_video_trackinfo_t vtinfo;
+        zc_audio_trackinfo_t atinfo;
+    };
     int status;
-    char name[32];             // shm path name
+    char name[32];  // shm path name
 } zc_meida_track_t;
 
 typedef struct _zc_stream_info {
@@ -211,6 +243,7 @@ typedef struct _zc_stream_info {
     unsigned char idx;            // idx
     unsigned char chn;            // chn num
     unsigned char tracknum;       // num
+    unsigned char fps;            // fps
     int status;                   // zc_stream_status_e, status: ide ;
     zc_meida_track_t tracks[ZC_MEDIA_TRACK_BUTT];
 } zc_stream_info_t;

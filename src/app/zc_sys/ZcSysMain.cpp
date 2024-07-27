@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
-    LOG_INFO("process[%s,%s], build:[%s]\n", argv[0], pname, g_buildDateTime);
+    LOG_INFO("process[%s,%s], build:[%s]\n", argv[0], pname, ZcGetBuildDateTimeStr());
 
     zc::smgr_callback_info_t smgrcbinfo = {
         .publishMsgCb = zc::CSysManager::PublishMsgCb,

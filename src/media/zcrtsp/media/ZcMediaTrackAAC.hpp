@@ -13,19 +13,10 @@
 namespace zc {
 
 class CMediaTrackAAC : public CMediaTrack {
-    typedef struct _audio_info_ {
-        int channels;     ///< number of audio channels
-        int sample_bits;  ///< bits per sample
-        int sample_rate;  ///< samples per second(frequency)
-    } audio_info_t;
-
  public:
     explicit CMediaTrackAAC(const zc_meida_track_t &info);
     virtual ~CMediaTrackAAC();
     virtual bool Init(void *info = nullptr);
-
- private:
-    audio_info_t m_meidainfo;
 };
 
 }  // namespace zc

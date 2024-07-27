@@ -12,6 +12,7 @@
 // #include "sys/system.h"
 #include "zc_frame.h"
 #include "zc_log.h"
+#include "zc_proc.h"
 
 #include "Epoll.hpp"
 #include "Thread.hpp"
@@ -19,6 +20,60 @@
 #include "ZcType.hpp"
 
 namespace zc {
+#define ZC_SERVERNAME "ZeroCamrea(zhoucc)"  //
+#define MKBETAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((unsigned)(a) << 24))
+// UB [4]; Codec Identifier.
+enum flv_videocodecid_e {
+    flv_vid_vp6 = 4,        // On2 VP6
+    flv_vid_vp6_alpha = 5,  // On2 VP6 with alpha channel
+    flv_vid_h264 = 7,       // avc
+    flv_vid_h265 = 12,      // 国内扩展
+
+    // 增强型rtmp FourCC
+    flv_vid_fourcc_vp9 = MKBETAG('v', 'p', '0', '9'),
+    flv_fourcc_av1 = MKBETAG('a', 'v', '0', '1'),
+    flv_fourcc_hevc = MKBETAG('h', 'v', 'c', '1')
+};
+
+// UB [4]; Format of SoundData
+enum flv_audiocodecid_e {
+    /**
+    0 = Linear PCM, platform endian
+    1 = ADPCM
+    2 = MP3
+    3 = Linear PCM, little endian
+    4 = Nellymoser 16 kHz mono
+    5 = Nellymoser 8 kHz mono
+    6 = Nellymoser
+    7 = G.711 A-law logarithmic PCM
+    8 = G.711 mu-law logarithmic PCM
+    9 = reserved
+    10 = AAC
+    11 = Speex
+    14 = MP3 8 kHz
+    15 = Device-specific sound
+    */
+    flv_aid_g711a = 7,
+    flv_aid_g711u = 8,
+    flv_aid_aac = 10,
+    flv_aid_opus = 13  // 国内扩展
+};
+
+static inline uint32_t getFlvCodeId(zc_frame_enc_e enc) {
+    switch (enc) {
+    case ZC_FRAME_ENC_H264:
+        return flv_vid_h264;
+    case ZC_FRAME_ENC_H265:
+        return flv_vid_h265;
+    case ZC_FRAME_ENC_AAC:
+        return flv_aid_aac;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
 CFlvMuxer::CFlvMuxer()
     : Thread("flvmuxer"), m_Idr(false), m_status(flv_status_init), m_pts(0), m_apts(0), m_flv(nullptr) {
     memset(&m_info, 0, sizeof(m_info));
@@ -61,6 +116,18 @@ bool CFlvMuxer::createStream() {
     if (m_vector.size() <= 0) {
         LOG_ERROR("no stream error");
         return false;
+    }
+
+    // check auido trackinfo
+    zc_audio_trackinfo_t *atrack = &m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo;
+    if (atrack->channels) {
+        atrack->channels = atrack->channels ? atrack->channels : ZC_AUDIO_CHN;
+        atrack->sample_bits = atrack->sample_bits ? atrack->sample_bits : ZC_AUDIO_SAMPLE_BIT_16;
+        atrack->sample_rate = atrack->sample_rate ? atrack->sample_rate : ZC_AUDIO_FREQUENCE;
+    } else {
+        atrack->channels = ZC_AUDIO_CHN;
+        atrack->sample_bits = ZC_AUDIO_SAMPLE_BIT_16;
+        atrack->sample_rate = ZC_AUDIO_FREQUENCE;
     }
 
     return true;
@@ -123,16 +190,19 @@ bool CFlvMuxer::Stop() {
 int CFlvMuxer::_fillFlvMuxerMeta() {
     // TODO(zhoucc): fill metadata hdr
     struct flv_metadata_t metadata;
-    metadata.audiocodecid = 4;
+
+    metadata.audiocodecid = getFlvCodeId((zc_frame_enc_e)m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].encode);
     metadata.audiodatarate = 16.1;
-    metadata.audiosamplerate = 48000;
-    metadata.audiosamplesize = 16;
-    metadata.stereo = TRUE;
-    metadata.videocodecid = 7;
+    metadata.audiosamplerate = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.sample_rate;  // 480000
+    metadata.audiosamplesize = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.sample_bits * 8;
+    metadata.stereo = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.channels > 1 ? true : false;
+    metadata.videocodecid = flv_vid_h264;// getFlvCodeId((zc_frame_enc_e)m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].encode);
     metadata.videodatarate = 64.0;
-    metadata.framerate = 30;
-    metadata.width = 1920;
-    metadata.height = 1080;
+    metadata.framerate = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.fps;
+    metadata.width = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.width;
+    metadata.height = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.height;
+    strncpy(metadata.server, ZC_SERVERNAME, sizeof(metadata.server));
+    snprintf(metadata.server_ver, sizeof(metadata.server_ver), "%s", ZcGetVersionBuildDateStr());
 
     flv_muxer_metadata(m_flv, &metadata);
     return 0;

@@ -8,6 +8,7 @@
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_type.h"
+#include "zc_basic_fun.h"
 
 #include "ZcMediaReceiverH265.hpp"
 

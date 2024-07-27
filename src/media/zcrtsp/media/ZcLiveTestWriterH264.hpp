@@ -43,7 +43,9 @@ class CLiveTestWriterH264 : public Thread, public ILiveTestWriter {
     H264FileReader *m_reader;
     // CShmFIFOW *m_fifowriter;
     CShmStreamW *m_fifowriter;
+    uint32_t m_seq;
     uint32_t m_timestamp;
+    uint32_t m_clock_interal;
     uint64_t m_rtp_clock;
     uint64_t m_rtcp_clock;
     int64_t m_pos;

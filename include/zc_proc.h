@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/prctl.h>
 #include <unistd.h>
+#include "zc_version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +22,11 @@ extern "C" {
 #define ZC_TASK_COMM_LEN (16)
 #endif
 
-extern const char *g_buildDateTime;
+const char* ZcGetVersionStr();
+const char* ZcGetBuildDateTimeStr();
+const char* ZcGetVersionBuildDateStr();
+char *VersionNum2str(char *str, unsigned int len, unsigned int num);
+unsigned int VersionStr2Num(const char *str) ;
 
 #define ZC_PROC_ABSPATH(p, len) \
     ({ \

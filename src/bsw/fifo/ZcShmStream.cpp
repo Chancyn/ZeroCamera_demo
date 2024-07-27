@@ -27,6 +27,7 @@
 #include "ZcShmStream.hpp"
 #include "ZcType.hpp"
 
+#define DEBUG_DUMP (0)
 // userspace modify................
 
 // userspace modify................
@@ -56,8 +57,11 @@ unsigned int CShmStreamW::Put(const unsigned char *buffer, unsigned int len, voi
     ShareLock();
 
     zc_frame_t *frame = (zc_frame_t *)buffer;
+
     if (frame->keyflag) {
+        #if DEBUG_DUMP
         LOG_TRACE("put encode:%u, size:%u", frame->video.encode, frame->size);
+        #endif
         setKeyPos();
     }
     ret = _put(buffer, len);

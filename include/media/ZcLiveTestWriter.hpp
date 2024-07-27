@@ -21,6 +21,7 @@ typedef struct {
     unsigned int chn;
     unsigned int size;
     unsigned int encode;  // ZC_FRAME_ENC_H265
+    unsigned int fps;     // fps
     char fifopath[128];
     char filepath[128];
     char threadname[32];

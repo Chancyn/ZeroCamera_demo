@@ -151,7 +151,7 @@ int CModSubBase::_sendRegisterMsg(int cmd) {
     zc_mod_reg_t *reqreg = reinterpret_cast<zc_mod_reg_t *>(req->data);
     reqreg->regcmd = cmd;
     reqreg->ver = m_version;
-    strncpy(reqreg->date, g_buildDateTime, sizeof(reqreg->date) - 1);
+    strncpy(reqreg->date, ZcGetBuildDateTimeStr(), sizeof(reqreg->date) - 1);
     strncpy(reqreg->pname, m_pname, sizeof(reqreg->pname) - 1);
     strncpy(reqreg->url, m_url, sizeof(reqreg->url) - 1);
 
@@ -183,7 +183,7 @@ int CModSubBase::_sendKeepaliveMsg() {
     zc_mod_keepalive_t *pkeepalive = reinterpret_cast<zc_mod_keepalive_t *>(pmsg->data);
     pkeepalive->seqno = s_seqno++;
     pkeepalive->status = m_status;
-    strncpy(pkeepalive->date, g_buildDateTime, sizeof(pkeepalive->date) - 1);
+    strncpy(pkeepalive->date, ZcGetBuildDateTimeStr(), sizeof(pkeepalive->date) - 1);
 
     char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_rep_t)] = {0};
     zc_msg_t *prmsg = reinterpret_cast<zc_msg_t *>(rmsg_buf);

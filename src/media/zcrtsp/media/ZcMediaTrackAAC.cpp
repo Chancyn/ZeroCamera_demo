@@ -18,31 +18,30 @@
 #include "ZcMediaTrackAAC.hpp"
 #include "ZcType.hpp"
 
-extern "C" uint32_t rtp_ssrc(void);
+#define ZC_AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
-#define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
-#define AUDIO_FREQUENCE (48000)     // frequence
+extern "C" uint32_t rtp_ssrc(void);
 
 namespace zc {
 CMediaTrackAAC::CMediaTrackAAC(const zc_meida_track_t &info)
     : CMediaTrack(info) {
-    memset(&m_meidainfo, 0, sizeof(m_meidainfo));
-    m_meidainfo.channels = 2;
-    m_meidainfo.sample_bits = 2;
-    m_meidainfo.sample_rate = AUDIO_FREQUENCE;
-    m_frequency = AUDIO_FREQUENCE;
+    if (m_info.atinfo.channels) {
+        m_info.atinfo.channels = m_info.atinfo.channels ? m_info.atinfo.channels : ZC_AUDIO_CHN;
+        m_info.atinfo.sample_bits = m_info.atinfo.sample_bits ? m_info.atinfo.sample_bits : ZC_AUDIO_SAMPLE_BIT_16;
+        m_info.atinfo.sample_rate = m_info.atinfo.sample_rate ? m_info.atinfo.sample_rate : ZC_AUDIO_FREQUENCE;
+    } else {
+        m_info.atinfo.channels = ZC_AUDIO_CHN;
+        m_info.atinfo.sample_bits = ZC_AUDIO_SAMPLE_BIT_16;
+        m_info.atinfo.sample_rate = ZC_AUDIO_FREQUENCE;
+    }
+
+    m_frequency = m_info.atinfo.sample_rate;
+    LOG_TRACE("chn:%u,bits:%u,rate:%u", m_info.atinfo.channels, m_info.atinfo.sample_bits*8, m_info.atinfo.sample_rate);
 }
 
 CMediaTrackAAC::~CMediaTrackAAC() {}
 
 bool CMediaTrackAAC::Init(void *pinfo) {
-    audio_info_t info;
-    if (pinfo) {
-        memcpy(&info, pinfo, sizeof(audio_info_t));
-        LOG_WARN("user audio_info chn[%d], bits[%d], rate[%d]", info.channels, info.sample_bits, info.sample_rate);
-    } else {
-        memcpy(&info, &m_meidainfo, sizeof(audio_info_t));
-    }
 #if 0
     static const char *pattern =
         "m=audio 0 RTP/AVP %d\n"
@@ -74,7 +73,7 @@ bool CMediaTrackAAC::Init(void *pinfo) {
         goto _err;
     }
 
-    m_rtp = rtp_create(&event, this, ssrc, ssrc, m_meidainfo.sample_rate, AUDIO_BANDWIDTH, 1);
+    m_rtp = rtp_create(&event, this, ssrc, ssrc, m_info.atinfo.sample_rate, ZC_AUDIO_BANDWIDTH, 1);
     if (!m_rtp) {
         LOG_ERROR("Create video track error AAC");
         goto _err;

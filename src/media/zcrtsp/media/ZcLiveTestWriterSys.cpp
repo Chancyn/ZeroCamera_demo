@@ -29,6 +29,9 @@
 
 extern "C" uint32_t rtp_ssrc(void);
 
+// test framerate
+#define ZC_TEST_FPS 60
+
 #if ZC_LIVE_TEST
 namespace zc {
 static const char *g_filesuffix[ZC_FRAME_ENC_BUTT] = {
@@ -39,11 +42,11 @@ static const char *g_filesuffix[ZC_FRAME_ENC_BUTT] = {
 };
 
 const static live_test_info_t g_livetestinfo[ZC_STREAM_VIDEO_MAX_CHN] = {
-    // {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_STREAM_VIDEO_SHM_PATH, "test"},
+    // {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test"},
     // test0.h265
-    {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_STREAM_VIDEO_SHM_PATH, "test0", "TestWH265_0"},
+    {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test0", "TestWH265_0"},
     // test0.h264
-    {1, ZC_STREAM_SUB_VIDEO_SIZE, ZC_FRAME_ENC_H264, ZC_STREAM_VIDEO_SHM_PATH, "test1", "TestWH264_1"},
+    {1, ZC_STREAM_SUB_VIDEO_SIZE, ZC_FRAME_ENC_H264, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test1", "TestWH264_1"},
 };
 
 ILiveTestWriter *CLiveTestWriterFac::CreateLiveTestWriter(int code, const live_test_info_t &info) {

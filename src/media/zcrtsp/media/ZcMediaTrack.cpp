@@ -23,7 +23,6 @@
 extern "C" uint32_t rtp_ssrc(void);
 
 #define VIDEO_BANDWIDTH (4 * 1024)
-#define AUDIO_BANDWIDTH (4 * 1024)  // bandwidth
 
 namespace zc {
 CMediaTrack::CMediaTrack(const zc_meida_track_t &info)
