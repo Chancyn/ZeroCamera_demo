@@ -8,6 +8,14 @@
 extern "C" {
 #endif /*__cplusplus*/
 
+#if ZC_DEBUG
+#define ZC_LOG_CONS_DEF_LEVEL LEVEL_DEBUG
+#define ZC_LOG_DEF_LEVEL LEVEL_DEBUG
+#else
+#define ZC_LOG_CONS_DEF_LEVEL LEVEL_INFO
+#define ZC_LOG_DEF_LEVEL LEVEL_DEBUG
+#endif
+
 enum LogLevel {
     LEVEL_TRACE = 0,
     LEVEL_DEBUG = 1,

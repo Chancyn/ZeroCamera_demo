@@ -98,12 +98,14 @@ typedef enum {
     ZC_FRAME_ENC_BUTT,
 } zc_frame_enc_e;
 
+#define ZC_FRAME_IDRFLAG (0x1 << 3)     // bit3 idrflag
 typedef enum {
     ZC_FRAME_P = 0,
-    ZC_FRAME_IDR,
-    ZC_FRAME_I,
-    ZC_FRAME_I_BLA,   // hevc BLA
-    ZC_FRAME_I_CRA,   // hevc CRA
+    ZC_FRAME_I,      //
+    ZC_FRAME_I_BLA,                     // hevc BLA
+    ZC_FRAME_I_CRA,                     // hevc CRA
+
+    ZC_FRAME_IDR = ZC_FRAME_IDRFLAG,    // IDR flag
 
     ZC_FRAME_BUTT,
 } zc_frame_e;
@@ -179,7 +181,7 @@ typedef struct _zc_frame_ {
     ZC_U32 magic;   // magic hdr; 0x5A,0x43,0x5A,0x43
     ZC_U32 size;    // data size;
     ZC_U8 type;     // zc_stream_e
-    ZC_U8 keyflag;  // idr flag;
+    ZC_U8 keyflag;  // key flag;
     ZC_U8 res0[2];
     ZC_U32 utc;     // localtime ms;
     ZC_U32 pts;     // timestamp ms;

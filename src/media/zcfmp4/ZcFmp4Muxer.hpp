@@ -2,9 +2,12 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
+#include <cstddef>
 #include <stdint.h>
 #include <string.h>
 #include <vector>
+
+#include <string>
 
 #include "NonCopyable.hpp"
 #include "fmp4-writer.h"
@@ -17,10 +20,16 @@
 #include "Thread.hpp"
 #include "ZcShmStream.hpp"
 
-#define ZC_FMP4_DEF_PATH "."          // default path
-#define ZC_FMP4_PACKING_SUFFIX "mp4"  // suffix file
+#define ZC_FMP4_DEF_PATH "."           // default path
+#define ZC_FMP4_PACKING_SUFFIX ".mp4"  // suffix file
 // YY-YY-MMDDThhmmss_randidx_def
 #define ZC_FMP4_FRAME_HDR 128  // debug
+
+// fmp4 file type
+#define ZC_FMP4_TYPE_NAME(auto) (((auto) & 0x1))      // bit0 是否指定名称
+#define ZC_FMP4_TYPE_SEGMENT(seg) (((seg)&0x1) << 1)  // bit1 是否自动分片
+#define ZC_FMP4_TYPE_APP(app) (((app)&0x7) << 2)      // bit2-bit4 fmp4_app_e
+#define ZC_FMP4_TYPE_FLAGS(auto, seg, app) (ZC_FMP4_TYPE_NAME(auto) | ZC_FMP4_TYPE_SEGMENT(seg) | ZC_FMP4_TYPE_APP(app))
 
 namespace zc {
 typedef enum {
@@ -31,11 +40,54 @@ typedef enum {
     fmp4_movio_butt,
 } fmp4_movio_e;
 
+typedef enum {
+    fmp4_app_none = 0,  // none
+    fmp4_app_webs,      // webser
+    fmp4_app_hls,       // hls
+    fmp4_app_record,    // record
+
+    fmp4_app_butt,
+} fmp4_app_e;
+
 typedef int (*OnFmp4PacketCb)(void *param, int type, const void *data, size_t bytes, uint32_t timestamp);
 
 typedef struct {
-    fmp4_movio_e type;  // type
-    const char *name;   // file filename
+    size_t size;     // 预分配内存大小,每次扩容大小
+    size_t maxsize;  // buff最大大小
+} zc_movio_bufinfo_t;
+
+typedef struct {
+    uint8_t appid;           // appid
+    uint8_t segment;         // 文件是否自动分片 1 超过maxsize 分片
+    uint32_t segmentnum;     // auto segment 分片数量 0:不循环覆盖,> 1 循环覆盖
+    size_t maxsize;          // auto segment下文件最大大小
+    const char *path;        // path文件名前缀
+    const char *nameprefix;  // path文件名前缀
+} zc_movio_fileinfo_t;
+
+typedef struct {
+    uint8_t appid;        // appid
+    uint8_t segment;      // 文件是否自动分片 1 超过maxsize 分片
+    uint32_t segmentnum;  // auto segment 分片数量 0:不循环覆盖,> 1 循环覆盖
+    size_t size;          // 预分配内存大小,每次扩容大小
+    size_t maxsize;       // buff最大大小
+    const char *path;     // path文件名前缀
+    const char *nameprefix;
+} zc_movio_buffileinfo_t;
+
+typedef union {
+    zc_movio_bufinfo_t buf;
+    zc_movio_fileinfo_t file;
+    zc_movio_buffileinfo_t buffile;
+} zc_movio_info_un;
+
+typedef struct {
+    fmp4_movio_e type;
+    zc_movio_info_un uninfo;
+} zc_movio_info_t;
+
+typedef struct {
+    zc_movio_info_t movinfo;
     zc_stream_info_t streaminfo;
     OnFmp4PacketCb onfmp4packetcb;
     void *Context;
@@ -65,7 +117,7 @@ class CMovIo {
 
 class CMovBuf : public CMovIo, public NonCopyable {
  public:
-    CMovBuf();
+    explicit CMovBuf(const zc_movio_bufinfo_t *info = nullptr);
     virtual ~CMovBuf();
 
     virtual int Read(void *data, uint64_t bytes);
@@ -76,16 +128,16 @@ class CMovBuf : public CMovIo, public NonCopyable {
     virtual const uint8_t *GetDataBufPtr(uint32_t &bytes);
 
  private:
-    uint8_t *m_buf;
-    size_t m_bytes;   // readpos
-    size_t m_offset;  // writepos
-    size_t m_capacity;
+    std::vector<uint8_t> m_buf;
+    size_t m_bytes;    // readpos
+    size_t m_offset;   // writepos
+    size_t m_capsize;  // 每次扩容大小 capacity size
     size_t m_maxsize;  // max bytes per mp4 file
 };
 
 class CMovFile : public CMovIo, public NonCopyable {
  public:
-    explicit CMovFile(const char *name);
+    explicit CMovFile(const zc_movio_fileinfo_t *info = nullptr);
     virtual ~CMovFile();
 
     void Close();
@@ -97,15 +149,19 @@ class CMovFile : public CMovIo, public NonCopyable {
     virtual const uint8_t *GetDataBufPtr(uint32_t &bytes) { return nullptr; };
 
  private:
-    char m_name[ZC_MAX_PATH];
+    std::string m_name;
+    std::string m_nameprefix;
+    uint8_t m_segmentnum;
+    uint32_t m_segmentidx;
+    uint32_t m_ftype;
     FILE *m_file;
 };
 
+// for debugtest/hls recyle
 class CMovBufFile : public CMovIo, public NonCopyable {
  public:
-    explicit CMovBufFile(const char *name);
+    explicit CMovBufFile(const zc_movio_buffileinfo_t *info = nullptr);
     virtual ~CMovBufFile();
-
     void Close();
     virtual int Read(void *data, uint64_t bytes);
     virtual int Write(const void *data, uint64_t bytes);
@@ -115,12 +171,19 @@ class CMovBufFile : public CMovIo, public NonCopyable {
     virtual const uint8_t *GetDataBufPtr(uint32_t &bytes);
 
  private:
-    char m_name[ZC_MAX_PATH];
+    // file
+    std::string m_name;
+    std::string m_nameprefix;
+    uint8_t m_segmentnum;
+    uint32_t m_segmentidx;
+    uint32_t m_ftype;
     FILE *m_file;
-    uint8_t *m_buf;
-    size_t m_bytes;
-    size_t m_offset;
-    size_t m_capacity;
+
+    // buf
+    std::vector<uint8_t> m_buf;
+    size_t m_bytes;    // readpos
+    size_t m_offset;   // writepos
+    size_t m_capsize;  // 每次扩容大小 capacity size
     size_t m_maxsize;  // max bytes per mp4 file
 };
 
@@ -128,7 +191,8 @@ class CMovIoFac {
  public:
     CMovIoFac() {}
     ~CMovIoFac() {}
-    static CMovIo *CMovIoCreate(fmp4_movio_e type, const char *name);
+    static CMovIo *CMovIoCreate(const zc_movio_info_t &info);
+    static CMovIo *CMovIoCreate(fmp4_movio_e type, const zc_movio_info_un *uninfo = nullptr);
 };
 
 class CFmp4Muxer : protected Thread {

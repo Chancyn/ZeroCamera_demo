@@ -33,13 +33,12 @@ bool CFmp4Sess::Open() {
     }
 
     zc_fmp4muxer_info_t muxerinfo = {
-        .type = fmp4_movio_buf,
-        .name = nullptr,
         .streaminfo = m_info.streaminfo,
         .onfmp4packetcb = OnFmp4PacketCb,
         .Context = this,
     };
 
+    muxerinfo.movinfo.type = fmp4_movio_buf;
     // TODO(zhoucc): check info
     if (!m_fmp4muxer.Create(muxerinfo)) {
         LOG_ERROR("fmp4muxer create error");

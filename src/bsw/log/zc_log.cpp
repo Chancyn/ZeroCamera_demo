@@ -15,14 +15,6 @@
 #include <string>
 #endif
 
-#if ZC_DEBUG
-#define ZC_LOG_CONS_DEF_LEVEL LEVEL_DEBUG
-#define ZC_LOG_DEF_LEVEL LEVEL_DEBUG
-#else
-#define ZC_LOG_CONS_DEF_LEVEL LEVEL_INFO
-#define ZC_LOG_DEF_LEVEL LEVEL_DEBUG
-#endif
-
 #define ZC_LOG_MAX_SIZE (1024 * 1024 * 10)  // file max size
 #define ZC_LOG_MAX_NUM (2)                  // file max num
 

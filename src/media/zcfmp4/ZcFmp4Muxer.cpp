@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <sys/syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,8 +29,16 @@
 namespace zc {
 #define ZC_DEBUG_DUMP 1
 
-#define N_SEGMENT (1 * 1024 * 1024)
-#define N_FILEBUF_MAXSIZE (4 * 1024 * 1024)  // 4M
+#define ZC_SEGMENT_MAXNUM (8)  // segment循环使用数量
+// 预分配内存大小
+#define ZC_CAPSIZE_MIN (500 * 1024)       // capacity 预分配内存块大小
+#define ZC_CAPSIZE_DEF (1 * 1024 * 1024)  // capacity 预分配内存块大小
+#define ZC_CAPSIZE_MAX (4 * 1024 * 1024)  // capacity 4M filebuff,一个segment默认最大大小
+
+// segment 分片最大大小
+#define ZC_SEGMENT_MIN_MAXSIZE (4 * 1024 * 1024)   // 1M filebuff,一个segment最大大小（限制最小值）
+#define ZC_SEGMENT_DEF_MAXSIZE (6 * 1024 * 1024)   // 4M filebuff,一个segment默认最大大小
+#define ZC_SEGMENT_MAX_MAXSIZE (10 * 1024 * 1024)  // 4M filebuff,一个segment默认最大大小
 
 #if defined(_WIN32) || defined(_WIN64)
 #define fseek64 _fseeki64
@@ -49,6 +58,7 @@ int CMovIo::ioRead(void *ptr, void *data, uint64_t bytes) {
     CMovIo *self = reinterpret_cast<CMovIo *>(ptr);
     return self->Read(data, bytes);
 }
+
 int CMovIo::ioWrite(void *ptr, const void *data, uint64_t bytes) {
     CMovIo *self = reinterpret_cast<CMovIo *>(ptr);
     return self->Write(data, bytes);
@@ -64,37 +74,52 @@ int64_t CMovIo::ioTell(void *ptr) {
     return self->Tell();
 }
 
-CMovBuf::CMovBuf() {
-    m_buf = nullptr;
+CMovBuf::CMovBuf(const zc_movio_bufinfo_t *info /*= nullptr*/) {
+    zc_movio_bufinfo_t definfo = {
+        .size = ZC_CAPSIZE_DEF,
+        .maxsize = ZC_SEGMENT_DEF_MAXSIZE,
+    };
+
+    if (!info) {
+        info = &definfo;
+    }
+
+    if (info->size != 0) {
+        m_capsize = info->size > ZC_CAPSIZE_MAX ? ZC_CAPSIZE_MAX : info->size;
+        m_capsize = m_capsize < ZC_CAPSIZE_MIN ? ZC_CAPSIZE_MIN : m_capsize;
+    } else {
+        m_capsize = ZC_CAPSIZE_DEF;
+    }
+
+    if (info->maxsize != 0) {
+        m_maxsize = info->maxsize > ZC_SEGMENT_MAX_MAXSIZE ? ZC_SEGMENT_MAX_MAXSIZE : info->maxsize;
+        m_maxsize = m_maxsize < ZC_SEGMENT_MIN_MAXSIZE ? ZC_SEGMENT_MIN_MAXSIZE : m_maxsize;
+    } else {
+        m_maxsize = ZC_SEGMENT_DEF_MAXSIZE;
+    }
+
+    m_buf.reserve(m_capsize);
     m_bytes = 0;
     m_offset = 0;
-    m_capacity = 0;
-    m_maxsize = N_FILEBUF_MAXSIZE;
-
     m_io.read = ioRead;
     m_io.write = ioWrite;
     m_io.seek = ioSeek;
     m_io.tell = ioTell;
 }
 
-CMovBuf::~CMovBuf() {
-    if (m_buf) {
-        free(m_buf);
-        m_buf = nullptr;
-    }
-}
+CMovBuf::~CMovBuf() {}
 
 int CMovBuf::Read(void *data, uint64_t bytes) {
     if (m_offset + bytes > m_bytes)
         return E2BIG;
-    memcpy(data, m_buf + m_offset, (uint64_t)bytes);
+
+    memcpy(data, &m_buf[m_offset], (uint64_t)bytes);
     m_offset += bytes;
 
     return 0;
 }
 
-void CMovBuf::ResetDataBufPos()
-{
+void CMovBuf::ResetDataBufPos() {
     m_offset = 0;
     m_bytes = 0;
     return;
@@ -108,7 +133,7 @@ const uint8_t *CMovBuf::GetDataBufPtr(uint32_t &bytes) {
 #endif
     if (m_offset > m_bytes) {
         bytes = m_offset - m_bytes;
-        ptr = m_buf + m_bytes;
+        ptr = &m_buf[m_bytes];
         m_bytes = m_offset;
     }
 
@@ -116,26 +141,18 @@ const uint8_t *CMovBuf::GetDataBufPtr(uint32_t &bytes) {
 }
 
 int CMovBuf::Write(const void *data, uint64_t bytes) {
-    void *ptr;
-    size_t capacity;
     if (m_offset + bytes > m_maxsize)
         return -E2BIG;
 
-    if (m_offset + bytes > m_capacity) {
-        capacity = m_offset + bytes + N_SEGMENT;
-        capacity = capacity > m_maxsize ? m_maxsize : capacity;
-        ptr = realloc(m_buf, capacity);
-        if (NULL == ptr)
-            return -ENOMEM;
-        m_buf = reinterpret_cast<uint8_t *>(ptr);
-        m_capacity = capacity;
+    if (m_offset + bytes > m_buf.capacity()) {
+        size_t needsize;
+        needsize = m_offset + bytes + m_capsize;
+        needsize = needsize > m_maxsize ? m_maxsize : needsize;
+        m_buf.reserve(needsize);
     }
 
-    memcpy(m_buf + m_offset, data, bytes);
+    memcpy(&m_buf[m_offset], data, bytes);
     m_offset += bytes;
-
-    // if (m_offset > m_bytes)
-    //     m_bytes = m_offset;
 
     return 0;
 }
@@ -143,6 +160,8 @@ int CMovBuf::Write(const void *data, uint64_t bytes) {
 int CMovBuf::Seek(int64_t offset) {
     if ((offset >= 0 ? offset : -offset) >= m_maxsize)
         return -E2BIG;
+
+    ZC_ASSERT(offset <= m_buf.capacity());
 
     m_offset = (size_t)(offset >= 0 ? offset : m_maxsize + offset);
     return 0;
@@ -152,16 +171,57 @@ int64_t CMovBuf::Tell() {
     return (int64_t)m_offset;
 }
 
-CMovFile::CMovFile(const char *name) {
-    m_file = fopen(name, "wb+");
+static void generateSegmentName(std::string &name, const std::string &prefix, uint32_t idx) {
+    name = prefix;
+    char idxstr[8];
+    snprintf(idxstr, sizeof(idxstr), "_%0u", idx);
+    name.append(idxstr);
+    name.append(ZC_FMP4_PACKING_SUFFIX);
+    return;
+}
+
+CMovFile::CMovFile(const zc_movio_fileinfo_t *info /*= nullptr*/) : m_segmentidx(0) {
+    zc_movio_fileinfo_t definfo{};
+    if (!info) {
+        info = &definfo;
+    }
+    const char *path = info->path;
+    if (path == nullptr || path[0] == '\0') {
+        path = ZC_FMP4_DEF_PATH;
+    }
+
+    m_nameprefix = path;
+    if (m_nameprefix[m_nameprefix.length() - 1] != '/') {
+        m_nameprefix.append("/");
+    }
+
+    const char *namepre = info->nameprefix;
+    char file[128];
+    ZC_U32 autoname = 0;
+    if (namepre == nullptr || namepre[0] == '\0') {
+        namepre = GenerateFileName(file, sizeof(file));
+        LOG_WARN("name null; generate filename:%s", namepre);
+        autoname = 1;
+    }
+    m_nameprefix.append(namepre);
+
+    m_ftype = ZC_FMP4_TYPE_FLAGS(autoname, info->segment, info->appid);
+    char typestr[8];
+    snprintf(typestr, sizeof(typestr), "_%04x", m_ftype);
+    m_nameprefix.append(typestr);
+
+    // name
+    generateSegmentName(m_name, m_nameprefix, m_segmentidx);
+
+    LOG_WARN("###debug prefix:%s, open:%s", m_nameprefix.c_str(), m_name.c_str());
+    m_file = fopen(m_name.c_str(), "wb+");
     if (m_file) {
-        strncpy(m_name, name, sizeof(m_name));
         m_io.read = ioRead;
         m_io.write = ioWrite;
         m_io.seek = ioSeek;
         m_io.tell = ioTell;
     } else {
-        LOG_ERROR("error open:%s", name);
+        LOG_ERROR("error open:%s", m_name.c_str());
     }
 }
 
@@ -174,7 +234,7 @@ void CMovFile::Close() {
         fsync(fileno(m_file));
         fclose(m_file);
         m_file = nullptr;
-        LOG_TRACE("close:%s", m_name);
+        LOG_TRACE("close:%s", m_name.c_str());
     }
     return;
 }
@@ -197,30 +257,76 @@ int64_t CMovFile::Tell() {
     return ftell64(m_file);
 }
 
-CMovBufFile::CMovBufFile(const char *name) {
-    m_buf = nullptr;
+CMovBufFile::CMovBufFile(const zc_movio_buffileinfo_t *info /*= nullptr*/) {
+    zc_movio_buffileinfo_t definfo = {
+        .size = ZC_CAPSIZE_DEF,
+        .maxsize = ZC_SEGMENT_DEF_MAXSIZE,
+    };
+
+    if (!info) {
+        info = &definfo;
+    }
+
+    if (info->size != 0) {
+        m_capsize = info->size > ZC_CAPSIZE_MAX ? ZC_CAPSIZE_MAX : info->size;
+        m_capsize = m_capsize < ZC_CAPSIZE_MIN ? ZC_CAPSIZE_MIN : m_capsize;
+    } else {
+        m_capsize = ZC_CAPSIZE_DEF;
+    }
+
+    if (info->maxsize != 0) {
+        m_maxsize = info->maxsize > ZC_SEGMENT_MAX_MAXSIZE ? ZC_SEGMENT_MAX_MAXSIZE : info->maxsize;
+        m_maxsize = m_maxsize < ZC_SEGMENT_MIN_MAXSIZE ? ZC_SEGMENT_MIN_MAXSIZE : m_maxsize;
+    } else {
+        m_maxsize = ZC_SEGMENT_DEF_MAXSIZE;
+    }
+
+    m_buf.reserve(m_capsize);
     m_bytes = 0;
     m_offset = 0;
-    m_capacity = 0;
-    m_maxsize = N_FILEBUF_MAXSIZE;
+    LOG_WARN("###debug m_capsize:%zu, m_maxsize:%zu", m_capsize, m_maxsize);
+    // file
+    const char *path = info->path;
+    if (path == nullptr || path[0] == '\0') {
+        path = ZC_FMP4_DEF_PATH;
+    }
 
-    m_file = fopen(name, "wb+");
+    m_nameprefix = path;
+    if (m_nameprefix[m_nameprefix.length() - 1] != '/') {
+        m_nameprefix.append("/");
+    }
+
+    const char *namepre = info->nameprefix;
+    char file[128];
+    ZC_U32 autoname = 0;
+    if (namepre == nullptr || namepre[0] == '\0') {
+        namepre = GenerateFileName(file, sizeof(file));
+        LOG_WARN("name null; generate filename:%s", namepre);
+        autoname = 1;
+    }
+    m_nameprefix.append(namepre);
+
+    m_ftype = ZC_FMP4_TYPE_FLAGS(autoname, info->segment, info->appid);
+    char typestr[8];
+    snprintf(typestr, sizeof(typestr), "_%04x", m_ftype);
+    m_nameprefix.append(typestr);
+
+    // name
+    generateSegmentName(m_name, m_nameprefix, m_segmentidx);
+
+    LOG_WARN("###debug prefix:%s, open:%s", m_nameprefix.c_str(), m_name.c_str());
+    m_file = fopen(m_name.c_str(), "wb+");
     if (m_file) {
-        strncpy(m_name, name, sizeof(m_name));
         m_io.read = ioRead;
         m_io.write = ioWrite;
         m_io.seek = ioSeek;
         m_io.tell = ioTell;
     } else {
-        LOG_ERROR("error open:%s", name);
+        LOG_ERROR("error open:%s", m_name.c_str());
     }
 }
 
 CMovBufFile::~CMovBufFile() {
-    if (m_buf) {
-        free(m_buf);
-        m_buf = nullptr;
-    }
     Close();
 }
 
@@ -229,7 +335,7 @@ void CMovBufFile::Close() {
         fsync(fileno(m_file));
         fclose(m_file);
         m_file = nullptr;
-        LOG_TRACE("close:%s", m_name);
+        LOG_TRACE("close:%s", m_name.c_str());
     }
     return;
 }
@@ -238,7 +344,7 @@ int CMovBufFile::Read(void *data, uint64_t bytes) {
     if (m_offset + bytes > m_bytes)
         return E2BIG;
     // LOG_TRACE("read, offset:%zu, size:%llu", m_offset, bytes);
-    memcpy(data, m_buf + m_offset, (uint64_t)bytes);
+    memcpy(data, &m_buf[m_offset], (uint64_t)bytes);
     m_offset += bytes;
 
     if (bytes == fread(data, 1, bytes, m_file))
@@ -263,7 +369,7 @@ const uint8_t *CMovBufFile::GetDataBufPtr(uint32_t &bytes) {
 
     if (m_offset > m_bytes) {
         bytes = m_offset - m_bytes;
-        ptr = m_buf + m_bytes;
+        ptr = &m_buf[m_bytes];
         m_bytes = m_offset;
     }
 
@@ -271,24 +377,22 @@ const uint8_t *CMovBufFile::GetDataBufPtr(uint32_t &bytes) {
 }
 
 int CMovBufFile::Write(const void *data, uint64_t bytes) {
-    void *ptr;
-    size_t capacity;
-    if (m_offset + bytes > m_maxsize)
+    if (m_offset + bytes > m_maxsize) {
+        LOG_ERROR("###debug,write off:%zu+bytes:%zu = %zu > %zu maxsize", m_offset, bytes, m_offset + bytes, m_maxsize);
         return -E2BIG;
-    // LOG_WARN("write,cap:%zu,offset:%zu,max:%zu, size:%llu", m_capacity, m_offset, m_maxsize, bytes);
-    if (m_offset + bytes > m_capacity) {
-        LOG_ERROR("need realloc,cap:%zu,offset%zu,size:%u", m_capacity, m_offset, bytes);
-        capacity = m_offset + bytes + N_SEGMENT;
-        capacity = capacity > m_maxsize ? m_maxsize : capacity;
-        ptr = realloc(m_buf, capacity);
-        if (NULL == ptr)
-            return -ENOMEM;
-        m_buf = reinterpret_cast<uint8_t *>(ptr);
-        m_capacity = capacity;
     }
 
-    memcpy(m_buf + m_offset, data, bytes);
+    // LOG_WARN("write,cap:%zu,offset:%zu,max:%zu, size:%llu", m_buf.capacity(), m_offset, m_maxsize, bytes);
+    if (m_offset + bytes > m_buf.capacity()) {
+        size_t needsize;
+        needsize = m_offset + bytes + m_capsize;
+        needsize = needsize > m_maxsize ? m_maxsize : needsize;
+        m_buf.reserve(needsize);
+    }
+
+    memcpy(&m_buf[m_offset], data, bytes);
     m_offset += bytes;
+
     // if (m_offset > m_bytes)
     //  m_bytes = m_offset;
 
@@ -300,6 +404,7 @@ int CMovBufFile::Seek(int64_t offset) {
         return -E2BIG;
 
     m_offset = (size_t)(offset >= 0 ? offset : m_maxsize + offset);
+    ZC_ASSERT(offset <= m_buf.capacity());
     // LOG_WARN("seek, offset%zu", m_offset);
     return fseek64(m_file, offset, offset >= 0 ? SEEK_SET : SEEK_END);
 }
@@ -315,35 +420,23 @@ int64_t CMovBufFile::Tell() {
     // return ftell64(m_file);
 }
 
-CMovIo *CMovIoFac::CMovIoCreate(fmp4_movio_e type, const char *name) {
+CMovIo *CMovIoFac::CMovIoCreate(const zc_movio_info_t &info) {
+    return CMovIoCreate(info.type, &info.uninfo);
+}
+
+CMovIo *CMovIoFac::CMovIoCreate(fmp4_movio_e type, const zc_movio_info_un *uninfo /*= nullptr*/) {
     CMovIo *io = nullptr;
-    LOG_TRACE("CMovIoCreate, type:%d, name:%s,", type, name);
+    LOG_TRACE("CMovIoCreate, type:%d", type);
     switch (type) {
     case fmp4_movio_buf:
-        io = new CMovBuf();
+        io = new CMovBuf((zc_movio_bufinfo_t *)uninfo);
         break;
     case fmp4_movio_file: {
-        char path[256];
-        if (name == nullptr || name[0] == '\0') {
-            char file[128];
-            snprintf(path, sizeof(path), "%s/%s_def.%s", ZC_FMP4_DEF_PATH, GenerateFileName(file, sizeof(file)),
-                     ZC_FMP4_PACKING_SUFFIX);
-            LOG_WARN("name null; generate filename:%s", path);
-            name = path;
-        }
-        io = new CMovFile(name);
+        io = new CMovFile((zc_movio_fileinfo_t *)uninfo);
         break;
     }
     case fmp4_movio_buffile: {
-        char path[256];
-        if (name == nullptr || name[0] == '\0') {
-            char file[128];
-            snprintf(path, sizeof(path), "%s/%s_defb.%s", ZC_FMP4_DEF_PATH, GenerateFileName(file, sizeof(file)),
-                     ZC_FMP4_PACKING_SUFFIX);
-            LOG_WARN("name null; generate filename:%s", path);
-            name = path;
-        }
-        io = new CMovBufFile(name);
+        io = new CMovBufFile((zc_movio_buffileinfo_t *)uninfo);
         break;
     }
     default:
@@ -420,8 +513,8 @@ bool CFmp4Muxer::Create(const zc_fmp4muxer_info_t &info) {
     }
 
     // debug
-    // m_movio = CMovIoFac::CMovIoCreate(fmp4_movio_buffile, info.name);
-    m_movio = CMovIoFac::CMovIoCreate(fmp4_movio_buffile, info.name);
+    // m_movio = CMovIoFac::CMovIoCreate(info.movinfo);
+    m_movio = CMovIoFac::CMovIoCreate(fmp4_movio_buffile, &info.movinfo.uninfo);
     if (!m_movio) {
         LOG_ERROR("CMovIoCreate error");
         goto _err;
@@ -486,7 +579,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
     int ret = -1;
     int keyflag = 0;
     uint8_t extra_data[64 * 1024];
-
+    int segment = 0;
     if (pframe->type == ZC_STREAM_VIDEO) {
         keyflag = pframe->keyflag;
         if (pframe->video.encode == ZC_FRAME_ENC_H264) {
@@ -593,21 +686,25 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
     }
 
     // save segment,and get data to send
-    if (ret >= 0 && fmp4_writer_save_segment(m_fmp4) == 0) {
-        if (m_info.onfmp4packetcb) {
-            // get buf number,
-            const uint8_t *data = nullptr;
-            uint32_t len = 0;
-            data = m_movio->GetDataBufPtr(len);
-            if (data) {
-                m_info.onfmp4packetcb(m_info.Context, keyflag, data, len, 0);
-            }
-            m_movio->ResetDataBufPos();
-        }
-    } else {
+    segment = keyflag ? 1 : 0;
+    if (segment && fmp4_writer_save_segment(m_fmp4) != 0) {
         LOG_ERROR("write,erro, pframe->size:%u", pframe->size);
+        return ret;
     }
 
+    if (m_info.onfmp4packetcb) {
+        // get buf number,
+        const uint8_t *data = nullptr;
+        uint32_t len = 0;
+        data = m_movio->GetDataBufPtr(len);
+        if (data) {
+            m_info.onfmp4packetcb(m_info.Context, keyflag, data, len, 0);
+        }
+    }
+
+    if (segment) {
+        m_movio->ResetDataBufPos();
+    }
     return ret;
 }
 
@@ -622,7 +719,7 @@ int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
         }
 
 #if 0  // no need anymore
-        // first IDR frame
+       // first IDR frame
         if (!m_Idr) {
             if (!pframe->keyflag) {
                 LOG_WARN("drop , need IDR frame");
