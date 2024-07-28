@@ -97,8 +97,10 @@ CMovBuf::CMovBuf(const zc_movio_bufinfo_t *info /*= nullptr*/) {
     } else {
         m_maxsize = ZC_SEGMENT_DEF_MAXSIZE;
     }
+    //m_buf.reserve(m_capsize);
+    m_buf.resize(m_capsize);
+    LOG_INFO("###debug m_capsize:%zu, capacity:%zu, m_maxsize:%zu", m_capsize, m_buf.capacity(), m_maxsize);
 
-    m_buf.reserve(m_capsize);
     m_bytes = 0;
     m_offset = 0;
     m_io.read = ioRead;
@@ -141,14 +143,19 @@ const uint8_t *CMovBuf::GetDataBufPtr(uint32_t &bytes) {
 }
 
 int CMovBuf::Write(const void *data, uint64_t bytes) {
-    if (m_offset + bytes > m_maxsize)
+    if (m_offset + bytes > m_maxsize) {
+        LOG_ERROR("###debug,write off:%zu+bytes:%llu = %zu > %zu maxsize", m_offset, bytes, m_offset + bytes, m_maxsize);
         return -E2BIG;
+    }
 
     if (m_offset + bytes > m_buf.capacity()) {
         size_t needsize;
         needsize = m_offset + bytes + m_capsize;
         needsize = needsize > m_maxsize ? m_maxsize : needsize;
-        m_buf.reserve(needsize);
+        LOG_WARN("###debug capacity off:%zu, byte:%llu, capacity:%zu; needsize:%zu", m_offset, bytes, m_buf.capacity(),
+                 needsize);
+        // m_buf.reserve(needsize);
+        m_buf.resize(needsize);
     }
 
     memcpy(&m_buf[m_offset], data, bytes);
@@ -281,10 +288,11 @@ CMovBufFile::CMovBufFile(const zc_movio_buffileinfo_t *info /*= nullptr*/) {
         m_maxsize = ZC_SEGMENT_DEF_MAXSIZE;
     }
 
-    m_buf.reserve(m_capsize);
+    // m_buf.reserve(m_capsize);
+    m_buf.resize(m_capsize);
     m_bytes = 0;
     m_offset = 0;
-    LOG_WARN("###debug m_capsize:%zu, m_maxsize:%zu", m_capsize, m_maxsize);
+    LOG_INFO("###debug m_capsize:%zu, capacity:%zu, m_maxsize:%zu", m_capsize, m_buf.capacity(), m_maxsize);
     // file
     const char *path = info->path;
     if (path == nullptr || path[0] == '\0') {
@@ -346,11 +354,21 @@ int CMovBufFile::Read(void *data, uint64_t bytes) {
     // LOG_TRACE("read, offset:%zu, size:%llu", m_offset, bytes);
     memcpy(data, &m_buf[m_offset], (uint64_t)bytes);
     m_offset += bytes;
-
-    if (bytes == fread(data, 1, bytes, m_file))
+    int ret = 0;
+    if (bytes == (ret = fread(data, 1, bytes, m_file)))
         return 0;
+    int fret = ferror(m_file);
+    if (fret != 0) {
+        LOG_ERROR("###debug read ret:%d, fret:%d, offset:%u, bytes:%u", ret, fret, m_offset, bytes);
+        return fret;
+    } else {
+        LOG_ERROR("###debug read EOF ret:%d, fret=%d, offset:%u, bytes:%u", ret, fret, m_offset, bytes);
+        return -1;
+    }
 
-    return 0 != ferror(m_file) ? ferror(m_file) : -1 /*EOF*/;
+    // if (bytes  == fread(data, 1, bytes, m_file))
+    //       return 0;
+    // return 0 != ferror(m_file) ? ferror(m_file) : -1 /*EOF*/;
 }
 
 void CMovBufFile::ResetDataBufPos() {
@@ -378,7 +396,7 @@ const uint8_t *CMovBufFile::GetDataBufPtr(uint32_t &bytes) {
 
 int CMovBufFile::Write(const void *data, uint64_t bytes) {
     if (m_offset + bytes > m_maxsize) {
-        LOG_ERROR("###debug,write off:%zu+bytes:%zu = %zu > %zu maxsize", m_offset, bytes, m_offset + bytes, m_maxsize);
+        LOG_ERROR("###debug,write off:%zu+bytes:%llu = %zu > %zu maxsize", m_offset, bytes, m_offset + bytes, m_maxsize);
         return -E2BIG;
     }
 
@@ -387,12 +405,15 @@ int CMovBufFile::Write(const void *data, uint64_t bytes) {
         size_t needsize;
         needsize = m_offset + bytes + m_capsize;
         needsize = needsize > m_maxsize ? m_maxsize : needsize;
-        m_buf.reserve(needsize);
+        LOG_WARN("###debug capacity off:%zu, byte:%llu, capacity:%zu; needsize:%zu", m_offset, bytes, m_buf.capacity(),
+                 needsize);
+        // m_buf.reserve(needsize);
+        m_buf.resize(needsize);
+
     }
 
     memcpy(&m_buf[m_offset], data, bytes);
     m_offset += bytes;
-
     // if (m_offset > m_bytes)
     //  m_bytes = m_offset;
 
@@ -400,8 +421,10 @@ int CMovBufFile::Write(const void *data, uint64_t bytes) {
 }
 
 int CMovBufFile::Seek(int64_t offset) {
-    if ((offset >= 0 ? offset : -offset) >= m_maxsize)
+    if ((offset >= 0 ? offset : -offset) >= m_maxsize) {
+        LOG_ERROR("seek:%lld, m_maxsize:%zu", offset, m_maxsize);
         return -E2BIG;
+    }
 
     m_offset = (size_t)(offset >= 0 ? offset : m_maxsize + offset);
     ZC_ASSERT(offset <= m_buf.capacity());
