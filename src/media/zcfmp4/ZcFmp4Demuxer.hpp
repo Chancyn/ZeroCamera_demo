@@ -17,6 +17,7 @@
 #include "ZcMovBuf.hpp"
 
 namespace zc {
+#define ZC_FMP4DE_DEBUG_DUMP 0              // debug log
 #define ZC_FMP4_DEMUXER_DEBUG_SAVE (1)      // debug save
 
 // readbuf maxsize

@@ -28,7 +28,6 @@
 #include "zc_type.h"
 
 namespace zc {
-#define ZC_FMP4DE_DEBUG_DUMP 1
 
 #define ADTS_HEADER_LEN 7
 
@@ -274,6 +273,17 @@ bool CFmp4DeMuxer::Open(const char *name) {
     LOG_TRACE("Open ok:%s", m_name.c_str());
     return true;
 _err:
+#if ZC_FMP4_DEMUXER_DEBUG_SAVE
+    if (m_debug_afp) {
+        fclose(m_debug_afp);
+        m_debug_afp = nullptr;
+    }
+
+    if (m_debug_vfp) {
+        fclose(m_debug_vfp);
+        m_debug_vfp = nullptr;
+    }
+#endif
     mov_reader_destroy(m_reader);
     m_reader = nullptr;
     ZC_SAFE_DELETEA(m_aframebuf);
@@ -288,7 +298,17 @@ bool CFmp4DeMuxer::Close() {
     if (!m_open) {
         return false;
     }
+#if ZC_FMP4_DEMUXER_DEBUG_SAVE
+    if (m_debug_afp) {
+        fclose(m_debug_afp);
+        m_debug_afp = nullptr;
+    }
 
+    if (m_debug_vfp) {
+        fclose(m_debug_vfp);
+        m_debug_vfp = nullptr;
+    }
+#endif
     mov_reader_destroy(m_reader);
     m_reader = nullptr;
     ZC_SAFE_DELETEA(m_aframebuf);
@@ -321,73 +341,44 @@ bool CFmp4DeMuxer::Stop() {
 int CFmp4DeMuxer::_videopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_info_t &frame) {
     int n = 0;
     if (pkt.encode == ZC_FRAME_ENC_H264) {
-#if ZC_FMP4DE_DEBUG_DUMP
-        LOG_WARN("[H264] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u,flags:%d",
-                 ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (int)(pkt.pts - m_vframe.pts),
-                 (int)(pkt.dts - m_vframe.dts), (unsigned int)pkt.bytes, pkt.flags);
-#endif
         assert(h264_is_new_access_unit((const uint8_t *)pkt.ptr + 4, pkt.bytes - 4));
-        n = h264_mp4toannexb((const struct mpeg4_avc_t *)m_mpeg4video, pkt.ptr, pkt.bytes, m_vframebuf,
-                             sizeof(m_vframebuf));
-#if ZC_FMP4_DEMUXER_DEBUG_SAVE
-        fwrite(m_vframebuf, 1, n, m_debug_vfp);
-#endif
+        n = h264_mp4toannexb((const struct mpeg4_avc_t *)m_mpeg4video, pkt.ptr, pkt.bytes, m_vframebuf, m_vframebuflen);
     } else if (pkt.encode == ZC_FRAME_ENC_H265) {
         uint8_t nalu_type = (((const uint8_t *)pkt.ptr)[4] >> 1) & 0x3F;
         uint8_t irap = 16 <= nalu_type && nalu_type <= 23;
-
-#if ZC_FMP4DE_DEBUG_DUMP
-        LOG_WARN("[H265] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u,flags:%d,%d",
-                 ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_vframe.pts),
-                 (pkt.dts - m_vframe.dts), (unsigned int)pkt.bytes, pkt.flags, (unsigned int)nalu_type);
-#endif
         assert(h265_is_new_access_unit((const uint8_t *)pkt.ptr + 4, pkt.bytes - 4));
-        int n = h265_mp4toannexb((const struct mpeg4_hevc_t *)m_mpeg4video, pkt.ptr, pkt.bytes, m_vframebuf,
-                                 sizeof(m_vframebuf));
-#if ZC_FMP4_DEMUXER_DEBUG_SAVE
-        fwrite(m_vframebuf, 1, n, m_debug_vfp);
-#endif
+        n = h265_mp4toannexb((const struct mpeg4_hevc_t *)m_mpeg4video, pkt.ptr, pkt.bytes, m_vframebuf,
+                             m_vframebuflen);
     }
 #if 0
     else if (pkt.encode == ZC_FRAME_ENC_AV1) {
-#if ZC_FMP4DE_DEBUG_DUMP
-        LOG_WARN("unsupport [AV1] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u,flags:%d",
-                 ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_vframe.pts),
-                 (pkt.dts - m_vframe.dts), (unsigned int)pkt.bytes, pkt.flags);
-#endif
-        // TODO(zhoucc): test
-        // n = aom_av1_codec_configuration_record_save((const struct aom_av1_t* )m_mpeg4video, m_vframebuf,
-        // sizeof(m_vframebuf));
-#if ZC_FMP4_DEMUXER_DEBUG_SAVE
-        // fwrite(m_vframebuf, 1, n, m_debug_vfp);
-#endif
+    // TODO(zhoucc): test
+    // n = aom_av1_codec_configuration_record_save((const struct aom_av1_t* )m_mpeg4video, m_vframebuf,
+    // m_vframebuflen);
     } else if (pkt.encode == ZC_FRAME_ENC_VP9) {
-#if ZC_FMP4DE_DEBUG_DUMP
-        LOG_WARN("unsupport [VPX] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u,flags:%d",
-                 ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_vframe.pts),
-                 (pkt.dts - m_vframe.dts), (unsigned int)pkt.bytes, pkt.flags);
-#endif
         // TODO(zhoucc): test
         // n = webm_vpx_codec_configuration_record_save((const struct webm_vpx_t* )m_mpeg4video, m_vframebuf,
-        // sizeof(m_vframebuf));
-#if ZC_FMP4_DEMUXER_DEBUG_SAVE
-        // fwrite(m_vframebuf, 1, n, m_debug_vfp);
-#endif
+        // m_vframebuflen);
     }
 #endif
     else {
-        LOG_ERROR("error video[%d] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u", pkt.object,
-                  ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                  ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_vframe.pts),
+        LOG_ERROR("error video[%d], diff: %03d/%03d, bytes: %u", pkt.object, (pkt.pts - m_vframe.pts),
                   (pkt.dts - m_vframe.dts), (unsigned int)pkt.bytes);
         // assert(0);
     }
 
     if (n > 0) {
+#if ZC_FMP4DE_DEBUG_DUMP
+        if (pkt.flags) {
+            LOG_TRACE("video enc:%d, pts:%s,dts:%s,diff:%03d/%03d,bytes: %u,flags:%d,n:%d", pkt.encode,
+                      ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
+                      ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_vframe.pts),
+                      (pkt.dts - m_vframe.dts), (unsigned int)pkt.bytes, pkt.flags, n);
+        }
+#endif
+#if ZC_FMP4_DEMUXER_DEBUG_SAVE
+        fwrite(m_vframebuf, 1, n, m_debug_vfp);
+#endif
         m_vframe.bytes = n;
         m_vframe.pts = pkt.pts;
         m_vframe.dts = pkt.dts;
@@ -395,7 +386,7 @@ int CFmp4DeMuxer::_videopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_inf
         m_vframe.stream = ZC_STREAM_VIDEO;
         m_vframe.keyflag = pkt.flags;
         m_vframe.ptr = m_vframebuf;
-        memcpy(&frame, &m_aframe, sizeof(zc_mov_frame_info_t));
+        memcpy(&frame, &m_vframe, sizeof(zc_mov_frame_info_t));
     }
 
     return n;
@@ -404,55 +395,41 @@ int CFmp4DeMuxer::_videopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_inf
 int CFmp4DeMuxer::_aduiopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_info_t &frame) {
     int n = 0;
     if (pkt.encode == ZC_FRAME_ENC_AAC) {
-#if ZC_FMP4DE_DEBUG_DUMP
-        LOG_WARN("[AAC] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u",
-                 ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_aframe.pts),
-                 (pkt.dts - m_aframe.dts), (unsigned int)pkt.bytes);
-#endif
         uint8_t adts[32];
         n = mpeg4_aac_adts_save((const struct mpeg4_aac_t *)m_mpeg4audio, pkt.bytes, adts, sizeof(adts));
         memcpy(m_aframebuf, adts, n);
         memcpy(m_aframebuf + n, pkt.ptr, pkt.bytes);
-#if ZC_FMP4_DEMUXER_DEBUG_SAVE
-        fwrite(adts, 1, n, m_debug_afp);
-        fwrite(pkt.ptr, 1, pkt.bytes, m_debug_afp);
-#endif
         n += pkt.bytes;
     }
 #if 0
     else if (pkt.encode == ZC_FRAME_ENC_OPUS) {
-#if ZC_FMP4DE_DEBUG_DUMP
-        LOG_WARN("[OPUS] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u", ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_aframe.pts), (pkt.dts - m_aframe.dts), (unsigned int)pkt.bytes);
-#endif
+        memcpy(m_aframebuf, pkt.ptr, pkt.bytes);
         n = pkt.bytes;
     } else if (pkt.encode == ZC_FRAME_ENC_MP3) {
-        LOG_WARN("[MP3] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u", ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_aframe.pts), (pkt.dts - m_aframe.dts), (unsigned int)pkt.bytes);
-
+        memcpy(m_aframebuf, pkt.ptr, pkt.bytes);
         n = pkt.bytes;
-#if ZC_FMP4_DEMUXER_DEBUG_SAVE
-        fwrite(pkt.ptr, 1, pkt.bytes, m_debug_afp);
-#endif
     } else if (pkt.encode == ZC_FRAME_ENC_G711) {
-        // static int64_t t_pts, t_dts;
-        LOG_WARN("[G711] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u", ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                 ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts -  m_aframe.pts), (pkt.dts - m_aframe.dts), (unsigned int)pkt.bytes);
-#if ZC_FMP4_DEMUXER_DEBUG_SAVE
-        fwrite(pkt.ptr, 1, pkt.bytes, m_debug_afp);
-#endif
+        memcpy(m_aframebuf, pkt.ptr, pkt.bytes);
+        n = pkt.bytes;
     }
 #endif
     else {
-        LOG_ERROR("error object[%d] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u", pkt.object,
-                  ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)),
-                  ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_aframe.pts),
-                  (pkt.dts - m_aframe.dts), (unsigned int)pkt.bytes);
+        LOG_ERROR("error audio:%d, diff: %03d/%03d, bytes: %u", pkt.object, (pkt.pts - m_vframe.pts),
+                  (pkt.dts - m_vframe.dts), (unsigned int)pkt.bytes);
         // assert(0);
     }
 
     if (n > 0) {
+#if 0  // ZC_FMP4DE_DEBUG_DUMP
+LOG_WARN("audio enc:%d pts: %s, dts: %s, diff: %03d/%03d, bytes: %u, n:%d",
+         ftimestamp(pkt.pts, m_lastts.s_pts, sizeof(m_lastts.s_pts)), pkt.encode,
+         ftimestamp(pkt.dts, m_lastts.s_dts, sizeof(m_lastts.s_dts)), (pkt.pts - m_aframe.pts),
+         (pkt.dts - m_aframe.dts), (unsigned int)pkt.bytes, n);
+#endif
+#if ZC_FMP4_DEMUXER_DEBUG_SAVE
+        fwrite(m_aframebuf, 1, n, m_debug_afp);
+#endif
+
         m_aframe.bytes = n;
         m_aframe.pts = pkt.pts;
         m_aframe.dts = pkt.dts;
@@ -523,7 +500,7 @@ int CFmp4DeMuxer::_getNextFrame(zc_mov_frame_info_t &frame) {
     m_pkt.bytes = m_bufferlen;
     if ((ret = mov_reader_read2(m_reader, OnAlloc, this)) <= 0) {
         LOG_ERROR("read error:%d", ret);
-        return ret;
+        return -1;
     }
 
     if (m_pkt.stream == ZC_STREAM_VIDEO) {
@@ -584,6 +561,5 @@ bool CFmp4DeMuxer::GetTrackInfo(zc_mov_trackinfo_t &tracks) {
     memcpy(&tracks, &m_tracksinfo, sizeof(zc_mov_trackinfo_t));
     return true;
 }
-
 
 }  // namespace zc

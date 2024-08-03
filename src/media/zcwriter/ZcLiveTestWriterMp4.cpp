@@ -136,11 +136,11 @@ int CLiveTestWriterMp4::_putData2FIFO() {
                 frame.pts = m_rtp_clock;  // m_pos;
 #endif
 
-#if 1  // dump/
+#if 0  // dump/
                 if (frame.keyflag) {
-                    LOG_WARN("stream:%d, seq[%d] put IDR:%d len:%d, pts:%u,utc:%u, wh[%u*%u]", movframe.stream,
-                             frame.seq, frame.keyflag, frame.size, frame.pts, frame.utc, frame.video.width,
-                             frame.video.height);
+                    LOG_TRACE("stream:%d, encode:%d, seq[%d] put IDR:%d len:%d, pts:%u,utc:%u, wh[%u*%u]",
+                             movframe.stream, frame.video.encode, frame.seq, frame.keyflag, frame.size, frame.pts,
+                             frame.utc, frame.video.width, frame.video.height);
                 }
 #endif
                 zc_write_frame_t framedata;
@@ -191,7 +191,7 @@ int CLiveTestWriterMp4::process() {
                 ret = 0;
                 goto _err;
             } else if (ret > 0) {
-                //ZC_MSLEEP(ret % 1000);
+                // ZC_MSLEEP(ret % 1000);
                 ZC_MSLEEP(16);
             } else {
                 ZC_MSLEEP(1);
