@@ -3,17 +3,19 @@
 
 #include <asm-generic/errno.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #include <mutex>
-
+#include <list>
 #include <memory>
 
-#include "rtp-payload.h"
-#include "rtp-profile.h"
-#include "rtp.h"
-#include "sys/path.h"
-#include "sys/system.h"
+//#include "rtp-payload.h"
+//#include "rtp-profile.h"
+//#include "rtp.h"
+//#include "sys/path.h"
+//#include "sys/system.h"
 
 #include "zc_log.h"
 #include "zc_macros.h"
@@ -90,7 +92,7 @@ int CLiveTestWriterH264::_putData2FIFO() {
 #if ZC_LIVE_TEST
     int ret = 0;
     // uint32_t timestamp = 0;
-    time64_t clock = zc_system_clock();  // time64_now();
+    uint64_t clock = zc_system_clock();  // time64_now();
     if (0 == m_rtp_clock)
         m_rtp_clock = clock;
 
@@ -112,7 +114,7 @@ int CLiveTestWriterH264::_putData2FIFO() {
             frame.video.width = m_naluinfo.width;
             frame.video.height = m_naluinfo.height;
             frame.keyflag = idr;
-#if 1
+#if 0
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             frame.utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;

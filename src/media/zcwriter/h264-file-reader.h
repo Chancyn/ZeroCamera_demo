@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <vector>
 #include <list>
-#include "ctypedef.h"
+#include <cstddef>
+#include <cstdint>
+//#include "ctypedef.h"
 
 class H264FileReader
 {

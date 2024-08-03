@@ -3,6 +3,7 @@
 
 #include <asm-generic/errno.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 
 #include <memory>
@@ -10,11 +11,6 @@
 
 #include "h264-file-reader.h"
 #include "h265-file-reader.h"
-#include "rtp-payload.h"
-#include "rtp-profile.h"
-#include "rtp.h"
-#include "sys/path.h"
-#include "sys/system.h"
 
 #include "zc_frame.h"
 #include "zc_log.h"

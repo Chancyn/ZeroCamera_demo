@@ -20,10 +20,13 @@
 #include "aio-worker.h"
 
 #include "cstringext.h"  // strstartswith
+#if 0
 #include "media/h264-file-source.h"
 #include "media/h265-file-source.h"
-#include "media/mp4-file-source.h"
 #include "media/ps-file-source.h"
+#endif
+#include "media/mp4-file-source.h"
+
 #include "ntp-time.h"
 #include "path.h"
 #include "rtp-tcp-transport.h"
@@ -159,13 +162,17 @@ int CRtspServer::_ondescribe(void *ptr, rtsp_server_t *rtsp, const char *uri) {
                 source.reset(new CLiveSource(info));
             } else {
                 LOG_TRACE("vod %s", filename.c_str());
+#if 0
                 if (strendswith(filename.c_str(), ".ps"))
                     source.reset(new PSFileSource(filename.c_str()));
                 else if (strendswith(filename.c_str(), ".h264"))
                     source.reset(new H264FileSource(filename.c_str()));
                 else if (strendswith(filename.c_str(), ".h265"))
                     source.reset(new H265FileSource(filename.c_str()));
-                else {
+
+                else
+#endif
+            {
 #if defined(_HAVE_FFMPEG_)
                     source.reset(new FFFileSource(filename.c_str()));
 #else
@@ -265,13 +272,17 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
             }
             item.media.reset(new CLiveSource(info));
         } else {
+#if 0
             if (strendswith(filename.c_str(), ".ps"))
                 item.media.reset(new PSFileSource(filename.c_str()));
+
             else if (strendswith(filename.c_str(), ".h264"))
                 item.media.reset(new H264FileSource(filename.c_str()));
             else if (strendswith(filename.c_str(), ".h265"))
                 item.media.reset(new H265FileSource(filename.c_str()));
-            else {
+            else
+#endif
+            {
 #if defined(_HAVE_FFMPEG_)
                 item.media.reset(new FFFileSource(filename.c_str()));
 #else

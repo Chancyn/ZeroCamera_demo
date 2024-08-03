@@ -8,8 +8,8 @@
 #include <memory>
 #include <string>
 
-#include "h265-file-reader.h"
-#include "time64.h"
+#include "h264-file-reader.h"
+//#include "time64.h"
 #include "zc_frame.h"
 
 #include "Singleton.hpp"
@@ -20,10 +20,10 @@
 
 class CMediaTrack;
 namespace zc {
-class CLiveTestWriterH265 : public Thread, public ILiveTestWriter{
+class CLiveTestWriterH264 : public Thread, public ILiveTestWriter {
  public:
-    explicit CLiveTestWriterH265(const live_test_info_t &info);
-    virtual ~CLiveTestWriterH265();
+    explicit CLiveTestWriterH264(const live_test_info_t &info);
+    virtual ~CLiveTestWriterH264();
 
  public:
     virtual int Play();
@@ -40,7 +40,7 @@ class CLiveTestWriterH265 : public Thread, public ILiveTestWriter{
  private:
     int m_status;
     live_test_info_t m_info;
-    H265FileReader *m_reader;
+    H264FileReader *m_reader;
     // CShmFIFOW *m_fifowriter;
     CShmStreamW *m_fifowriter;
     uint32_t m_seq;
