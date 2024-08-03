@@ -58,12 +58,13 @@ unsigned int CShmStreamW::Put(const unsigned char *buffer, unsigned int len, voi
 
     zc_frame_t *frame = (zc_frame_t *)buffer;
 
+    frame->magic = m_magic;  // set frame magic
+    #if DEBUG_DUMP
     if (frame->keyflag) {
-        #if DEBUG_DUMP
         LOG_TRACE("put encode:%u, size:%u", frame->video.encode, frame->size);
-        #endif
-        setKeyPos();
     }
+    #endif
+    setLatestpos(frame->keyflag);
     ret = _put(buffer, len);
 
     // callback function need call puting to put framedata append
@@ -110,6 +111,14 @@ unsigned int CShmStreamR::_getLatestFrameHdr(unsigned char *buffer, unsigned int
     // set out pos = latest frame pos
     setLatestOutpos(pos);
     unsigned int ret = _get(buffer, hdrlen);
+    unsigned int *magicb = (unsigned int *)buffer;
+    if (keyflag && ((*magicb) != m_magic)) {
+        LOG_ERROR("get keyframe error magic[0x%x]!=[0x%x], try get latest frame", (*magicb), m_magic);
+        pos = getLatestPos(false);
+        setLatestOutpos(pos);
+        ret = _get(buffer, hdrlen);
+    }
+
     ZC_ASSERT(ret == hdrlen);
     LOG_WARN("get latest IDR frame hdr ret[%u]", ret);
     return ret;
@@ -197,33 +206,28 @@ _err:
 }
 
 // put for hi_venc_stream, 1.first put hdr, 2.stream data GetAppending by m_puting_cb
-unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsigned int hdrlen, unsigned int magic) {
+unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsigned int hdrlen) {
     unsigned int framelen = 0;
     unsigned int ret = 0;
     ShareLock();
     ret = _get(buffer, hdrlen);
     ZC_ASSERT(ret == hdrlen);
     unsigned int *magicb = (unsigned int *)buffer;
-    // zc_frame_t *frame = (zc_frame_t *)buffer;
-    //  framelen = frame->size;
-    //  if (frame->magic != magic) {
-    //      LOG_ERROR("magic[0x%x]size[%u]pts[%u]utc[%u]", frame->magic, frame->size, frame->pts, frame->utc);
-    //  }
-
+    zc_frame_t *frame = (zc_frame_t *)buffer;
+    framelen = frame->size;
     // ZC_ASSERT((*magicb) == magic);
-    if ((*magicb) != magic) {
+     if (frame->magic != m_magic) {
         // get latest frame
-        LOG_ERROR("magic[0x%x]!=[0x%x], get latest IDR frame", (*magicb), magic);
+        LOG_ERROR("magic[0x%x]!=[0x%x], get latest IDR frame", (*magicb), m_magic);
         _getLatestFrameHdr(buffer, hdrlen, true);
-        // ZC_ASSERT((*magicb) == magic);
-        if ((*magicb) != magic) {
-            LOG_ERROR("empty frame", (*magicb), magic);
+        if (frame->magic != m_magic) {
+            LOG_ERROR("empty frame, [0x%x]!=[0x%x]", frame->magic, m_magic);
             ShareUnlock();
             return 0;
         }
     }
 
-    framelen = *(++magicb);
+    framelen = frame->size;
     // LOG_ERROR("buflen[%u]hdrlen[%u]framelen[%u]ret[%u]", buflen, hdrlen, framelen, ret);
     ZC_ASSERT(buflen >= hdrlen + framelen);
     ret = _get(buffer + hdrlen, framelen);

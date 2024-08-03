@@ -238,7 +238,7 @@ int CLiveTestWriterH265::process() {
                 ret = 0;
                 goto _err;
             } else if (ret > 0) {
-                ZC_MSLEEP(ret);
+                ZC_MSLEEP(ret%20);
             } else {
                 ZC_MSLEEP(1);
             }

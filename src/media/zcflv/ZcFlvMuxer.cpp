@@ -264,7 +264,7 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
     // if (stream->Len() > sizeof(zc_frame_t)) {
     while (State() == Running && (stream->Len() > sizeof(zc_frame_t))) {
-        ret = stream->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
+        ret = stream->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t));
         if (ret < sizeof(zc_frame_t)) {
             return -1;
         }

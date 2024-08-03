@@ -89,7 +89,8 @@ int CMediaTrack::SendBye() {
     char rtcp[1024] = {0};
     size_t n = rtp_rtcp_bye(m_rtp, rtcp, sizeof(rtcp));
     // send RTCP packet
-    m_transport->Send(true, rtcp, n);
+    if (m_transport)
+        m_transport->Send(true, rtcp, n);
 
     return 0;
 }
@@ -148,11 +149,12 @@ int CMediaTrack::_RTPPacket(const void *packet, int bytes, uint32_t timestamp, i
     // so that receivers will (likely) be able to get RTCP-synchronized presentation times immediately:
     rtp_onsend(m_rtp, packet, bytes /*, time*/);
     SendRTCP(system_clock());
-
-    int r = m_transport->Send(false, packet, bytes);
-    // ZC_ASSERT(r == (int)bytes);
-    if (r != bytes) {
-        return -1;
+    if (m_transport) {
+        int r = m_transport->Send(false, packet, bytes);
+        // ZC_ASSERT(r == (int)bytes);
+        if (r != bytes) {
+            return -1;
+        }
     }
 
     return 0;
@@ -173,7 +175,7 @@ int CMediaTrack::GetData2Send() {
     // if (!m_fiforeader->IsEmpty()) {
 #endif
     while (m_fiforeader->Len() > sizeof(zc_frame_t)) {
-        ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
+        ret = m_fiforeader->Get(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t));
         if (ret < sizeof(zc_frame_t)) {
             return -1;
         }

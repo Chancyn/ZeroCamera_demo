@@ -21,6 +21,7 @@
 #include "ZcType.hpp"
 #include "zc_log.h"
 #include "zc_macros.h"
+#include "zc_type.h"
 
 // userspace modify................
 
@@ -334,17 +335,22 @@ void CShmFIFO::ShmFree() {
     return _shmfree();
 }
 
-void CShmFIFO::setKeyPos() {
-    m_pfifo.fifo->key = m_pfifo.fifo->in;
+void CShmFIFO::setLatestpos(bool key) {
+    if (unlikely(key))
+        m_pfifo.fifo->key = m_pfifo.fifo->in;
+    else
+        m_pfifo.fifo->latest = m_pfifo.fifo->in;
+
     return;
 }
 
 unsigned int CShmFIFO::getLatestPos(bool key) {
-    return key ? m_pfifo.fifo->key : m_pfifo.fifo->in;
+    return key ? m_pfifo.fifo->key : m_pfifo.fifo->latest;
 }
 
 void CShmFIFO::setLatestOutpos(unsigned int pos) {
-    LOG_WARN("skip set Out pos:%u->%u, in:%u, key:%u", m_pfifo.out, pos, m_pfifo.fifo->in, m_pfifo.fifo->key);
+    LOG_WARN("skip set Out pos:%u->%u, in:%u, key:%u, last:%u", m_pfifo.out, pos, m_pfifo.fifo->in, m_pfifo.fifo->key,
+             m_pfifo.fifo->latest);
     m_pfifo.out = pos;
     return;
 }
@@ -514,7 +520,7 @@ unsigned int CShmFIFO::getUserData(unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     share_mutex_lock(&m_pfifo.fifo->mutex);
     unsigned int wlen = wlen < m_pfifo.usersize ? wlen : m_pfifo.usersize;
-    if (wlen > 0 && m_pfifo.fifo->usersetflag)  {
+    if (wlen > 0 && m_pfifo.fifo->usersetflag) {
         memcpy(buffer, m_pfifo.shmbuff, wlen);
         LOG_WARN("get user data:%u", wlen);
     }
@@ -527,7 +533,7 @@ unsigned int CShmFIFO::setUserData(unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     share_mutex_lock(&m_pfifo.fifo->mutex);
     unsigned int wlen = wlen < m_pfifo.usersize ? wlen : m_pfifo.usersize;
-    if (wlen > 0)  {
+    if (wlen > 0) {
         if (m_pfifo.fifo->usersetflag)
             m_pfifo.fifo->usersetflag = 1;
         memcpy(m_pfifo.shmbuff, buffer, wlen);

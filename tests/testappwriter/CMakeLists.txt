@@ -15,6 +15,7 @@ endforeach()
 #头文件包含
 target_include_directories(zc_testwriter PRIVATE
 ${ZCRTSP_INC}
+${ZCFMP4_INC}
 ${ZCWRITER_INC}
 ${MEDIAAVCODEC_INC}
 ${MEDIAAVBSF_INC}
@@ -53,6 +54,7 @@ ${NNG_LIBPATH}
 target_link_libraries(zc_testwriter PRIVATE
 zcrtsp
 zcwriter
+zcfmp4
 ${MEDIARTSPMEDIA}
 zch26x
 ${MEDIAAIO}

@@ -19,6 +19,7 @@
 
 class CMediaTrack;
 namespace zc {
+
 typedef int (*TestWGetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
 typedef int (*TestWSetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
 
@@ -32,7 +33,7 @@ class CLiveTestWriterFac {
  public:
     CLiveTestWriterFac() {}
     ~CLiveTestWriterFac() {}
-    ILiveTestWriter *CreateLiveTestWriter(int code, const live_test_info_t &info);
+    ILiveTestWriter *CreateLiveTestWriter(int file, int code, const live_test_info_t &info);
 };
 
 class CLiveTestWriterSys : public Singleton<CLiveTestWriterSys> {

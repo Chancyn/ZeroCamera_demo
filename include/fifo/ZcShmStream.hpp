@@ -43,7 +43,7 @@ class CShmStreamR : public CShmFIFO{
 
  public:
     // put for hi_venc_stream, 1.first put hdr, 2.stream data
-    unsigned int Get(unsigned char *buffer, unsigned int buflen, unsigned int hdrlen, unsigned int magic);
+    unsigned int Get(unsigned char *buffer, unsigned int buflen, unsigned int hdrlen);
     bool GetStreamInfo(zc_frame_userinfo_t &info, bool skip2lastest = false);
     void Skip2LatestPos(bool key);
 

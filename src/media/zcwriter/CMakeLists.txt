@@ -13,6 +13,7 @@ endforeach()
 add_library(zcwriter STATIC ${DIR_SOURCE_SRCS})
 
 target_include_directories(zcwriter PRIVATE
+${ZCFMP4_INC}
 ${MEDIAMOV_INC}
 ${MEDIAFLV_INC}
 ${PLAT_BASIC_INC}

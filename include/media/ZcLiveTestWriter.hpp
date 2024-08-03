@@ -17,9 +17,17 @@ typedef struct {
     const uint8_t *ptr;
 } test_raw_frame_t;
 
+typedef enum {
+    ZC_TEST_FILE_STREAM_RAW  = 0,      // H264/H265
+    ZC_TEST_FILE_MP4,                  // mp4
+
+    ZC_TEST_FILE_BUTT,
+} zc_test_file_e;
+
 typedef struct {
     unsigned int chn;
     unsigned int size;
+    unsigned int file;    // zc_test_file_e
     unsigned int encode;  // ZC_FRAME_ENC_H265
     unsigned int fps;     // fps
     char fifopath[128];

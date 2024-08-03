@@ -454,13 +454,13 @@ CMovIo *CMovIoFac::CMovIoCreate(fmp4_movio_e type, const zc_movio_info_un *uninf
 }
 
 CMovReadIo::CMovReadIo(const char *name) {
-    m_file = fopen(name, "wb+");
+    m_file = fopen(name, "rb");
     if (!m_file) {
         LOG_ERROR("error open:%s", name);
         return;
     }
     m_io.read = ioRead;
-    m_io.write = ioWrite;
+    m_io.write = nullptr;
     m_io.seek = ioSeek;
     m_io.tell = ioTell;
     m_name = name;

@@ -20,6 +20,7 @@
 #include "Epoll.hpp"
 #include "ZcLiveTestWriterH264.hpp"
 #include "ZcLiveTestWriterH265.hpp"
+#include "ZcLiveTestWriterMp4.hpp"
 #include "ZcLiveTestWriterSys.hpp"
 #include "ZcType.hpp"
 
@@ -30,23 +31,38 @@ extern "C" uint32_t rtp_ssrc(void);
 
 #if ZC_LIVE_TEST
 namespace zc {
-static const char *g_filesuffix[ZC_FRAME_ENC_BUTT] = {
+static const char *g_encsuffix[ZC_FRAME_ENC_BUTT] = {
     "h264",
     "h265",
     "aac",
     "metabin",
 };
 
+static const char *g_filesuffix[ZC_FRAME_ENC_BUTT] = {
+    "",
+    ".mp4",
+};
 const static live_test_info_t g_livetestinfo[ZC_STREAM_VIDEO_MAX_CHN] = {
     // {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test"},
     // test0.h265
-    {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_FRAME_ENC_H265, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test0", "TestWH265_0"},
+    {0, ZC_STREAM_MAIN_VIDEO_SIZE, ZC_TEST_FILE_MP4, ZC_FRAME_ENC_H265, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test0",
+     "TestW_0"},
     // test0.h264
-    {1, ZC_STREAM_SUB_VIDEO_SIZE, ZC_FRAME_ENC_H264, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test1", "TestWH264_1"},
+    {1, ZC_STREAM_SUB_VIDEO_SIZE, ZC_TEST_FILE_MP4, ZC_FRAME_ENC_H264, ZC_TEST_FPS, ZC_STREAM_VIDEO_SHM_PATH, "test1",
+     "TestW_1"},
 };
 
-ILiveTestWriter *CLiveTestWriterFac::CreateLiveTestWriter(int code, const live_test_info_t &info) {
+ILiveTestWriter *CLiveTestWriterFac::CreateLiveTestWriter(int file, int code, const live_test_info_t &info) {
     ILiveTestWriter *pw = nullptr;
+    // file type
+    switch (file) {
+    case ZC_TEST_FILE_MP4:
+        pw = new CLiveTestWriterMp4(info);
+        return pw;
+    default:
+        break;
+    }
+
     switch (code) {
     case ZC_FRAME_ENC_H264:
         pw = new CLiveTestWriterH264(info);
@@ -74,7 +90,7 @@ int CLiveTestWriterSys::init() {
     CLiveTestWriterFac fac;
     ILiveTestWriter *tmp = nullptr;
     for (unsigned int i = 0; i < ZC_STREAM_VIDEO_MAX_CHN; i++) {
-        tmp = fac.CreateLiveTestWriter(m_liveinfotab[i].encode, m_liveinfotab[i]);
+        tmp = fac.CreateLiveTestWriter(m_liveinfotab[i].file, m_liveinfotab[i].encode, m_liveinfotab[i]);
         ZC_ASSERT(tmp != nullptr);
         if (!tmp) {
             LOG_ERROR("init error");
@@ -155,8 +171,8 @@ int CLiveTestWriterSys::Init(const testwriter_callback_info_t &cbinfo, unsigned 
             code = (pCodeTab[i]) % ZC_FRAME_ENC_BUTT;
         }
         m_liveinfotab[i].encode = code;
-        snprintf(m_liveinfotab[i].filepath, sizeof(m_liveinfotab[i].filepath) - 1, "%s.%s", g_livetestinfo[i].filepath,
-                 g_filesuffix[code]);
+        snprintf(m_liveinfotab[i].filepath, sizeof(m_liveinfotab[i].filepath) - 1, "%s.%s%s",
+                 g_livetestinfo[i].filepath, g_encsuffix[code], g_filesuffix[m_liveinfotab[i].file]);
         LOG_TRACE("init testwriter,i:%u,code:%u,%s", i, code, m_liveinfotab[i].filepath);
     }
 
