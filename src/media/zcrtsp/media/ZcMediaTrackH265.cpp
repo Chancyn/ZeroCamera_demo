@@ -11,11 +11,11 @@
 #include "sys/path.h"
 #include "sys/system.h"
 
+#include "zc_base64.h"
 #include "zc_frame.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_type.h"
-#include "zc_base64.h"
 
 #include "ZcMediaTrackH265.hpp"
 #include "ZcType.hpp"
@@ -26,8 +26,7 @@ extern "C" uint32_t rtp_ssrc(void);
 #define VIDEO_FREQUENCE (90000)  // frequence
 
 namespace zc {
-CMediaTrackH265::CMediaTrackH265(const zc_meida_track_t &info)
-    : CMediaTrack(info) {
+CMediaTrackH265::CMediaTrackH265(const zc_meida_track_t &info) : CMediaTrack(info) {
     m_frequency = VIDEO_FREQUENCE;
     LOG_TRACE("Constructor");
 }
@@ -56,7 +55,8 @@ bool CMediaTrackH265::Init(void *pinfo) {
     static const char *video_pattern =
         "m=video 0 RTP/AVP %d\n"
         "a=rtpmap:%d H265/%d\n"
-        "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=%s\n";
+        "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=%s\n"
+        "a=control:track%d\n";
 
     const char *test_sps = "QAEMAf//AWAAAAMAsAAAAwAAAwBdqgJAAAAAAQ==";
     // profile-level-id=010C01;
@@ -112,7 +112,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
 
     // sps
     snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H265, RTP_PAYLOAD_H265, m_frequency, RTP_PAYLOAD_H265,
-             profileid[0], profileid[1], profileid[2], spspps);
+             profileid[0], profileid[1], profileid[2], spspps, m_info.trackno);
     LOG_TRACE("ok H265 sdp sdpbuf[%s]", sdpbuf);
     m_sdp = sdpbuf;
     // set create flag

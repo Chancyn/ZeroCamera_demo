@@ -21,7 +21,7 @@ extern "C" {
 
 // debug dump stream
 #ifdef ZC_DEBUG
-#define ZC_DUMP_BINSTREAM 0
+#define ZC_DUMP_BINSTREAM 1
 #endif
 
 void zc_debug_dump_binstream(const char *fun, int type, const uint8_t *data, uint32_t len, uint32_t dumplen);

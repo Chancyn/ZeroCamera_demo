@@ -23,8 +23,7 @@
 extern "C" uint32_t rtp_ssrc(void);
 
 namespace zc {
-CMediaTrackAAC::CMediaTrackAAC(const zc_meida_track_t &info)
-    : CMediaTrack(info) {
+CMediaTrackAAC::CMediaTrackAAC(const zc_meida_track_t &info) : CMediaTrack(info) {
     if (m_info.atinfo.channels) {
         m_info.atinfo.channels = m_info.atinfo.channels ? m_info.atinfo.channels : ZC_AUDIO_CHN;
         m_info.atinfo.sample_bits = m_info.atinfo.sample_bits ? m_info.atinfo.sample_bits : ZC_AUDIO_SAMPLE_BIT_16;
@@ -36,21 +35,26 @@ CMediaTrackAAC::CMediaTrackAAC(const zc_meida_track_t &info)
     }
 
     m_frequency = m_info.atinfo.sample_rate;
-    LOG_TRACE("chn:%u,bits:%u,rate:%u", m_info.atinfo.channels, m_info.atinfo.sample_bits*8, m_info.atinfo.sample_rate);
+    LOG_TRACE("chn:%u,bits:%u,rate:%u", m_info.atinfo.channels, m_info.atinfo.sample_bits * 8,
+              m_info.atinfo.sample_rate);
 }
 
 CMediaTrackAAC::~CMediaTrackAAC() {}
 
 bool CMediaTrackAAC::Init(void *pinfo) {
-#if 0
-    static const char *pattern =
-        "m=audio 0 RTP/AVP %d\n"
-        "a=rtpmap:%d MPEG4-GENERIC/%d/%d\n"
-        "a=fmtp:%d "
-        "streamType=5;profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=";
+#if 1
+    static const char *audio_pattern = "m=audio 0 RTP/AVP %d\n"
+                                       "a=rtpmap:%d MPEG4-GENERIC/%d/%d\n"
+                                       "a=fmtp:%d "
+                                       "streamType=5;profile-level-id=%d;mode=AAC-hbr;sizelength=13;indexlength=3;"
+                                       "indexdeltalength=3;config=%s\n"
+                                       "a=control:track%d\n";
 #endif
+    char sdpbuf[1024];
+    char extra[32] = "400023203FC0";
     uint32_t ssrc = rtp_ssrc();
     m_timestamp = ssrc;
+    int profilelevel = 1;  // TODO(zhoucc): prase  aac profilelevel
     static struct rtp_payload_t s_rtpfunc = {
         CMediaTrack::RTPAlloc,
         CMediaTrack::RTPFree,
@@ -85,6 +89,12 @@ bool CMediaTrackAAC::Init(void *pinfo) {
     }
 
     rtp_set_info(m_rtp, "RTSPServer", "live.aac");
+
+    // sps
+    snprintf(sdpbuf, sizeof(sdpbuf), audio_pattern, RTP_PAYLOAD_MP4A, RTP_PAYLOAD_MP4A, m_info.atinfo.sample_rate,
+             m_info.atinfo.channels, RTP_PAYLOAD_MP4A, profilelevel, extra, m_info.trackno);
+    LOG_TRACE("ok H264 sdp sdpbuf[%s]", sdpbuf);
+    m_sdp = sdpbuf;
     // set create flag
     m_create = true;
     LOG_TRACE("Create ok ,AAC");

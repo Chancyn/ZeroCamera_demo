@@ -11,6 +11,7 @@
 
 void zc_debug_dump_binstream(const char *fun, int type, const uint8_t *data, uint32_t len, uint32_t dumplen) {
 #if ZC_DUMP_BINSTREAM
+    dumplen = dumplen < len ? dumplen : len;
     printf("[%s] type:%d, dump bin len:%u,dumplen:%u [", fun, type, len, dumplen);
     for (unsigned int i = 0; i < dumplen; i++) {
         printf("%02x ", data[i]);

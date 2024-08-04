@@ -56,7 +56,8 @@ bool CMediaTrackH264::Init(void *pinfo) {
     static const char *video_pattern =
         "m=video 0 RTP/AVP %d\n"
         "a=rtpmap:%d H264/%d\n"
-        "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=%s\n";
+        "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=%s\n"
+        "a=control:track%d\n";
 
     const char *test_sps = "Z00AKpY1QPAET8s3AQEBAgAAAAE=,aO4xsgAAAAEG5QHpgAAAAAFluAAADJ1wAAE/6Q==";
     // profile-level-id=4D002A;
@@ -110,7 +111,7 @@ bool CMediaTrackH264::Init(void *pinfo) {
 
     // sps
     snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H264, RTP_PAYLOAD_H264, m_frequency, RTP_PAYLOAD_H264,
-             profileid[0], profileid[1], profileid[2], spspps);
+             profileid[0], profileid[1], profileid[2], spspps, m_info.trackno);
     LOG_TRACE("ok H264 sdp sdpbuf[%s]", sdpbuf);
     m_sdp = sdpbuf;
     // set create flag

@@ -18,6 +18,7 @@
 #include "opus-head.h"
 #include "webm-vpx.h"
 #include "zc_h26x_sps_parse.h"
+#include "zc_basic_fun.h"
 // #include "sys/system.h"
 #include "zc_frame.h"
 #include "zc_log.h"
@@ -81,7 +82,7 @@ void CFmp4DeMuxer::OnMovVideoInfo(void *param, uint32_t track, uint8_t object, i
 
 void CFmp4DeMuxer::_onMovVideoInfo(uint32_t track, uint8_t object, int width, int height, const void *extra,
                                    size_t bytes) {
-    LOG_WARN("onaudio track:%u,obj:%u,width:%d,height:%d,", track, object, width, height);
+    LOG_WARN("onaudio track:%u,obj:%u,bytes:%zu,width:%d,height:%d,", track, object, bytes, width, height);
     zc_mov_track_t &trackinfo = m_tracksinfo.tracks[ZC_MEDIA_TRACK_VIDEO];
     trackinfo.used = 1;
     trackinfo.trackid = track;
@@ -146,7 +147,7 @@ void CFmp4DeMuxer::OnMovAudioInfo(void *param, uint32_t track, uint8_t object, i
 
 void CFmp4DeMuxer::_onMovAudioInfo(uint32_t track, uint8_t object, int channel_count, int bit_per_sample,
                                    int sample_rate, const void *extra, size_t bytes) {
-    LOG_WARN("onaudio track:%u,obj:%u,channel:%d,sample_bits:%d,sample_rate:%d", track, object, channel_count,
+    LOG_WARN("onaudio track:%u,obj:%u,bytes:%zu,channel:%d,sample_bits:%d,sample_rate:%d", track, object, bytes, channel_count,
              bit_per_sample, sample_rate);
     zc_mov_track_t &trackinfo = m_tracksinfo.tracks[ZC_MEDIA_TRACK_AUDIO];
     trackinfo.used = 1;
@@ -167,7 +168,10 @@ void CFmp4DeMuxer::_onMovAudioInfo(uint32_t track, uint8_t object, int channel_c
         ZC_ASSERT(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t *)extra, bytes, aac));
         ZC_ASSERT(channel_count == aac->channels);
         ZC_ASSERT(MOV_OBJECT_AAC == object);
-        aac->profile = MPEG4_AAC_LC;
+        LOG_WARN("AAC track:%u,obj:%u,channel:%d,profile:%d", track, object, channel_count,
+             aac->profile);
+        zc_debug_dump_binstream("aac_extra", ZC_FRAME_ENC_AAC, (const uint8_t *)extra, bytes, bytes);
+        // aac->profile = MPEG4_AAC_LC;
         aac->channel_configuration = channel_count;
         aac->sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);
     }

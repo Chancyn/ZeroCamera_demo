@@ -227,7 +227,7 @@ typedef struct {
 
 typedef struct _zc_media_track {
     unsigned char chn;         // chnno
-    unsigned char trackno;     // tracktype zc_stream_e
+    unsigned char trackno;     // tracknum
     unsigned char tracktype;   // tracktype zc_stream_e
     unsigned char encode;      // encode zc_frame_enc_e
     unsigned int mediacode;    // encode zc_media_code_e for new different CMediaTrackH264

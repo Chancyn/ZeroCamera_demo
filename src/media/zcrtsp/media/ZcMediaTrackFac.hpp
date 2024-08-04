@@ -32,7 +32,7 @@ class CMediaTrackFac {
         case ZC_MEDIA_CODE_AAC:
             track = new CMediaTrackAAC(info);
             break;
-        // case ZC_MEDIA_CODE_AAC:
+        // case ZC_MEDIA_CODE_METADATA:
         // track = new CMediaTrackAAC();
         // break;
         default:
