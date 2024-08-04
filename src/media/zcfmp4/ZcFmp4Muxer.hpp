@@ -69,6 +69,7 @@ class CFmp4Muxer : protected Thread {
     CMovIo *m_movio;
     struct fmp4_writer_t *m_fmp4;
     int m_trackid[ZC_MEDIA_TRACK_BUTT];
+    zc_frame_userinfo_t m_frameinfoTab[ZC_MEDIA_TRACK_BUTT];
     std::vector<CShmStreamR *> m_vector;
 };
 

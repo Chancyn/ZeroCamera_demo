@@ -34,6 +34,11 @@ CFmp4Muxer::CFmp4Muxer()
     : Thread("fmp4buf"), m_Idr(false), m_status(fmp4_status_init), m_pts(0), m_apts(0), m_fmp4(nullptr),
       m_movio(nullptr) {
     memset(&m_info, 0, sizeof(m_info));
+    int channels = m_info.streaminfo.tracks[ZC_STREAM_AUDIO].atinfo.channels;
+    int sample_bits = m_info.streaminfo.tracks[ZC_STREAM_AUDIO].atinfo.sample_bits * 8;
+    int sample_rate = m_info.streaminfo.tracks[ZC_STREAM_AUDIO].atinfo.sample_rate;
+
+    LOG_WARN("init channels:%d, sample_bits:%d, sample_rate:%d", channels, sample_bits, sample_rate);
     m_vector.clear();
 }
 
@@ -69,9 +74,9 @@ bool CFmp4Muxer::createStream() {
         }
 
         // skip2f
-        zc_frame_userinfo_t frameinfo;
+        // zc_frame_userinfo_t frameinfo;
         // Skip2LatestPos();
-        if (fiforeader->GetStreamInfo(frameinfo, true)) {
+        if (fiforeader->GetStreamInfo(m_frameinfoTab[track->tracktype], true)) {
             LOG_WARN("Get Streaminfo/jump2latest ok");
         }
         m_vector.push_back(fiforeader);
@@ -156,13 +161,16 @@ bool CFmp4Muxer::Stop() {
     return false;
 }
 
+#define ZC_AUIDO_DELAY_VIDEO 300
+#define ZC_AUIDO_LEADER_VIDEO 100
+
 int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
     int update = 0;
     int vcl = 0;
     int n = 0;
     int ret = -1;
     int keyflag = 0;
-    uint8_t extra_data[64 * 1024];
+
     int segment = 0;
     if (pframe->type == ZC_STREAM_VIDEO) {
         keyflag = pframe->keyflag;
@@ -170,6 +178,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
             struct mpeg4_avc_t avc = {0};
             n = h264_annexbtomp4(&avc, pframe->data, pframe->size, m_framemp4buf, sizeof(m_framemp4buf), &vcl, &update);
             if (m_trackid[ZC_STREAM_VIDEO] == -1) {
+                uint8_t extra_data[64 * 1024];
                 LOG_WARN("H264 [size:%d, n:%d, vlc:%d]", pframe->size, n, vcl);
                 if (avc.nb_sps < 1 || avc.sps[0].bytes < 4) {
                     LOG_WARN("H264 skip video wait for key frame [idc:%d, nb_sps:%d, sps:%d]", avc.chroma_format_idc,
@@ -186,17 +195,37 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
                         LOG_WARN("prase wh [size:%d, wh:%hu:%hu]", pframe->video.width, pframe->video.height);
                     }
                 }
-                LOG_INFO("fmp4 => add H264 info->v.w:%d, info->v.h:%d", pframe->video.width, pframe->video.height);
+                LOG_INFO("fmp4 => add H264 info->v.w:%d, info->v.h:%d,seq:%u,pts:%llu ", pframe->video.width,
+                         pframe->video.height, pframe->seq, pframe->pts);
                 int extra_data_size = mpeg4_avc_decoder_configuration_record_save(&avc, extra_data, sizeof(extra_data));
                 assert(extra_data_size > 0);  // check buffer length
 
                 m_trackid[ZC_STREAM_VIDEO] = fmp4_writer_add_video(m_fmp4, MOV_OBJECT_H264, pframe->video.width,
                                                                    pframe->video.height, extra_data, extra_data_size);
+                if (m_info.streaminfo.tracks[ZC_STREAM_AUDIO].enable) {
+                    int channels = 2;      // m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.channels;
+                    int sample_bits = 16;  // m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.sample_bits*8;
+                    int sample_rate = 48000;
+                    channels = m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.channels;
+                    sample_bits = m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.sample_bits * 8;
+                    sample_rate = m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.sample_rate;
+                    // struct mpeg4_aac_t aac;
+                    // mpeg4_aac_adts_load((const uint8_t *) m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.adts, 7, &aac);
+                    // int extra_data_size = mpeg4_aac_audio_specific_config_save(&aac, extra_data, sizeof(extra_data));
+                    // sample_rate = mpeg4_aac_audio_frequency_to((enum
+                    // mpeg4_aac_frequency)aac.sampling_frequency_index); channels = aac.channel_configuration;
+                    m_trackid[ZC_STREAM_AUDIO] =
+                        fmp4_writer_add_audio(m_fmp4, MOV_OBJECT_AAC, channels, sample_bits, sample_rate, NULL, 0);
+                    LOG_WARN("fmp4 => video add AAC track channels:%d, sample_bits:%d, sample_rate:%d", channels,
+                             sample_bits, sample_rate);
+                }
+
                 LOG_WARN("H264 [size:%d, n:%d, vlc:%d, track:%d, extra:%d]", pframe->size, n, vcl,
                          m_trackid[ZC_STREAM_VIDEO], extra_data_size);
                 fmp4_writer_init_segment(m_fmp4);
             }
 
+            m_pts = pframe->pts;
             if (m_trackid[ZC_STREAM_VIDEO] != -1) {
                 // LOG_TRACE("H264 [size:%d, n:%d, vlc:%d, track:%d]", pframe->size, n, vcl,
                 // m_trackid[ZC_STREAM_VIDEO]);
@@ -213,6 +242,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
                     LOG_WARN("H265 skip wait for key frame");
                     return 0;
                 }
+                uint8_t extra_data[64 * 1024];
                 // zc_debug_dump_binstream(__FUNCTION__, ZC_FRAME_ENC_H265, pframe->data, pframe->size, 64);
 
                 // LOG_WARN("H265 numnalu:%u, keyflag:%u, size:%u", hevc.numOfArrays, pframe->keyflag, pframe->size);
@@ -236,29 +266,48 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
                 LOG_INFO("fmp4 => add H265 info->v.w:%d, info->v.h:%d", pframe->video.width, pframe->video.height);
                 m_trackid[ZC_STREAM_VIDEO] = fmp4_writer_add_video(m_fmp4, MOV_OBJECT_HEVC, pframe->video.width,
                                                                    pframe->video.height, extra_data, extra_data_size);
+
+                if (m_info.streaminfo.tracks[ZC_STREAM_AUDIO].enable) {
+                    int channels = 2;      // m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.channels;
+                    int sample_bits = 16;  // m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.sample_bits*8;
+                    int sample_rate = 48000;
+                    channels = m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.channels;
+                    sample_bits = m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.sample_bits * 8;
+                    sample_rate = m_frameinfoTab[ZC_STREAM_AUDIO].ainfo.sample_rate;
+                    m_trackid[ZC_STREAM_AUDIO] =
+                        fmp4_writer_add_audio(m_fmp4, MOV_OBJECT_AAC, channels, sample_bits, sample_rate, NULL, 0);
+                    LOG_WARN("fmp4 => video add AAC track channels:%d, sample_bits:%d, sample_rate:%d", channels,
+                             sample_bits, sample_rate);
+                }
                 fmp4_writer_init_segment(m_fmp4);
             }
-
+            m_pts = pframe->pts;
             if (m_trackid[ZC_STREAM_VIDEO] != -1) {
                 ret = fmp4_writer_write(m_fmp4, m_trackid[ZC_STREAM_VIDEO], m_framemp4buf, n, pframe->pts, pframe->pts,
                                         pframe->keyflag ? MOV_AV_FLAG_KEYFREAME : 0);
             }
         }
     } else if (pframe->type == ZC_STREAM_AUDIO) {
-        int rate = 1;
+        if (pframe->pts + ZC_AUIDO_DELAY_VIDEO < m_pts) {
+            LOG_WARN("drop apts:%llu,delay pts:%llu,over%dms", pframe->pts, m_pts, ZC_AUIDO_DELAY_VIDEO);
+            return 0;
+        } else if (pframe->pts > m_pts + ZC_AUIDO_LEADER_VIDEO) {
+            LOG_WARN("drop apts:%llu,leader pts%llu,over%dms", pframe->pts, m_pts, ZC_AUIDO_LEADER_VIDEO);
+            return 0;
+        }
         struct mpeg4_aac_t aac;
-        uint8_t extra_data[64 * 1024];
         mpeg4_aac_adts_load((const uint8_t *)pframe->data, pframe->size, &aac);
-
         if (m_trackid[ZC_STREAM_AUDIO] == -1) {
-            LOG_INFO("fmp4 => add AAC");
+            uint8_t extra_data[64 * 1024];
+            int rate = 1;
             int extra_data_size = mpeg4_aac_audio_specific_config_save(&aac, extra_data, sizeof(extra_data));
             rate = mpeg4_aac_audio_frequency_to((enum mpeg4_aac_frequency)aac.sampling_frequency_index);
             m_trackid[ZC_STREAM_AUDIO] = fmp4_writer_add_audio(m_fmp4, MOV_OBJECT_AAC, aac.channel_configuration, 16,
                                                                rate, extra_data, extra_data_size);
+            LOG_WARN("fmp4 => add audiotrack AAC channel:%d,rate:%d", aac.channel_configuration, rate);
             fmp4_writer_init_segment(m_fmp4);
         }
-
+        m_apts = pframe->pts;
         if (m_trackid[ZC_STREAM_AUDIO] != -1) {
             unsigned char *_buf = pframe->data;
             // mpeg4_aac_adts_frame_length();
@@ -302,14 +351,16 @@ int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
             return -1;
         }
 
-#if 0  // no need anymore
+#if 1  // no need anymore
        // first IDR frame
         if (!m_Idr) {
-            if (!pframe->keyflag) {
-                LOG_WARN("drop , need IDR frame");
+            if (m_info.streaminfo.tracks[ZC_STREAM_VIDEO].enable && !pframe->keyflag) {
+                LOG_WARN("drop, need IDR frame");
                 return 0;
             } else {
                 m_Idr = true;
+                LOG_WARN("set IDR flag type:%d, video:%d, key:%d", pframe->type,
+                         m_info.streaminfo.tracks[ZC_STREAM_VIDEO].enable, pframe->keyflag);
             }
         }
 #endif

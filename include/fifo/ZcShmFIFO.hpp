@@ -53,6 +53,7 @@ class CShmFIFO : public NonCopyable {
 
     // no put event
     unsigned int _put(const unsigned char *buffer, unsigned int len);
+     unsigned int _preget(unsigned char *buffer, unsigned int len);
     unsigned int _get(unsigned char *buffer, unsigned int len);
     void _putev();
     //

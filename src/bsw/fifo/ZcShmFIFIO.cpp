@@ -402,19 +402,8 @@ unsigned int CShmFIFO::_put(const unsigned char *buffer, unsigned int len) {
     return len;
 }
 
-/**
- * zcfifo_get - gets some data from the FIFO, no locking version
- * @fifo: the fifo to be used.
- * @buffer: where the data must be copied.
- * @len: the size of the destination buffer.
- *
- * This function copies at most @len bytes from the FIFO into the
- * @buffer and returns the number of copied bytes.
- *
- * Note that with only one concurrent reader and one concurrent
- * writer, you don't need extra locking to use these functions.
- */
-unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
+// don't change offset
+ unsigned int CShmFIFO::_preget(unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     unsigned int l;
 
@@ -446,9 +435,26 @@ unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
 
     smp_mb();
 
-    m_pfifo.out += len;
-
     return len;
+}
+
+/**
+ * zcfifo_get - gets some data from the FIFO, no locking version
+ * @fifo: the fifo to be used.
+ * @buffer: where the data must be copied.
+ * @len: the size of the destination buffer.
+ *
+ * This function copies at most @len bytes from the FIFO into the
+ * @buffer and returns the number of copied bytes.
+ *
+ * Note that with only one concurrent reader and one concurrent
+ * writer, you don't need extra locking to use these functions.
+ */
+unsigned int CShmFIFO::_get(unsigned char *buffer, unsigned int len) {
+     unsigned int ret = _preget(buffer, len);
+    m_pfifo.out += ret;
+
+    return ret;
 }
 
 void CShmFIFO::_putev() {

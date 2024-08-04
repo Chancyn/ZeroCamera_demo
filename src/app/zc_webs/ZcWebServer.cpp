@@ -498,10 +498,8 @@ int CWebServer::_sendFmp4DataCb(void *sess, int type, const void *data, size_t b
         .data = buf,
     };
 
-    // LOG_TRACE("write bytes:%u, data:%p, ptr:%p, c:%p, id:%lu", bytes, data, buf, con, con->id);
-
-    if (type)
-        LOG_TRACE("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, bytes, buf, con, con->id);
+    // if (type)
+    //     LOG_TRACE("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, bytes, buf, con, con->id);
 
     memcpy(buf, data, bytes);
     mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure

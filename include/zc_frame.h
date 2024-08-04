@@ -144,7 +144,10 @@ typedef struct {
 
 // video nalu for package sdp
 typedef struct {
-    zc_nalu_t nalu[1];  // res;
+    ZC_U8 channels;      ///< number of audio channels
+    ZC_U8 sample_bits;   ///< bits per sample 0,ZC_AUDIO_SAMPLE_BIT_16
+    ZC_U32 sample_rate;  ///< samples per second(frequency)
+    ZC_U8 adts[7];
 } zc_audio_naluinfo_t;
 
 // video frame info
@@ -222,7 +225,7 @@ typedef struct {
 typedef struct {
     ZC_U8 channels;      ///< number of audio channels
     ZC_U8 sample_bits;   ///< bits per sample 0,ZC_AUDIO_SAMPLE_BIT_16
-    ZC_U16 sample_rate;  ///< samples per second(frequency)
+    ZC_U32 sample_rate;  ///< samples per second(frequency)
 } zc_audio_trackinfo_t;
 
 typedef struct _zc_media_track {

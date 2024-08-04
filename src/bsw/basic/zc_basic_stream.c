@@ -141,6 +141,39 @@ uint32_t zc_h26x_parse_nalu(const uint8_t *data, uint32_t dataSize, zc_h26x_nalu
     return 0;
 }
 
+static const int s_frequency[] = {96000, 88200, 64000, 48000, 44100, 32000, 24000,
+                                  22050, 16000, 12000, 11025, 8000,  7350};
+
+static inline int zc_mpeg4_aac_audio_frequency_to(uint8_t index) {
+    if (index < 0 || index >= _SIZEOFTAB(s_frequency))
+        return 0;
+    return s_frequency[index];
+}
+
+static inline uint8_t zc_mpeg4_aac_channel_count(uint8_t channel_configuration) {
+    static const uint8_t s_channels[] = {0, 1, 2, 3, 4, 5, 6, 8};
+    if (channel_configuration < 0 || channel_configuration >= _SIZEOFTAB(s_channels))
+        return 0;
+    return s_channels[channel_configuration];
+}
+
+int zc_mpeg4_aac_adts_load(const uint8_t *data, size_t bytes, zc_mpeg4_aac_t *aac) {
+    if (bytes < 7)
+        return -1;
+
+    memset(aac, 0, sizeof(zc_mpeg4_aac_t));
+    // assert(0xFF == data[0] && 0xF0 == (data[1] & 0xF0));    /* syncword */
+    aac->profile = ((data[2] >> 6) & 0x03) + 1;             // 2 bits: the MPEG-2 Audio Object Type add 1
+    aac->sampling_frequency_index = (data[2] >> 2) & 0x0F;  // 4 bits: MPEG-4 Sampling Frequency Index (15 is forbidden)
+    aac->channel_configuration =
+        ((data[2] & 0x01) << 2) | ((data[3] >> 6) & 0x03);  // 3 bits: MPEG-4 Channel Configuration
+    aac->channels = zc_mpeg4_aac_channel_count(aac->channel_configuration);
+    aac->sampling_frequency = zc_mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+    aac->extension_frequency = aac->sampling_frequency;
+    LOG_DEBUG("profile:%d, chn:%d, sample:%d", aac->profile, aac->channels,  aac->sampling_frequency);
+    return 7;
+}
+
 static const char *g_streamUrlTab[ZC_SHMSTREAM_BUTT] = {
     ZC_STREAM_LIVEURL_CHN_PREFIX,
     ZC_STREAM_PULLURL_CHN_PREFIX,
@@ -148,8 +181,7 @@ static const char *g_streamUrlTab[ZC_SHMSTREAM_BUTT] = {
     ZC_STREAM_PUSHCURL_CHN_PREFIX,
 };
 
-const char* zc_get_livestreampath(zc_shmstream_e type) {
-
+const char *zc_get_livestreampath(zc_shmstream_e type) {
     if (type >= ZC_SHMSTREAM_BUTT) {
         LOG_ERROR("type:%u, error", type);
         return NULL;

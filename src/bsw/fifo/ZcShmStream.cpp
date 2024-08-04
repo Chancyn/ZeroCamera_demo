@@ -20,6 +20,7 @@
 #include "zc_frame.h"
 // #include "zc_h26x_sps_parse.h"
 #include "zc_basic_stream.h"
+#include "zc_basic_fun.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 
@@ -59,11 +60,11 @@ unsigned int CShmStreamW::Put(const unsigned char *buffer, unsigned int len, voi
     zc_frame_t *frame = (zc_frame_t *)buffer;
 
     frame->magic = m_magic;  // set frame magic
-    #if DEBUG_DUMP
+#if DEBUG_DUMP
     if (frame->keyflag) {
         LOG_TRACE("put encode:%u, size:%u", frame->video.encode, frame->size);
     }
-    #endif
+#endif
     setLatestpos(frame->keyflag);
     ret = _put(buffer, len);
 
@@ -161,32 +162,40 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
                 break;
             }
         }
+        LOG_TRACE("prase frame len:%u, num:%d, flags:%d", frame->size, info.vinfo.nalunum, flags);
+    } else if (frame->audio.encode == ZC_FRAME_ENC_AAC) {
+        zc_mpeg4_aac_t aac;
+        zc_mpeg4_aac_adts_load(frame->data, frame->size, &aac);
+        info.ainfo.channels = aac.channels;
+        info.ainfo.sample_bits = ZC_AUDIO_SAMPLE_BIT_16;
+        info.ainfo.sample_rate = aac.sampling_frequency;
+        memcpy(info.ainfo.adts, frame->data, 7);
+        zc_debug_dump_binstream("audio_adts", ZC_STREAM_AUDIO, frame->data, frame->size, 64);
+        flags = true;
+        LOG_TRACE("prase frame len:%u, channels:%d,sample_bits:%d,sample_rate:%d ", frame->size, info.ainfo.channels,
+                  info.ainfo.sample_bits, info.ainfo.sample_rate);
     }
 
-    LOG_TRACE("prase frame len:%u, num:%d, flags:%d", frame->size, info.vinfo.nalunum, flags);
     return flags;
 }
 
 bool CShmStreamR::_getLatestFrameInfo(zc_frame_userinfo_t &info) {
     bool ret = false;
-    unsigned int pos = 0;
     unsigned int hdrlen = sizeof(zc_frame_t);
     unsigned char buffer[hdrlen + m_framemaxlen];
     zc_frame_t *frame = (zc_frame_t *)buffer;
     unsigned int framelen = 0;
     ShareLock();
-    // 1.find latest key frame pos
-    pos = getLatestPos(true);
-    // 2.set out pos = latest frame pos
-    setLatestOutpos(pos);
-    unsigned int len = _get(buffer, hdrlen);
+    _findSkip2LatestPos(m_type == ZC_STREAM_VIDEO ? true : false);
+    unsigned int len = _preget(buffer, hdrlen);
     if (frame->magic != m_magic) {
         LOG_ERROR("empty frame magic:0x%08x != 0x%08x", frame->magic, m_magic);
         goto _err;
     }
+
     framelen = frame->size;
-    len = _get(buffer + hdrlen, framelen);
-    if (len != framelen) {
+    len = _preget(buffer, framelen+hdrlen);
+    if (len != framelen+hdrlen) {
         LOG_ERROR("get frame error len:%u != %u", len, framelen);
         goto _err;
     }
@@ -198,8 +207,6 @@ bool CShmStreamR::_getLatestFrameInfo(zc_frame_userinfo_t &info) {
     }
     ret = true;
 _err:
-    // reset outpos to latest key frame pos
-    setLatestOutpos(pos);
     ShareUnlock();
     LOG_WARN("get latest IDR frameinfo ret[%u]", ret);
     return ret;
@@ -216,10 +223,11 @@ unsigned int CShmStreamR::Get(unsigned char *buffer, unsigned int buflen, unsign
     zc_frame_t *frame = (zc_frame_t *)buffer;
     framelen = frame->size;
     // ZC_ASSERT((*magicb) == magic);
-     if (frame->magic != m_magic) {
+    if (frame->magic != m_magic) {
         // get latest frame
         LOG_ERROR("magic[0x%x]!=[0x%x], get latest IDR frame", (*magicb), m_magic);
-        _getLatestFrameHdr(buffer, hdrlen, true);
+        _findSkip2LatestPos(m_type == ZC_STREAM_VIDEO ? true : false);
+        ret = _get(buffer, hdrlen);
         if (frame->magic != m_magic) {
             LOG_ERROR("empty frame, [0x%x]!=[0x%x]", frame->magic, m_magic);
             ShareUnlock();
@@ -256,9 +264,36 @@ bool CShmStreamR::GetStreamInfo(zc_frame_userinfo_t &info, bool skip2lastest /*=
     return ret;
 }
 
+bool CShmStreamR::_findSkip2LatestPos(bool key) {
+    zc_frame_t frame;
+    unsigned int hdrlen = sizeof(zc_frame_t);
+    unsigned int pos = 0;
+    // get latest frame pos
+    pos = getLatestPos(key);
+    // set out pos = latest frame pos
+    setLatestOutpos(pos);
+    unsigned int ret = _preget((unsigned char *)&frame, hdrlen);
+    if (frame.magic != m_magic) {
+        LOG_WARN("find type:%d, keyframe error magic[0x%x]!=[0x%x], try get latest frame", m_type, frame.magic,
+                 m_magic);
+        if (key) {
+            pos = getLatestPos(false);
+            setLatestOutpos(pos);
+            ret = _preget((unsigned char *)&frame, hdrlen);
+        }
+    }
+
+    LOG_WARN("find type:%d, result:%d, magic[0x%x]-[0x%x]", m_type, frame.magic == m_magic, frame.magic, m_magic);
+    if (frame.magic != m_magic) {
+        // TODO(zhoucc): goto end
+        LOG_ERROR("find type:%d, result:%d, magic[0x%x]-[0x%x]", m_type, frame.magic == m_magic, frame.magic, m_magic);
+    }
+    return frame.magic == m_magic;
+}
+
 void CShmStreamR::Skip2LatestPos(bool key) {
     ShareLock();
-    getLatestPos(key);
+    _findSkip2LatestPos(key);
     ShareUnlock();
     return;
 }

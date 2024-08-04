@@ -143,7 +143,7 @@ int CLiveTestWriterMp4::_putData2FIFO() {
             // pts use video
             if ((m_tracks.tracks[ZC_STREAM_VIDEO].used && movframe.stream == ZC_STREAM_VIDEO) ||
                 !m_tracks.tracks[ZC_STREAM_VIDEO].used) {
-                 _delayByPts(movframe.pts);
+                _delayByPts(movframe.pts);
             }
 
             zc_frame_t frame;
@@ -174,6 +174,12 @@ int CLiveTestWriterMp4::_putData2FIFO() {
             framedata.datalen = movframe.bytes;
             fifowriter->Put((const unsigned char *)&frame, sizeof(frame), &framedata);
 
+#if 0  // dump
+            if (frame.type == ZC_STREAM_AUDIO) {
+                zc_debug_dump_binstream("aac_hdr", ZC_STREAM_AUDIO, ( const uint8_t *)&frame, sizeof(frame), sizeof(frame));
+                zc_debug_dump_binstream("adts_hdr", ZC_STREAM_AUDIO, framedata.dataptr, framedata.datalen, 64);
+            }
+#endif
             return 0;
         }
     }

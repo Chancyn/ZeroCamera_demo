@@ -51,6 +51,7 @@ class CShmStreamR : public CShmFIFO{
     unsigned int _getLatestFrameHdr(unsigned char *buffer, unsigned int hdrlen, bool keyflag);
     bool _praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame);
     bool _getLatestFrameInfo(zc_frame_userinfo_t &info);
+    bool _findSkip2LatestPos(bool key);
 
     unsigned int m_magic;
     unsigned int m_framemaxlen;
