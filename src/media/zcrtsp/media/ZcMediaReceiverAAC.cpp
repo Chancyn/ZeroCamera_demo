@@ -130,15 +130,13 @@ unsigned int CMediaReceiverAAC::_putingCb(void *stream) {
 
 int CMediaReceiverAAC::RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags) {
     ZC_ASSERT(m_fifowriter != nullptr);
-    struct timespec _ts;
-    // clock_gettime(CLOCK_MONOTONIC, &_ts);
     if (bytes + 7 <= m_info.framemaxlen) {
         _framelenUpdateADTSHdr(bytes);
         memcpy(m_frame->data, m_dtshdr, 7);
 
         m_frame->keyflag = 0;
         m_frame->seq = 0;
-        m_frame->utc = zc_system_time();  // _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+        m_frame->utc = zc_system_time();
         m_frame->pts = m_frame->utc;
         m_frame->size = bytes + 7;
         audio_raw_frame_t raw;

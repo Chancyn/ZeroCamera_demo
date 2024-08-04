@@ -25,7 +25,6 @@ class CMediaReceiverH264 : public CMediaReceiver {
 
  private:
     zc_h26x_sps_info_t m_spsinfo;
-    // uint32_t m_lasttime;
     unsigned int m_pkgcnt;  // nalucnt, video frame pack by multiple nalu,
     zc_frame_t *m_frame;
 };

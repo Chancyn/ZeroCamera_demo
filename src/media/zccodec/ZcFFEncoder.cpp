@@ -1,3 +1,4 @@
+#include "zc_basic_fun.h"
 #if defined(WITH_FFMPEG)
 #include <sys/time.h>
 #include <unistd.h>
@@ -15,7 +16,7 @@ CFFEncoder::CFFEncoder(const char *camera, const zc_ffcodec_info_t &info) : Thre
         s_init = 1;
         // avformat_network_init();
         avdevice_register_all();
-        avcodec_register_all();
+        // avcodec_register_all();
     }
 
     m_status = 0;
@@ -216,13 +217,11 @@ int CFFEncoder::_encode(AVFrame *frame, AVPacket *pkt) {
             ZC_ASSERT(0);
             return ret;
         }
-        struct timespec tp;
-        clock_gettime(CLOCK_MONOTONIC, &tp);
-        uint64_t clock = (tp.tv_sec * 1000 + tp.tv_nsec / 1000000);
 
+        uint64_t clock = zc_system_clock();
         if (m_firstpts == 0) {
             m_firstpts = clock;
-            LOG_DEBUG("###debug first pts:%lld, cos:%lld ", m_firstpts, m_firstpts - m_startutc);
+            LOG_DEBUG("###debug first pts:%lld, cos:%lld ", m_firstpts, m_firstpts - m_startpts);
         }
 
         // pkt->pts = av_rescale_q(frame->pts, m_encctx->time_base, {1, 1000});        // time ms
@@ -289,10 +288,8 @@ int CFFEncoder::_encodecProcess() {
         exit(1);
     }
 
-    struct timespec tp;
-    clock_gettime(CLOCK_MONOTONIC, &tp);
-    uint64_t clock = (tp.tv_sec * 1000 + tp.tv_nsec / 1000000);
-    m_startutc = clock;
+    uint64_t clock = zc_system_clock();
+    m_startpts = clock;
 #if ZC_FFENCODER_DEBUG
     FILE *fp;
     char filename[128];

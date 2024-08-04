@@ -59,7 +59,7 @@ class CFFEncoder : public Thread {
 
  private:
     int m_open;
-    int64_t m_startutc;
+    int64_t m_startpts;
     int64_t m_firstpts;
 
     int m_status;

@@ -21,7 +21,6 @@ CMediaReceiverH264::CMediaReceiverH264(const zc_meida_track_t &info) : CMediaRec
     // init package
     memset(&m_spsinfo, 0, sizeof(m_spsinfo));
     m_pkgcnt = 0;
-    // m_lasttime = 0;
     LOG_TRACE("Create Constructor [%p]", m_frame);
 }
 
@@ -62,9 +61,6 @@ unsigned int CMediaReceiverH264::_putingCb(void *stream) {
 
 int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags) {
     uint8_t type = *(uint8_t *)packet & 0x1f;
-    // struct timespec _ts;
-    // clock_gettime(CLOCK_MONOTONIC, &_ts);
-    // m_lasttime = _ts.tv_sec;
 
     // sps;
     if (type == H264_NAL_UNIT_TYPE_SPS) {
@@ -103,7 +99,7 @@ int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
     if (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR || type == H264_NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) {
         m_frame->keyflag = (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR) ? ZC_FRAME_IDR : 0;
         m_frame->seq = m_frame->seq + 1;
-        m_frame->utc = zc_system_time();  // _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+        m_frame->utc = zc_system_time();
         m_frame->pts = m_frame->utc;
 
         m_fifowriter->Put((const unsigned char *)m_frame, sizeof(zc_frame_t) + m_frame->size, NULL);

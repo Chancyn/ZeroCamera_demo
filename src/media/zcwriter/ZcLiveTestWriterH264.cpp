@@ -114,15 +114,8 @@ int CLiveTestWriterH264::_putData2FIFO() {
             frame.video.width = m_naluinfo.width;
             frame.video.height = m_naluinfo.height;
             frame.keyflag = idr;
-#if 0
-            struct timespec _ts;
-            clock_gettime(CLOCK_MONOTONIC, &_ts);
-            frame.utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-            frame.pts = frame.utc;  // m_pos;
-#else
             frame.utc = zc_system_time();
             frame.pts = m_rtp_clock;  // m_pos;
-#endif
 
 #if 0  // dump/
     if (frame.keyflag) {

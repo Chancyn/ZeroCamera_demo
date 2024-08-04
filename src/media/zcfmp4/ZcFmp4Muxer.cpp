@@ -317,13 +317,7 @@ int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
 #if 1  // ZC_DEBUG
        // debug info
         if (pframe->keyflag) {
-#if 0
-            struct timespec _ts;
-            clock_gettime(CLOCK_MONOTONIC, &_ts);
-            unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-#else
             uint64_t now = zc_system_time();
-#endif
             LOG_TRACE("fmp4:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size,
                       now - pframe->utc);
         }

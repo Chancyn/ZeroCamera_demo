@@ -282,13 +282,7 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
 #if 0  // ZC_DEBUG
        // debug info
         if (pframe->keyflag) {
-#if 0
-            struct timespec _ts;
-            clock_gettime(CLOCK_MONOTONIC, &_ts);
-            unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-#else
             uint64_t now = zc_system_time();
-#endif
             LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size,
                       now - pframe->utc);
         }

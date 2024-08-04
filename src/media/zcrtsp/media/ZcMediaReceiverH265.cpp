@@ -22,7 +22,6 @@ CMediaReceiverH265::CMediaReceiverH265(const zc_meida_track_t &info) : CMediaRec
     // init package
     memset(&m_spsinfo, 0, sizeof(m_spsinfo));
     m_pkgcnt = 0;
-    // m_lasttime = 0;
     LOG_TRACE("debug framemaxlen:%u", m_info.framemaxlen);
 }
 
@@ -63,9 +62,6 @@ unsigned int CMediaReceiverH265::_putingCb(void *stream) {
 
 int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags) {
     uint8_t type = ((*(uint8_t *)packet) & 0x7F) >> 1;
-    // struct timespec _ts;
-    // clock_gettime(CLOCK_MONOTONIC, &_ts);
-    // m_lasttime = _ts.tv_sec;
 
     if (type >= H265_NAL_UNIT_CODED_SLICE_TRAIL_N && type <= H265_NAL_UNIT_CODED_SLICE_RASL_R) {
         // TODO(zhoucc): B frame
@@ -114,7 +110,7 @@ int CMediaReceiverH265::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
     if (type >= 0 && type <= H265_NAL_UNIT_CODED_SLICE_CRA) {
         m_frame->keyflag = (type >= H265_NAL_UNIT_CODED_SLICE_BLA_W_LP) ? ZC_FRAME_IDR : 0;
         m_frame->seq = m_frame->seq + 1;
-        m_frame->utc = zc_system_time();  // _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+        m_frame->utc = zc_system_time();
         m_frame->pts = m_frame->utc;
 
         m_fifowriter->Put((const unsigned char *)m_frame, sizeof(zc_frame_t) + m_frame->size, NULL);
