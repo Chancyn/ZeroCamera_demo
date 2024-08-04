@@ -75,14 +75,14 @@ int CMediaTrack::GetSDPMedia(std::string &sdp) const {
 }
 
 int CMediaTrack::GetRTPInfo(const char *uri, char *rtpinfo, size_t bytes) const {
-    uint16_t seq;
-    uint32_t timestamp;
+    uint16_t seq = 0;
+    uint32_t timestamp = 0;
 
     rtp_payload_encode_getinfo(m_rtppacker, &seq, &timestamp);
     // snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_info.trackno, seq, timestamp);
     snprintf(rtpinfo, bytes, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m_info.trackno, seq,
              (unsigned int)(m_timestamp * (m_frequency / 1000) /*kHz*/));
-
+    LOG_WARN("rtptime, tracktype:%d, seq:%hu, timestamp:%u, %s", m_info.tracktype, seq, m_timestamp, rtpinfo);
     return 0;
 }
 
@@ -192,16 +192,21 @@ int CMediaTrack::GetData2Send() {
             LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size,
                       now - pframe->utc);
         }
-        if (-1 == m_dts_first)
+        bool first = false;
+        if (-1 == m_dts_first) {
             m_dts_first = pframe->pts;
+            first  = true;
+        }
+
         m_dts_last = pframe->pts;
-        uint32_t timestamp = m_timestamp + (uint32_t)((m_dts_last - m_dts_first)) * (m_frequency / 1000);
+        uint32_t timestamp = (m_timestamp + (uint32_t)((m_dts_last - m_dts_first))) * (m_frequency / 1000);
+        if (first) {
+            LOG_WARN("track:%d, timestamp:%u, freq:%u, ", m_info.tracktype, timestamp, m_frequency);
+        }
         rtp_payload_encode_input(m_rtppacker, pframe->data, (int)pframe->size, timestamp /*kHz*/);
 
-        // m_rtp_clock += 1000/14;
-        // m_timestamp += 1000/14;
-        m_rtp_clock += 16;
-        m_timestamp += 16;
+        // m_rtp_clock += 16;
+        // m_timestamp += 16;
 #if ZC_DEBUG_MEDIATRACK
         uint64_t now = zc_system_clock();
         m_debug_framecnt++;

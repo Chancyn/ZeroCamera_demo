@@ -24,7 +24,7 @@ extern "C" uint32_t rtp_ssrc(void);
 
 #define VIDEO_BANDWIDTH (4 * 1024)
 #define VIDEO_FREQUENCE (90000)  // frequence
-
+#define ZC_RTP_PAYLOAD_H265 98   // H.265 video (MPEG-H Part 2) (rfc7798)
 namespace zc {
 CMediaTrackH265::CMediaTrackH265(const zc_meida_track_t &info) : CMediaTrack(info) {
     m_frequency = VIDEO_FREQUENCE;
@@ -37,6 +37,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
     LOG_TRACE("Create H265 into");
     char sdpbuf[1024];
     char spspps[1024] = {0};
+    int payload = ZC_RTP_PAYLOAD_H265;  // RTP_PAYLOAD_H265
     size_t spslen = 0;
     zc_frame_userinfo_t frameinfo = {0};
     uint32_t ssrc = rtp_ssrc();
@@ -96,7 +97,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
         LOG_ERROR("GetStreamInfo spspps[%s]", spspps);
     }
 
-    m_rtppacker = rtp_payload_encode_create(RTP_PAYLOAD_H265, "h265", (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
+    m_rtppacker = rtp_payload_encode_create(payload, "h265", (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
     if (!m_rtppacker) {
         LOG_ERROR("Create playload encode error H265");
         goto _err;
@@ -111,7 +112,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
     rtp_set_info(m_rtp, "RTSPServer", "live.h265");
 
     // sps
-    snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, RTP_PAYLOAD_H265, RTP_PAYLOAD_H265, m_frequency, RTP_PAYLOAD_H265,
+    snprintf(sdpbuf, sizeof(sdpbuf), video_pattern, payload, payload, m_frequency, payload,
              profileid[0], profileid[1], profileid[2], spspps, m_info.trackno);
     LOG_TRACE("ok H265 sdp sdpbuf[%s]", sdpbuf);
     m_sdp = sdpbuf;
