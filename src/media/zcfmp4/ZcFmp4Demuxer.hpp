@@ -17,46 +17,48 @@
 #include "ZcMovBuf.hpp"
 
 namespace zc {
-#define ZC_FMP4DE_DEBUG_DUMP 0              // debug log
-#define ZC_FMP4_DEMUXER_DEBUG_SAVE (1)      // debug save
+#define ZC_FMP4DE_DEBUG_DUMP 0          // debug log
+#define ZC_FMP4_DEMUXER_DEBUG_SAVE (1)  // debug save
 
 // readbuf maxsize
-#define ZC_FMP4_RBUF_MAX (2 * 1024 * 1024)         // read MP4 buffer
+#define ZC_FMP4_RBUF_MAX (2 * 1024 * 1024)  // read MP4 buffer
 
 typedef struct {
     uint8_t flags;
-    uint8_t encode;
-    uint8_t stream;
+    uint8_t encode;  // zc_frame_enc_e
+    uint8_t stream;  // zc_stream_e
     uint8_t object;
+    uint32_t seqno;
+    uint32_t track;
     int64_t pts;
     int64_t dts;
-    uint32_t track;
-
-    void *ptr;
     size_t bytes;
+    void *ptr;
 } zc_mov_pkt_info_t;
 
 typedef struct {
-    int keyflag;
+    uint8_t keyflag;
+    uint8_t encode;  // zc_frame_enc_e
+    uint8_t stream;  // zc_stream_e
+    uint32_t seqno;
+    size_t bytes;
     int64_t pts;
     int64_t dts;
-    zc_frame_enc_e encode;
-    zc_stream_e stream;
     uint8_t *ptr;
-    size_t bytes;
 } zc_mov_frame_info_t;
 
 typedef struct {
-     char s_pts[64];
-     char s_dts[64];
+    char s_pts[64];
+    char s_dts[64];
 } zc_mov_ts_t;
 
 typedef struct {
     uint8_t used;
     uint8_t trackid;
     uint8_t object;
-    zc_frame_enc_e encode;
-    zc_stream_e stream;
+    uint8_t encode;  // zc_frame_enc_e
+    uint8_t stream;  // zc_stream_e
+    uint32_t seqno;
     union {
         zc_video_trackinfo_t vtinfo;
         zc_audio_trackinfo_t atinfo;
@@ -90,6 +92,7 @@ class CFmp4DeMuxer : protected Thread {
     bool Stop();
     int GetNextFrame(zc_mov_frame_info_t &frame);
     bool GetTrackInfo(zc_mov_trackinfo_t &tracks);
+
  private:
     static void OnMovVideoInfo(void *param, uint32_t track, uint8_t object, int width, int height, const void *extra,
                                size_t bytes);
@@ -104,10 +107,10 @@ class CFmp4DeMuxer : protected Thread {
     static void *OnAlloc(void *param, uint32_t track, size_t bytes, int64_t pts, int64_t dts, int flags);
     void *_onAlloc(uint32_t track, size_t bytes, int64_t pts, int64_t dts, int flags);
 
-    int _videopkt2frame(const zc_mov_pkt_info_t &pkt,  zc_mov_frame_info_t &frame);
-    int _aduiopkt2frame(const zc_mov_pkt_info_t &pkt,  zc_mov_frame_info_t &frame);
-    int _metapkt2frame(const zc_mov_pkt_info_t &pkt,  zc_mov_frame_info_t &frame);
-    const zc_mov_track_t *_findTrackinfo(uint32_t track);
+    int _videopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_info_t &frame);
+    int _aduiopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_info_t &frame);
+    int _metapkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_info_t &frame);
+    zc_mov_track_t *_findTrackinfo(uint32_t track);
     int _getNextFrame(zc_mov_frame_info_t &frame);
     int _demuxerProcess();
     virtual int process();

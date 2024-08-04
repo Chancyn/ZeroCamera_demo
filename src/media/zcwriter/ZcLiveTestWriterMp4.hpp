@@ -48,7 +48,7 @@ class CLiveTestWriterMp4 : public Thread, public ILiveTestWriter {
     int fillnaluInfo(zc_video_naluinfo_t &sdpinfo);
     static int OnFrameCallback(void *param, const zc_mov_frame_info_t *frame);
     int _onFrameCallback(const zc_mov_frame_info_t *frame);
-
+    void _delayByPts(uint64_t pts);
  private:
     int m_status;
     int m_chn;
@@ -56,11 +56,9 @@ class CLiveTestWriterMp4 : public Thread, public ILiveTestWriter {
     live_mp4_info_t m_info;
     CFmp4DeMuxer *m_reader;
     CShmStreamW *m_fifowriter[ZC_MEDIA_TRACK_BUTT];
-    uint32_t m_seq;
-    uint32_t m_timestamp;
     uint32_t m_clock_interal;
-    uint64_t m_rtp_clock;
-    uint64_t m_rtcp_clock;
+    uint64_t m_last_vpts;
+    uint64_t m_last_clock;
     zc_mov_trackinfo_t m_tracks;
 };
 

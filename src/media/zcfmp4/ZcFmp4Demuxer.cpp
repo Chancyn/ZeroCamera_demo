@@ -17,8 +17,8 @@
 #include "mpeg4-hevc.h"
 #include "opus-head.h"
 #include "webm-vpx.h"
-#include "zc_h26x_sps_parse.h"
 #include "zc_basic_fun.h"
+#include "zc_h26x_sps_parse.h"
 // #include "sys/system.h"
 #include "zc_frame.h"
 #include "zc_log.h"
@@ -147,12 +147,13 @@ void CFmp4DeMuxer::OnMovAudioInfo(void *param, uint32_t track, uint8_t object, i
 
 void CFmp4DeMuxer::_onMovAudioInfo(uint32_t track, uint8_t object, int channel_count, int bit_per_sample,
                                    int sample_rate, const void *extra, size_t bytes) {
-    LOG_WARN("onaudio track:%u,obj:%u,bytes:%zu,channel:%d,sample_bits:%d,sample_rate:%d", track, object, bytes, channel_count,
-             bit_per_sample, sample_rate);
+    LOG_WARN("onaudio track:%u,obj:%u,bytes:%zu,channel:%d,sample_bits:%d,sample_rate:%d", track, object, bytes,
+             channel_count, bit_per_sample, sample_rate);
     zc_mov_track_t &trackinfo = m_tracksinfo.tracks[ZC_MEDIA_TRACK_AUDIO];
     trackinfo.used = 1;
     trackinfo.trackid = track;
     trackinfo.object = object;
+    trackinfo.seqno = 0;
     trackinfo.stream = ZC_STREAM_AUDIO;
     trackinfo.atinfo.channels = channel_count;
     trackinfo.atinfo.sample_bits = bit_per_sample / 8;
@@ -168,8 +169,7 @@ void CFmp4DeMuxer::_onMovAudioInfo(uint32_t track, uint8_t object, int channel_c
         ZC_ASSERT(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t *)extra, bytes, aac));
         ZC_ASSERT(channel_count == aac->channels);
         ZC_ASSERT(MOV_OBJECT_AAC == object);
-        LOG_WARN("AAC track:%u,obj:%u,channel:%d,profile:%d", track, object, channel_count,
-             aac->profile);
+        LOG_WARN("AAC track:%u,obj:%u,channel:%d,profile:%d", track, object, channel_count, aac->profile);
         zc_debug_dump_binstream("aac_extra", ZC_FRAME_ENC_AAC, (const uint8_t *)extra, bytes, bytes);
         // aac->profile = MPEG4_AAC_LC;
         aac->channel_configuration = channel_count;
@@ -384,6 +384,7 @@ int CFmp4DeMuxer::_videopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_inf
         fwrite(m_vframebuf, 1, n, m_debug_vfp);
 #endif
         m_vframe.bytes = n;
+        m_vframe.seqno = pkt.seqno;
         m_vframe.pts = pkt.pts;
         m_vframe.dts = pkt.dts;
         m_vframe.encode = (zc_frame_enc_e)pkt.encode;
@@ -435,6 +436,7 @@ LOG_WARN("audio enc:%d pts: %s, dts: %s, diff: %03d/%03d, bytes: %u, n:%d",
 #endif
 
         m_aframe.bytes = n;
+        m_aframe.seqno = pkt.seqno;
         m_aframe.pts = pkt.pts;
         m_aframe.dts = pkt.dts;
         m_aframe.encode = (zc_frame_enc_e)pkt.encode;
@@ -451,26 +453,28 @@ int CFmp4DeMuxer::_metapkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_info
     // zhoucc:TODO
     int n = 0;
     LOG_WARN("subtilte frame: %zu", pkt.bytes);
-    n = pkt.bytes;
+    // n = pkt.bytes;
+
     if (n > 0) {
         m_aframe.bytes = n;
+        m_aframe.seqno = pkt.seqno;
         m_aframe.pts = pkt.pts;
         m_aframe.dts = pkt.dts;
         m_aframe.encode = (zc_frame_enc_e)pkt.encode;
-        m_aframe.stream = ZC_STREAM_AUDIO;
+        m_aframe.stream = ZC_STREAM_META;
         m_aframe.keyflag = pkt.flags;
         m_aframe.ptr = m_aframebuf;
         memcpy(&frame, &m_aframe, sizeof(zc_mov_frame_info_t));
     }
 
-    return 0;
+    return n;
 }
 
 void *CFmp4DeMuxer::OnAlloc(void *param, uint32_t track, size_t bytes, int64_t pts, int64_t dts, int flags) {
     return reinterpret_cast<CFmp4DeMuxer *>(param)->_onAlloc(track, bytes, pts, dts, flags);
 }
 
-const zc_mov_track_t *CFmp4DeMuxer::_findTrackinfo(uint32_t track) {
+zc_mov_track_t *CFmp4DeMuxer::_findTrackinfo(uint32_t track) {
     for (unsigned int i = 0; i < _SIZEOFTAB(m_tracksinfo.tracks); i++) {
         if (m_tracksinfo.tracks[i].used && m_tracksinfo.tracks[i].trackid == track) {
             return &m_tracksinfo.tracks[i];
@@ -486,10 +490,11 @@ void *CFmp4DeMuxer::_onAlloc(uint32_t track, size_t bytes, int64_t pts, int64_t 
     // emulate allocation
     if (m_pkt.bytes < bytes)
         return nullptr;
-    const zc_mov_track_t *ptrack = _findTrackinfo(track);
+    zc_mov_track_t *ptrack = _findTrackinfo(track);
     m_pkt.encode = ptrack->encode;
     m_pkt.stream = ptrack->stream;
     m_pkt.object = ptrack->object;
+    m_pkt.seqno = (ptrack->seqno)++;
     m_pkt.flags = flags;
     m_pkt.pts = pts;
     m_pkt.dts = dts;

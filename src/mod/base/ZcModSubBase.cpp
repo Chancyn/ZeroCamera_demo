@@ -26,6 +26,10 @@
 #include "ZcModSubBase.hpp"
 #include "ZcType.hpp"
 
+#if ZC_DEBUG
+#define ZC_MOD_DEBUG_DUMP 0
+#endif
+
 namespace zc {
 // subscriber & sysmod
 CModSubBase::CModSubBase(ZC_U8 modid)
@@ -165,7 +169,8 @@ int CModSubBase::_sendRegisterMsg(int cmd) {
             LOG_ERROR("recv register rep err:%d \n", rep->err);
         }
     }
-#if ZC_DEBUG
+
+#if ZC_MOD_DEBUG_DUMP
     uint64_t now = zc_system_time();
     LOG_TRACE("send register:%d pid:%d,modid:%d, pname:%s,date:%s, cos1:%llu,%llu", reqreg->regcmd, req->pid,
               req->modid, reqreg->pname, reqreg->date, (rep->ts1 - rep->ts), (now - rep->ts));
@@ -176,7 +181,6 @@ int CModSubBase::_sendRegisterMsg(int cmd) {
 // send keepalive
 int CModSubBase::_sendKeepaliveMsg() {
     static ZC_U32 s_seqno = 0;
-    // LOG_TRACE("send keepalive msg into[%d] into", m_modid);
     char msg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_t)] = {0};
     zc_msg_t *pmsg = reinterpret_cast<zc_msg_t *>(msg_buf);
     BuildReqMsgHdr(pmsg, ZC_MODID_SYS_E, ZC_MID_SYS_MAN_E, ZC_MSID_SYS_MAN_KEEPALIVE_E, 0, sizeof(zc_mod_keepalive_t));
@@ -188,13 +192,15 @@ int CModSubBase::_sendKeepaliveMsg() {
     char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_rep_t)] = {0};
     zc_msg_t *prmsg = reinterpret_cast<zc_msg_t *>(rmsg_buf);
     size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_keepalive_rep_t);
-    zc_mod_keepalive_rep_t *prkeepalive = reinterpret_cast<zc_mod_keepalive_rep_t *>(pmsg->data);
     if (MsgSendTo(pmsg, ZC_SYS_URL_IPC, prmsg, &rlen)) {
         if (prmsg->err != 0) {
             LOG_ERROR("recv keepalive rep err:%d \n", prmsg->err);
         }
+#if ZC_MOD_DEBUG_DUMP
+        zc_mod_keepalive_rep_t *prkeepalive = reinterpret_cast<zc_mod_keepalive_rep_t *>(pmsg->data);
         LOG_TRACE("recv keepalive rep success, modid:%d, seq:%u, status:%d,date:%s->%s", pmsg->modid,
                   prkeepalive->seqno, prkeepalive->status, pkeepalive->date, prkeepalive->date);
+#endif
     }
     // LOG_TRACE("send keepalive msg into id[%d] sid[%d] into", pmsg->id, pmsg->sid);
 
