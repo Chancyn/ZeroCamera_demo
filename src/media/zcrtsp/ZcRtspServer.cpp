@@ -32,7 +32,8 @@
 #include "rtp-tcp-transport.h"
 #include "rtp-udp-transport.h"
 #include "rtsp-server-aio.h"
-#include "sys/system.h"  // system_clock
+// #include "sys/system.h"  // system_clock
+#include "zc_basic_fun.h"
 #include "uri-parse.h"
 #include "urlcodec.h"
 #include "zc_type.h"
@@ -446,7 +447,7 @@ int CRtspServer::_onplay(void * /*ptr*/, rtsp_server_t *rtsp, const char *uri, c
     // for vlc 2.2.2
     MP4FileSource *mp4 = dynamic_cast<MP4FileSource *>(source.get());
     if (mp4)
-        mp4->SendRTCP(system_clock());
+        mp4->SendRTCP(zc_system_clock());
 
     it->second.status = 1;
 #else
@@ -744,7 +745,7 @@ int CRtspServer::process() {
     LOG_WARN("process into");
     while (State() == Running /*&&  i < loopcnt*/) {
         _aio_work();
-        system_sleep(100);
+        ZC_MSLEEP(100);
     }
     LOG_WARN("process exit");
     return -1;

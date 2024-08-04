@@ -27,7 +27,6 @@
 #include "sockpair.h"
 
 #include "rtsp-server-aio.h"
-#include "sys/system.h"  // system_clock
 #include "uri-parse.h"
 #include "urlcodec.h"
 #include "zc_type.h"
@@ -724,7 +723,7 @@ int CRtspPushServer::process() {
     LOG_WARN("process into");
     while (State() == Running /*&&  i < loopcnt*/) {
         _aio_work();
-        system_sleep(100);
+        ZC_MSLEEP(100);
     }
     LOG_WARN("process exit");
     return -1;

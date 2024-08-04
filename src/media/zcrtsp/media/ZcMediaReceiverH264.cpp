@@ -3,14 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "sys/system.h"
-
-#include "ZcType.hpp"
+#include "zc_basic_fun.h"
 #include "zc_log.h"
 #include "zc_macros.h"
 #include "zc_type.h"
 
 #include "ZcMediaReceiverH264.hpp"
+#include "ZcType.hpp"
 
 namespace zc {
 CMediaReceiverH264::CMediaReceiverH264(const zc_meida_track_t &info) : CMediaReceiver(info) {
@@ -22,7 +21,7 @@ CMediaReceiverH264::CMediaReceiverH264(const zc_meida_track_t &info) : CMediaRec
     // init package
     memset(&m_spsinfo, 0, sizeof(m_spsinfo));
     m_pkgcnt = 0;
-    m_lasttime = 0;
+    // m_lasttime = 0;
     LOG_TRACE("Create Constructor [%p]", m_frame);
 }
 
@@ -62,20 +61,10 @@ unsigned int CMediaReceiverH264::_putingCb(void *stream) {
 }
 
 int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags) {
-    // int ret = 0;
-    // zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
-    // ret = m_fifowriter->Put(m_framebuf, sizeof(m_framebuf), sizeof(zc_frame_t), ZC_FRAME_VIDEO_MAGIC);
-    // if (pframe->keyflag) {
-    //     struct timespec _ts;
-    //     clock_gettime(CLOCK_MONOTONIC, &_ts);
-    //     unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
-    //     LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size,
-    //               now - pframe->utc);
-    // }
     uint8_t type = *(uint8_t *)packet & 0x1f;
-    struct timespec _ts;
-    clock_gettime(CLOCK_MONOTONIC, &_ts);
-    m_lasttime = _ts.tv_sec;
+    // struct timespec _ts;
+    // clock_gettime(CLOCK_MONOTONIC, &_ts);
+    // m_lasttime = _ts.tv_sec;
 
     // sps;
     if (type == H264_NAL_UNIT_TYPE_SPS) {
@@ -114,7 +103,7 @@ int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
     if (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR || type == H264_NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) {
         m_frame->keyflag = (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR) ? ZC_FRAME_IDR : 0;
         m_frame->seq = m_frame->seq + 1;
-        m_frame->utc = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+        m_frame->utc = zc_system_time();  // _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
         m_frame->pts = m_frame->utc;
 
         m_fifowriter->Put((const unsigned char *)m_frame, sizeof(zc_frame_t) + m_frame->size, NULL);

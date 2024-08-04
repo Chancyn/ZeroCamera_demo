@@ -9,7 +9,8 @@
 #include "rtp-profile.h"
 #include "rtp.h"
 #include "sys/path.h"
-#include "sys/system.h"
+//#include "sys/system.h"
+#include "zc_basic_fun.h"
 
 #include "ZcType.hpp"
 #include "zc_frame.h"
@@ -148,7 +149,7 @@ int CMediaTrack::_RTPPacket(const void *packet, int bytes, uint32_t timestamp, i
     // Hack: Send an initial RTCP "SR" packet, before the initial RTP packet,
     // so that receivers will (likely) be able to get RTCP-synchronized presentation times immediately:
     rtp_onsend(m_rtp, packet, bytes /*, time*/);
-    SendRTCP(system_clock());
+    SendRTCP(zc_system_clock());
     if (m_transport) {
         int r = m_transport->Send(false, packet, bytes);
         // ZC_ASSERT(r == (int)bytes);
@@ -187,9 +188,13 @@ int CMediaTrack::GetData2Send() {
             continue;
         }
         if (pframe->keyflag) {
+            #if 0
             struct timespec _ts;
             clock_gettime(CLOCK_MONOTONIC, &_ts);
             unsigned int now = _ts.tv_sec * 1000 + _ts.tv_nsec / 1000000;
+            #else
+            uint64_t now = zc_system_time();
+            #endif
             LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size,
                       now - pframe->utc);
         }
@@ -204,10 +209,10 @@ int CMediaTrack::GetData2Send() {
         m_rtp_clock += 16;
         m_timestamp += 16;
 #if ZC_DEBUG_MEDIATRACK
-        uint64_t now = system_clock();
+        uint64_t now = zc_system_clock();
         m_debug_framecnt++;
         if (now > (m_debug_cnt_lasttime + 1000 * 10)) {
-            LOG_TRACE("fps[%.2f],cnt[%u]cos[%llu]",
+            LOG_TRACE("track:%d, fps[%.2f],cnt[%u]cos[%llu]", m_info.tracktype,
                      (double)(m_debug_framecnt - m_debug_framecnt_last) * 1000 / (now - m_debug_cnt_lasttime),
                      m_debug_framecnt - m_debug_framecnt_last, (now - m_debug_cnt_lasttime) / 1000);
             m_debug_cnt_lasttime = now;
@@ -216,7 +221,7 @@ int CMediaTrack::GetData2Send() {
 
         SendRTCP(now);
 #else
-        SendRTCP(system_clock());
+        SendRTCP(zc_system_clock());
 #endif
     }
 

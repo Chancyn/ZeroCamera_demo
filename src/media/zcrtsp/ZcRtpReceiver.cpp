@@ -15,7 +15,6 @@
 #include "rtp.h"
 #include "sockutil.h"
 #include "sys/pollfd.h"
-#include "sys/system.h"  // system_clock
 #include "sys/thread.h"
 #include "time64.h"
 #include "zc_frame.h"
@@ -40,7 +39,7 @@ int CRtpRxThread::process() {
             ret = -1;
             break;
         }
-        system_sleep(100);
+        ZC_MSLEEP(100);
     }
     LOG_DEBUG("process exit");
     return -1;

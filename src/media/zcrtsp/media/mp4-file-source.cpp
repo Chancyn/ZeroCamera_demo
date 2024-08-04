@@ -381,7 +381,7 @@ int MP4FileSource::SendBye()
 	for (int i = 0; i < m_count; i++)
 	{
 		struct media_t* m = &m_media[i];
-		
+
 		size_t n = rtp_rtcp_bye(m->rtp.rtp, rtcp, sizeof(rtcp));
 
 		// send RTCP packet
@@ -422,7 +422,7 @@ int MP4FileSource::OnRTPPacket(void* param, const void *packet, int bytes, uint3
 	{
 		assert(0);
 		return -1;
-	}	
+	}
 
 	return rtp_onsend(m->rtp.rtp, packet, bytes/*, time*/);
 }

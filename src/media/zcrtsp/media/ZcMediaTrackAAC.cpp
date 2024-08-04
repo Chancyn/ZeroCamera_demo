@@ -44,7 +44,7 @@ CMediaTrackAAC::~CMediaTrackAAC() {}
 bool CMediaTrackAAC::Init(void *pinfo) {
 #if 1
     static const char *audio_pattern = "m=audio 0 RTP/AVP %d\n"
-                                       "a=rtpmap:%d MPEG4-GENERIC/%d/%d\n"
+                                       "a=rtpmap:%d %s/%d/%d\n"
                                        "a=fmtp:%d "
                                        "streamType=5;profile-level-id=%d;mode=AAC-hbr;sizelength=13;indexlength=3;"
                                        "indexdeltalength=3;config=%s\n"
@@ -54,6 +54,10 @@ bool CMediaTrackAAC::Init(void *pinfo) {
     char extra[32] = "400023203FC0";
     uint32_t ssrc = rtp_ssrc();
     m_timestamp = ssrc;
+    // int payload = RTP_PAYLOAD_MP4A;
+    // const char payloadname[32] = "MPEG4-GENERIC";
+    int payload = RTP_PAYLOAD_LATM;
+    const char *payloadname = "MP4A-LATM";
     int profilelevel = 1;  // TODO(zhoucc): prase  aac profilelevel
     static struct rtp_payload_t s_rtpfunc = {
         CMediaTrack::RTPAlloc,
@@ -76,7 +80,7 @@ bool CMediaTrackAAC::Init(void *pinfo) {
         goto _err;
     }
 
-    m_rtppacker = rtp_payload_encode_create(RTP_PAYLOAD_MP4A, "mpeg4-generic", (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
+    m_rtppacker = rtp_payload_encode_create(payload, payloadname, (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
     if (!m_rtppacker) {
         LOG_ERROR("Create playload encode error AAC");
         goto _err;
@@ -91,8 +95,8 @@ bool CMediaTrackAAC::Init(void *pinfo) {
     rtp_set_info(m_rtp, "RTSPServer", "live.aac");
 
     // sps
-    snprintf(sdpbuf, sizeof(sdpbuf), audio_pattern, RTP_PAYLOAD_MP4A, RTP_PAYLOAD_MP4A, m_info.atinfo.sample_rate,
-             m_info.atinfo.channels, RTP_PAYLOAD_MP4A, profilelevel, extra, m_info.trackno);
+    snprintf(sdpbuf, sizeof(sdpbuf), audio_pattern, payload, payload, payloadname, m_info.atinfo.sample_rate,
+             m_info.atinfo.channels, payload, profilelevel, extra, m_info.trackno);
     LOG_TRACE("ok H264 sdp sdpbuf[%s]", sdpbuf);
     m_sdp = sdpbuf;
     // set create flag
