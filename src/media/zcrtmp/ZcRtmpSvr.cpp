@@ -109,8 +109,7 @@ int CRtmpPlayer::FlvMuxer(int codec, const void *data, size_t bytes, uint32_t pt
 
     default:
         LOG_DEBUG("error codec:%d", codec);
-        ret = -1;
-        ZC_ASSERT(0);
+        ret = 0;
     }
 
     return ret;

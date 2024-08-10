@@ -144,7 +144,10 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
                 }
             }
         }
-
+        info.encode = frame->video.encode;
+        info.type = ZC_STREAM_VIDEO;
+        info.vinfo.width = frame->video.width;
+        info.vinfo.height = frame->video.height;
         info.vinfo.nalunum = 0;
         for (unsigned int i = 0; i < frame->video.nalunum; i++) {
             pos += prefixlen;
@@ -166,6 +169,8 @@ bool CShmStreamR::_praseFrameInfo(zc_frame_userinfo_t &info, zc_frame_t *frame) 
     } else if (frame->audio.encode == ZC_FRAME_ENC_AAC) {
         zc_mpeg4_aac_t aac;
         zc_mpeg4_aac_adts_load(frame->data, frame->size, &aac);
+        info.encode = ZC_FRAME_ENC_AAC;
+        info.type = ZC_STREAM_AUDIO;
         info.ainfo.channels = aac.channels;
         info.ainfo.sample_bits = ZC_AUDIO_SAMPLE_BIT_16;
         info.ainfo.sample_rate = aac.sampling_frequency;

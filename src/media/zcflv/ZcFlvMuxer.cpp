@@ -18,6 +18,7 @@
 #include "Thread.hpp"
 #include "ZcFlvMuxer.hpp"
 #include "ZcType.hpp"
+#include "ZcStreamTrace.hpp"
 
 namespace zc {
 #define ZC_SERVERNAME "ZeroCamrea(zhoucc)"  //
@@ -111,12 +112,9 @@ bool CFlvMuxer::createStream() {
             continue;
         }
 
-        zc_frame_userinfo_t frameinfo;
-        // Skip2LatestPos();
-        if (fiforeader->GetStreamInfo(frameinfo, true)) {
+        if (fiforeader->GetStreamInfo(m_frameinfoTab[track->tracktype], true)) {
             LOG_WARN("Get Streaminfo/jump2latest ok");
         }
-
         m_vector.push_back(fiforeader);
     }
 
@@ -125,17 +123,11 @@ bool CFlvMuxer::createStream() {
         return false;
     }
 
-    // check auido trackinfo
-    zc_audio_trackinfo_t *atrack = &m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo;
-    if (atrack->channels) {
-        atrack->channels = atrack->channels ? atrack->channels : ZC_AUDIO_CHN;
-        atrack->sample_bits = atrack->sample_bits ? atrack->sample_bits : ZC_AUDIO_SAMPLE_BIT_16;
-        atrack->sample_rate = atrack->sample_rate ? atrack->sample_rate : ZC_AUDIO_FREQUENCE;
-    } else {
-        atrack->channels = ZC_AUDIO_CHN;
-        atrack->sample_bits = ZC_AUDIO_SAMPLE_BIT_16;
-        atrack->sample_rate = ZC_AUDIO_FREQUENCE;
-    }
+    // check auido info
+    zc_audio_naluinfo_t *ainfo = &m_frameinfoTab[ZC_MEDIA_TRACK_AUDIO].ainfo;
+    ainfo->channels = ainfo->channels ? ainfo->channels : ZC_AUDIO_CHN;
+    ainfo->sample_bits = ainfo->sample_bits ? ainfo->sample_bits : ZC_AUDIO_SAMPLE_BIT_16;
+    ainfo->sample_rate = ainfo->sample_rate ? ainfo->sample_rate : ZC_AUDIO_FREQUENCE;
 
     return true;
 }
@@ -198,20 +190,22 @@ int CFlvMuxer::_fillFlvMuxerMeta() {
     // TODO(zhoucc): fill metadata hdr
     struct flv_metadata_t metadata;
 
-    metadata.audiocodecid = getFlvCodeId((zc_frame_enc_e)m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].encode);
+    metadata.audiocodecid = getFlvCodeId((zc_frame_enc_e)m_frameinfoTab[ZC_MEDIA_TRACK_AUDIO].encode);
     metadata.audiodatarate = 16.1;
-    metadata.audiosamplerate = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.sample_rate;  // 480000
-    metadata.audiosamplesize = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.sample_bits * 8;
-    metadata.stereo = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_AUDIO].atinfo.channels > 1 ? true : false;
-    metadata.videocodecid =
-        flv_vid_h264;  // getFlvCodeId((zc_frame_enc_e)m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].encode);
+    metadata.audiosamplerate = m_frameinfoTab[ZC_MEDIA_TRACK_AUDIO].ainfo.sample_rate;  // 480000
+    metadata.audiosamplesize = m_frameinfoTab[ZC_MEDIA_TRACK_AUDIO].ainfo.sample_bits * 8;
+    metadata.stereo = m_frameinfoTab[ZC_MEDIA_TRACK_AUDIO].ainfo.channels > 1 ? true : false;
+    metadata.videocodecid = getFlvCodeId((zc_frame_enc_e)m_frameinfoTab[ZC_MEDIA_TRACK_VIDEO].encode);
     metadata.videodatarate = 64.0;
-    metadata.framerate = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.fps;
-    metadata.width = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.width;
-    metadata.height = m_info.streaminfo.tracks[ZC_MEDIA_TRACK_VIDEO].vtinfo.height;
+    metadata.framerate = m_frameinfoTab[ZC_MEDIA_TRACK_VIDEO].vinfo.fps;
+    metadata.width = m_frameinfoTab[ZC_MEDIA_TRACK_VIDEO].vinfo.width;
+    metadata.height = m_frameinfoTab[ZC_MEDIA_TRACK_VIDEO].vinfo.height;
     strncpy(metadata.server, ZC_SERVERNAME, sizeof(metadata.server));
     snprintf(metadata.server_ver, sizeof(metadata.server_ver), "%s", ZcGetVersionBuildDateStr());
-
+    LOG_DEBUG("aenc:%d,aid:%d samplerate:%d,samplesize:%u,venc:%d,vid:%d,%ux%u,fps:%d",
+              m_frameinfoTab[ZC_MEDIA_TRACK_AUDIO].encode, metadata.audiocodecid, metadata.audiosamplerate,
+              metadata.audiosamplesize, m_frameinfoTab[ZC_MEDIA_TRACK_VIDEO].encode, metadata.videocodecid,
+              metadata.width, metadata.height, metadata.framerate);
     flv_muxer_metadata(m_flv, &metadata);
     return 0;
 }
@@ -220,41 +214,51 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
     if (frame->video.encode == ZC_FRAME_ENC_H264) {
         if (!m_pts) {
             _fillFlvMuxerMeta();
-            m_pts = frame->pts;
+            LOG_INFO("V rec->type:%d, seq:%d, utc:%u, size:%d\n", frame->type, frame->seq, frame->utc, frame->size);
         }
 
         // sps-pps-vcl
-        if (flv_muxer_avc(m_flv, frame->data, frame->size, frame->pts - m_pts, frame->pts - m_pts) < 0) {
+        if (flv_muxer_avc(m_flv, frame->data, frame->size, frame->pts, frame->pts) < 0) {
             LOG_ERROR("push error, flv_muxer_avc err.\n");
             return -1;
         }
+        m_pts = frame->pts;
     } else if (frame->video.encode == ZC_FRAME_ENC_H265) {
         if (!m_pts) {
             _fillFlvMuxerMeta();
-            m_pts = frame->pts;
         }
 
         // https://github.com/ksvc/FFmpeg/wiki
         // https://ott.dolby.com/codec_test/index.html
         // sps-pps-vcl
-        if (flv_muxer_hevc(m_flv, frame->data, frame->size, frame->pts - m_pts, frame->pts - m_pts) < 0) {
+        if (flv_muxer_hevc(m_flv, frame->data, frame->size, frame->pts, frame->pts) < 0) {
             LOG_ERROR("flv_muxer_hevc err.\n");
             return -1;
         }
+        m_pts = frame->pts;
     } else if (frame->audio.encode == ZC_FRAME_ENC_AAC) {
         if (m_pts) {
-            if (!m_apts) {
-                LOG_INFO("A rec->type:%d, seq:%d, utc:%u, size:%d\n", frame->type, frame->seq, frame->utc, frame->size);
-                m_apts = frame->pts;
+            if (frame->pts + ZC_AUIDO_DELAY_VIDEO < m_pts) {
+                LOG_WARN("drop apts:%llu,delay pts:%llu,over%dms", frame->pts, m_pts, ZC_AUIDO_DELAY_VIDEO);
+                return 0;
+            } else if (frame->pts > m_pts + ZC_AUIDO_LEADER_VIDEO) {
+                LOG_WARN("drop apts:%llu,leader pts%llu,over%dms", frame->pts, m_pts, ZC_AUIDO_LEADER_VIDEO);
+                return 0;
             }
 
-            if (flv_muxer_aac(m_flv, frame->data, frame->size, frame->pts - m_apts, frame->pts - m_apts) < 0) {
+            if (!m_apts) {
+                LOG_INFO("A rec->type:%d, seq:%d, utc:%u, size:%d\n", frame->type, frame->seq, frame->utc, frame->size);
+            }
+
+            if (flv_muxer_aac(m_flv, frame->data, frame->size, frame->pts, frame->pts) < 0) {
                 LOG_ERROR("flv_muxer_hevc err.\n");
                 return -1;
             }
+            m_apts = frame->pts;
         }
     }
 
+    m_trace.TraceStream(frame);
     return 0;
 }
 
@@ -268,8 +272,8 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
         if (ret < sizeof(zc_frame_t)) {
             return -1;
         }
-#if 0   // no need anymore,first open stream,skip2last keyframe
-        // first IDR frame
+#if 0  // no need anymore,first open stream,skip2last keyframe
+       // first IDR frame
         if (!m_Idr) {
             if (!pframe->keyflag) {
                 LOG_WARN("drop , need IDR frame");

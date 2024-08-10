@@ -12,6 +12,7 @@
 
 #include "Thread.hpp"
 #include "ZcShmStream.hpp"
+#include "ZcStreamTrace.hpp"
 
 namespace zc {
 typedef int (*OnFlvPacketCb)(void *param, int type, const void *data, size_t bytes, uint32_t timestamp);
@@ -64,7 +65,10 @@ class CFlvMuxer : protected Thread {
     unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];
     zc_flvmuxer_info_t m_info;
     flv_muxer_t *m_flv;
+    zc_frame_userinfo_t m_frameinfoTab[ZC_MEDIA_TRACK_BUTT];
     std::vector<CShmStreamR *> m_vector;
+
+    CStreamTrace m_trace;
 };
 
 }  // namespace zc

@@ -68,6 +68,9 @@ http://192.168.1.166/live/pull.ch0.mp4
 #define ZC_AUDIO_CHN (2)  // channel
 #define ZC_AUDIO_FREQUENCE (48000)     // frequence
 
+// dealy
+#define ZC_AUIDO_DELAY_VIDEO 300    // 100ms drop audio delay video
+#define ZC_AUIDO_LEADER_VIDEO 100   // 100ms drop audio leader video
 
 // shmstream type
 typedef enum {

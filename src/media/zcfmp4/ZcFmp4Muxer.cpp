@@ -161,9 +161,6 @@ bool CFmp4Muxer::Stop() {
     return false;
 }
 
-#define ZC_AUIDO_DELAY_VIDEO 300
-#define ZC_AUIDO_LEADER_VIDEO 100
-
 int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
     int update = 0;
     int vcl = 0;
