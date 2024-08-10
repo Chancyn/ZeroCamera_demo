@@ -214,12 +214,12 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
     if (frame->video.encode == ZC_FRAME_ENC_H264) {
         if (!m_pts) {
             _fillFlvMuxerMeta();
-            LOG_INFO("V rec->type:%d, seq:%d, utc:%u, size:%d\n", frame->type, frame->seq, frame->utc, frame->size);
+            LOG_INFO("V rec->type:%d, seq:%d, utc:%u, size:%d", frame->type, frame->seq, frame->utc, frame->size);
         }
 
         // sps-pps-vcl
         if (flv_muxer_avc(m_flv, frame->data, frame->size, frame->pts, frame->pts) < 0) {
-            LOG_ERROR("push error, flv_muxer_avc err.\n");
+            LOG_ERROR("push error, flv_muxer_avc err");
             return -1;
         }
         m_pts = frame->pts;
@@ -247,11 +247,11 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
             }
 
             if (!m_apts) {
-                LOG_INFO("A rec->type:%d, seq:%d, utc:%u, size:%d\n", frame->type, frame->seq, frame->utc, frame->size);
+                LOG_INFO("A rec->type:%d, seq:%d, utc:%u, size:%d", frame->type, frame->seq, frame->utc, frame->size);
             }
 
             if (flv_muxer_aac(m_flv, frame->data, frame->size, frame->pts, frame->pts) < 0) {
-                LOG_ERROR("flv_muxer_hevc err.\n");
+                LOG_ERROR("flv_muxer_hevc err");
                 return -1;
             }
             m_apts = frame->pts;
@@ -272,17 +272,19 @@ int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
         if (ret < sizeof(zc_frame_t)) {
             return -1;
         }
-#if 0  // no need anymore,first open stream,skip2last keyframe
-       // first IDR frame
+
+        // first IDR frame
         if (!m_Idr) {
-            if (!pframe->keyflag) {
-                LOG_WARN("drop , need IDR frame");
+            if (m_info.streaminfo.tracks[ZC_STREAM_VIDEO].enable && !pframe->keyflag) {
+                LOG_WARN("drop, need IDR frame");
                 return 0;
             } else {
                 m_Idr = true;
+                LOG_WARN("set IDR flag type:%d, video:%d, key:%d", pframe->type,
+                         m_info.streaminfo.tracks[ZC_STREAM_VIDEO].enable, pframe->keyflag);
             }
         }
-#endif
+
 #if 0  // ZC_DEBUG
        // debug info
         if (pframe->keyflag) {

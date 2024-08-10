@@ -348,7 +348,6 @@ int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
             return -1;
         }
 
-#if 1  // no need anymore
        // first IDR frame
         if (!m_Idr) {
             if (m_info.streaminfo.tracks[ZC_STREAM_VIDEO].enable && !pframe->keyflag) {
@@ -360,7 +359,6 @@ int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
                          m_info.streaminfo.tracks[ZC_STREAM_VIDEO].enable, pframe->keyflag);
             }
         }
-#endif
 
 #if 1  // ZC_DEBUG
        // debug info
