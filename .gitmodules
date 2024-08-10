@@ -1,3 +1,6 @@
 [submodule "thirdparty/package/media_server/media-server"]
 	path = thirdparty/package/media_server/media-server
 	url = git@github.com:Chancyn/media-server.git
+[submodule "thirdparty/package/libsrt/srt"]
+	path = thirdparty/package/libsrt/srt
+	url = git@github.com:Chancyn/srt.git
