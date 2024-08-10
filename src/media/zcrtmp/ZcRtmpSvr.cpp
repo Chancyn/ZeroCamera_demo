@@ -148,14 +148,13 @@ int CRtmpSource::onHandler(void *param, int codec, const void *data, size_t byte
 }
 
 int CRtmpSource::_onHandler(int codec, const void *data, size_t bytes, uint32_t pts, uint32_t dts, int flags) {
-    LOG_DEBUG("_onHandler(code:%d,bytes: %zu, pts:%u)", codec, bytes, pts);
     int ret = 0;
     std::lock_guard<std::mutex> locker(m_mutex);
     for (auto it = m_players.begin(); it != m_players.end(); ++it) {
         ret =  it->get()->FlvMuxer(codec, data, bytes, pts, dts, flags);
     }
 
-    LOG_DEBUG("_onHandler(ret:%d, code:%d,bytes: %zu, pts:%u)", ret, codec, bytes, pts);
+    // LOG_TRACE("_onHandler(ret:%d, code:%d,bytes: %zu, pts:%u)", ret, codec, bytes, pts);
 
     return ret;  // ignore error
 }
@@ -164,14 +163,12 @@ int CRtmpSource::FlvDemuxerInput(int type, const void *data, size_t bytes, uint3
     if (!m_demuxer) {
         return -1;
     }
-    LOG_DEBUG("FlvDemuxerInput into(type:%d,bytes: %zu, pts:%u)", type, bytes, timestamp);
     int ret = flv_demuxer_input(m_demuxer, type, data, bytes, timestamp);
-    LOG_DEBUG("FlvDemuxerInput(tret:%d, ype:%d,bytes: %zu, pts:%u)", ret, type, bytes, timestamp);
+    // LOG_TRACE("FlvDemuxerInput(tret:%d, ype:%d,bytes: %zu, pts:%u)", ret, type, bytes, timestamp);
     return ret;
 }
 
 const CRtmpPlayer *CRtmpSource::OpenPlayer(const aio_rtmp_session_t *session) {
-    LOG_INFO("OpenPlayer rtmp session(%p)\n", session);
     if (m_demuxer) {
         {
             std::lock_guard<std::mutex> locker(m_mutex);
@@ -217,7 +214,7 @@ void *CRtmpSvr::onPublish(void *param, aio_rtmp_session_t *session, const char *
 }
 
 void *CRtmpSvr::_onPublish(aio_rtmp_session_t *session, const char *app, const char *stream, const char *type) {
-    LOG_DEBUG("_onPublish(%s, %s, %s)", app, stream, type);
+    LOG_TRACE("_onPublish(%s, %s, %s)", app, stream, type);
     std::string key(app);
     key += "/";
     key += stream;
@@ -259,21 +256,21 @@ void CRtmpSvr::onClose(void *param, void *sourceptr) {
 }
 
 void CRtmpSvr::_onClose(void *sourceptr) {
-    LOG_INFO("onClose rtmp sourceptr(%p)", sourceptr);
+    LOG_TRACE("onClose rtmp sourceptr(%p)", sourceptr);
     std::lock_guard<std::mutex> locker(m_mutex);
     for (auto it = m_livesmap.begin(); it != m_livesmap.end(); ++it) {
         std::shared_ptr<CRtmpSource> &source = it->second;
         // try find source
         if (sourceptr == source.get()) {
             m_livesmap.erase(it);
-            LOG_INFO("close source ok");
+            LOG_TRACE("close source ok");
             return;
         }
 
         // try find player
         const CRtmpPlayer *payer = reinterpret_cast<const CRtmpPlayer *>(sourceptr);
         if (source.get()->ClosePlayer(payer)) {
-            LOG_INFO("close player ok");
+            LOG_TRACE("close player ok");
             return;
         }
     }
@@ -288,7 +285,7 @@ void *CRtmpSvr::onPlay(void *param, aio_rtmp_session_t *session, const char *app
 
 void *CRtmpSvr::_onPlay(aio_rtmp_session_t *session, const char *app, const char *stream, double start, double duration,
                         uint8_t reset) {
-    LOG_INFO("_onPlay (%s, %s, %f, %f, %d)", app, stream, start, duration, (int)reset);
+    LOG_TRACE("_onPlay (%s, %s, %f, %f, %d)", app, stream, start, duration, (int)reset);
     std::string key(app);
     key += "/";
     key += stream;
