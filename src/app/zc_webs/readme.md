@@ -68,13 +68,21 @@ http://192.168.1.166:8000/flv/http-flv.json
 }
 ```
 
+## http-fmp4
 
+## ws-fmp4
+
+## http-ts
+vlc播放：
+http://192.168.1.166:8000/live/live.ch0.ts
+
+## ws-ts
+http://192.168.1.166:8000/live/live.ch0.ws.ts
 
 ## 完成
 2.http-flv，出错关闭逻辑，清除http-live-session;
 3.http-flv 浏览器播放几十秒之后停止(问题原因发送命令)
+4.http-fmp4
 
 ##
-TODO:
-1.websocket-flv
 

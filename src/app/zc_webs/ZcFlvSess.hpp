@@ -9,41 +9,15 @@
 
 #include "NonCopyable.hpp"
 #include "ZcFlvMuxer.hpp"
+#include "ZcWebMSess.hpp"
 
 #define ZC_SUPPORT_HTTP_FLV 1  // support http-flv
 #define ZC_SUPPORT_WS_FLV 1    // support ws-flv,websocket-flv
 
 namespace zc {
-// type
-typedef enum {
-    zc_flvsess_type_http = 0,  // http/https
-    zc_flvsess_type_ws,        // ws/wss
-
-    zc_flvsess_type_butt,  // max
-} zc_flvsess_type_e;
-
-// session status
-typedef enum {
-    zc_flvsess_err_e,         // error
-    zc_flvsess_uninit_e = 0,  // uninit status
-    zc_flvsess_init_e,        // uninit status
-    zc_flvsess_sending_e,     // running
-
-    zc_flvsess_butt_e,  //
-} zc_flvsess_status_e;
-
-typedef int (*SendFlvDataCb)(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
-
-typedef struct _zc_flvsess_info {
-    zc_stream_info_t streaminfo;
-    SendFlvDataCb sendflvdatacb;
-    void *context;   // context
-    void *connsess;  // http session
-} zc_flvsess_info_t;
-
-class CFlvSess : public NonCopyable {
+class CFlvSess : public IWebMSess, public NonCopyable {
  public:
-    explicit CFlvSess(zc_flvsess_type_e type, const zc_flvsess_info_t &info);
+    CFlvSess(zc_web_msess_type_e type, const zc_flvsess_info_t &info);
     virtual ~CFlvSess();
     bool Open();
     bool Close();
@@ -55,24 +29,8 @@ class CFlvSess : public NonCopyable {
     virtual int _onFlvPacketCb(int type, const void *data, size_t bytes, ZC_U32 timestamp);
 
  private:
-    zc_flvsess_type_e m_type;
-    zc_flvsess_status_e m_status;  // zc_flvsess_status_e
+    zc_msess_status_e m_status;  // zc_flvsess_status_e
     CFlvMuxer m_flvmuxer;
     zc_flvsess_info_t m_info;
 };
-
-#if ZC_SUPPORT_HTTP_FLV
-class CHttpFlvSess : public CFlvSess {
- public:
-    explicit CHttpFlvSess(const zc_flvsess_info_t &info) : CFlvSess(zc_flvsess_type_http, info) {}
-    virtual ~CHttpFlvSess() {}
-};
-
-class CWebSocketFlvSess : public CFlvSess {
- public:
-    explicit CWebSocketFlvSess(const zc_flvsess_info_t &info) : CFlvSess(zc_flvsess_type_ws, info) {}
-    virtual ~CWebSocketFlvSess() {}
-};
-#endif
-
 }  // namespace zc

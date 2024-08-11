@@ -66,25 +66,25 @@ class CWebServer : protected Thread, public NonCopyable {
     static void InitMgLog();
     virtual int process();
     static void EventHandlerCb(struct mg_connection *c, int ev, void *ev_data);
-    static int sendFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
-    int _sendFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
+    static int sendFlvDataCb(void *ptr, void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp);
+    int _sendFlvDataCb(void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp);
     int handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
     int _sendFlvHdr(void *sess, bool hasvideo, bool hasaudio);
     int handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data);
-    static int sendWsFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
-    int _sendWsFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
+    // static int sendWsFlvDataCb(void *ptr, void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp);
+    // int _sendWsFlvDataCb(void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp);
     int _sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio);
     int handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
 
     // fmp4
-    static int sendFmp4DataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
-    int _sendFmp4DataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp);
+    static int sendFmp4DataCb(void *ptr, void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp);
+    int _sendFmp4DataCb(void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp);
     int handleOpenHttpFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
     int handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
 
     // ts
-    static int sendTsDataCb(void *ptr, void *sess, const void *data, size_t bytes);
-    int _sendTsDataCb(void *sess, const void *data, size_t bytes);
+    static int sendTsDataCb(void *ptr, void *sess, int sesstype, const void *data, size_t bytes);
+    int _sendTsDataCb(void *sess, int sesstype, const void *data, size_t bytes);
     int handleOpenHttpTsSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
     int handleOpenWsTsSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
 
@@ -104,9 +104,11 @@ class CWebServer : protected Thread, public NonCopyable {
     char m_addrs[32];   // https server addr
     void *m_mgrhandle;  // mongoose mgr
     std::mutex m_flvsessmutex;
-    std::list<CFlvSess *> m_flvsesslist;
-    std::list<CFmp4Sess *> m_fmp4sesslist;
-    std::list<CTsSess *> m_tssesslist;
+    std::list<IWebMSess *> m_flvsesslist;
+    std::mutex m_fmp4sessmutex;
+    std::list<IWebMSess *> m_fmp4sesslist;
+    std::mutex m_tssessmutex;
+    std::list<IWebMSess *> m_tssesslist;
 };
 
 class CWebServerHttp : public CWebServer {

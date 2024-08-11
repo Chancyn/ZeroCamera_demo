@@ -74,18 +74,14 @@ static zc_webs_info_t g_websinfodeftab[zc_webs_type_butt] = {
 };
 
 typedef enum {
-    zc_wakeup_msg_httpflv = 1,   // http-flv
-    zc_wakeup_msg_wsflv = 2,     // ws-flv
-    zc_wakeup_msg_httpfmp4 = 1,  // http-fmp4
-    zc_wakeup_msg_wsfmp4 = 2,    // ws-fmp4
-    zc_wakeup_msg_httpts = 1,    // http-ts
-    zc_wakeup_msg_wsts = 2,      // ws-ts
+    zc_wakeup_msg_http_chunk = 1,   // http-flv/http-fmp4/http-ts
+    zc_wakeup_msg_ws_data = 2,      // ws-flv/ws-flv/ws-ts
 
     zc_wakeup_msg_butt,  // max
 } zc_wakeup_msg_type;
 
 typedef struct _zc_wakeup_msg {
-    uint32_t msgtype;  // zc_wakeup_msg_type http-flv
+    uint32_t msgtype;  // zc_wakeup_msg_type
     uint32_t len;      //
     uint8_t *data;
 } zc_wakeup_msg_t;
@@ -214,13 +210,14 @@ static inline void packFlvFileHdr(flv_file_hdr_t *hdr, bool hasvideo, bool hasau
     return;
 }
 
-int CWebServer::sendFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+int CWebServer::sendFlvDataCb(void *ptr, void *sess, int sesstype, int type, const void *data, size_t bytes,
+                              uint32_t timestamp) {
     CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
-    return webs->_sendFlvDataCb(sess, type, data, bytes, timestamp);
+    return webs->_sendFlvDataCb(sess, sesstype, type, data, bytes, timestamp);
 }
 
 // TODO(zhoucc): maybe memory leak可能存在内存泄漏
-int CWebServer::_sendFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+int CWebServer::_sendFlvDataCb(void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
     int ret = 0;
     // taghdr(11byte) + datalen + previous_tag_len(4byte)
@@ -230,10 +227,15 @@ int CWebServer::_sendFlvDataCb(void *sess, int type, const void *data, size_t by
     flv_tag_hdr_t *tag = reinterpret_cast<flv_tag_hdr_t *>(buf);
     // Sender side:
     zc_wakeup_msg_t framemsg = {
-        .msgtype = zc_wakeup_msg_httpflv,
+        .msgtype = zc_wakeup_msg_http_chunk,
         .len = framelen,
         .data = buf,
     };
+
+    if (sesstype == zc_web_msess_ws_flv) {
+        framemsg.msgtype = zc_wakeup_msg_ws_data;
+    }
+
     // LOG_WARN("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, framelen, buf, con, con->id);
     packFlvTagHdr(tag, type, bytes, timestamp);
     memcpy(buf + sizeof(flv_tag_hdr_t), data, bytes);
@@ -267,8 +269,8 @@ int CWebServer::_sendFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
 }
 
 int CWebServer::unInitFlvSess() {
-    std::lock_guard<std::mutex> locker(m_flvsessmutex);
     {
+        std::lock_guard<std::mutex> locker(m_flvsessmutex);
         auto iter = m_flvsesslist.begin();
         for (; iter != m_flvsesslist.end();) {
             ZC_SAFE_DELETE(*iter);
@@ -277,6 +279,7 @@ int CWebServer::unInitFlvSess() {
     }
 
     {
+        std::lock_guard<std::mutex> locker(m_fmp4sessmutex);
         auto iter = m_fmp4sesslist.begin();
         for (; iter != m_fmp4sesslist.end();) {
             ZC_SAFE_DELETE(*iter);
@@ -285,6 +288,7 @@ int CWebServer::unInitFlvSess() {
     }
 
     {
+        std::lock_guard<std::mutex> locker(m_tssessmutex);
         auto iter = m_tssesslist.begin();
         for (; iter != m_tssesslist.end();) {
             ZC_SAFE_DELETE(*iter);
@@ -295,8 +299,8 @@ int CWebServer::unInitFlvSess() {
 }
 
 int CWebServer::handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data) {
-    std::lock_guard<std::mutex> locker(m_flvsessmutex);
     {
+        std::lock_guard<std::mutex> locker(m_flvsessmutex);
         auto iter = m_flvsesslist.begin();
         for (; iter != m_flvsesslist.end();) {
             if ((*iter)->GetConnSess() == c) {
@@ -310,6 +314,7 @@ int CWebServer::handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data
     }
 
     {
+        std::lock_guard<std::mutex> locker(m_fmp4sessmutex);
         auto iter = m_fmp4sesslist.begin();
         for (; iter != m_fmp4sesslist.end();) {
             if ((*iter)->GetConnSess() == c) {
@@ -323,6 +328,7 @@ int CWebServer::handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data
     }
 
     {
+        std::lock_guard<std::mutex> locker(m_tssessmutex);
         auto iter = m_tssesslist.begin();
         for (; iter != m_tssesslist.end();) {
             if ((*iter)->GetConnSess() == c) {
@@ -341,20 +347,24 @@ int CWebServer::handleCloseHttpFlvSession(struct mg_connection *c, void *ev_data
 int CWebServer::handleOpenHttpFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("http-flv into");
     char httphdr[256];
-    zc_flvsess_info_t info = {
-        .sendflvdatacb = sendFlvDataCb,
-        .context = this,
-        .connsess = c,
+    zc_msess_info_t info = {
+        .type = zc_web_msess_http_flv,
+        .flvinfo =
+            {
+                .sendflvdatacb = sendFlvDataCb,
+                .context = this,
+                .connsess = c,
+            },
     };
 
     // prase channel
-    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.flvinfo.streaminfo)) {
         LOG_ERROR("get streaminfo error");
         return -1;
     }
 
     // create sess
-    CFlvSess *sess = new CHttpFlvSess(info);
+    IWebMSess *sess = CWebMSessFac::CreateWebMSess(info);
     if (!sess) {
         LOG_ERROR("new http-flv session error");
         return -1;
@@ -395,13 +405,15 @@ err:
     return -1;
 }
 
-int CWebServer::sendWsFlvDataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+#if 0
+int CWebServer::sendWsFlvDataCb(void *ptr, void *sess, int sesstype, int type, const void *data, size_t bytes,
+                                uint32_t timestamp) {
     CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
-    return webs->_sendWsFlvDataCb(sess, type, data, bytes, timestamp);
+    return webs->_sendWsFlvDataCb(sess, sesstype, type, data, bytes, timestamp);
 }
 
 // TODO(zhoucc): maybe memory leak可能存在内存泄漏
-int CWebServer::_sendWsFlvDataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+int CWebServer::_sendWsFlvDataCb(void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
     int ret = 0;
     // taghdr(11byte) + datalen + previous_tag_len(4byte)
@@ -411,7 +423,7 @@ int CWebServer::_sendWsFlvDataCb(void *sess, int type, const void *data, size_t 
     flv_tag_hdr_t *tag = reinterpret_cast<flv_tag_hdr_t *>(buf);
     // Sender side:
     zc_wakeup_msg_t framemsg = {
-        .msgtype = zc_wakeup_msg_wsflv,
+        .msgtype = zc_wakeup_msg_ws_data,
         .len = framelen,
         .data = buf,
     };
@@ -424,6 +436,7 @@ int CWebServer::_sendWsFlvDataCb(void *sess, int type, const void *data, size_t 
     mg_wakeup((struct mg_mgr *)m_mgrhandle, con->id, &framemsg, sizeof(framemsg));  // Send a pointer to structure
     return ret;
 }
+#endif
 
 int CWebServer::_sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
@@ -443,20 +456,24 @@ int CWebServer::_sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
 int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("ws-flv into");
     char httphdr[256];
-    zc_flvsess_info_t info = {
-        .sendflvdatacb = sendWsFlvDataCb,
-        .context = this,
-        .connsess = c,
+    zc_msess_info_t info = {
+        .type = zc_web_msess_ws_flv,
+        .flvinfo =
+            {
+                .sendflvdatacb = sendFlvDataCb,
+                .context = this,
+                .connsess = c,
+            },
     };
 
     // prase channel
-    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.flvinfo.streaminfo)) {
         LOG_ERROR("get streaminfo error");
         return -1;
     }
 #if 1
     // create sess
-    CFlvSess *sess = new CWebSocketFlvSess(info);
+    IWebMSess *sess = CWebMSessFac::CreateWebMSess(info);
     if (!sess) {
         LOG_ERROR("new ws-flv session error");
         return -1;
@@ -502,23 +519,27 @@ err:
     return -1;
 }
 
-int CWebServer::sendFmp4DataCb(void *ptr, void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+int CWebServer::sendFmp4DataCb(void *ptr, void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp) {
     CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
-    return webs->_sendFmp4DataCb(sess, type, data, bytes, timestamp);
+    return webs->_sendFmp4DataCb(sess, sesstype, type, data, bytes, timestamp);
 }
 
 // TODO(zhoucc): maybe memory leak可能存在内存泄漏
-int CWebServer::_sendFmp4DataCb(void *sess, int type, const void *data, size_t bytes, uint32_t timestamp) {
+int CWebServer::_sendFmp4DataCb(void *sess, int sesstype, int type, const void *data, size_t bytes, uint32_t timestamp) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
     int ret = 0;
     // taghdr(11byte) + datalen + previous_tag_len(4byte)
     uint8_t *buf = new uint8_t[bytes];  // Big structure, allocate it
     // Sender side:
     zc_wakeup_msg_t framemsg = {
-        .msgtype = zc_wakeup_msg_httpfmp4,
+        .msgtype = zc_wakeup_msg_http_chunk,
         .len = (uint32_t)bytes,
         .data = buf,
     };
+
+    if (sesstype == zc_web_msess_ws_fmp4) {
+        framemsg.msgtype = zc_wakeup_msg_ws_data;
+    }
 
     // if (type)
     //     LOG_TRACE("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, bytes, buf, con, con->id);
@@ -531,20 +552,24 @@ int CWebServer::_sendFmp4DataCb(void *sess, int type, const void *data, size_t b
 int CWebServer::handleOpenHttpFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("http-fmp4 into");
     char httphdr[256];
-    zc_fmp4sess_info_t info = {
-        .sendfmp4datacb = sendFmp4DataCb,
-        .context = this,
-        .connsess = c,
+    zc_msess_info_t info = {
+        .type = zc_web_msess_http_fmp4,
+        .fmp4info =
+            {
+                .sendfmp4datacb = sendFmp4DataCb,
+                .context = this,
+                .connsess = c,
+            },
     };
 
     // prase channel
-    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.fmp4info.streaminfo)) {
         LOG_ERROR("get streaminfo error");
         return -1;
     }
 
     // create sess
-    CFmp4Sess *sess = new CHttpFmp4Sess(info);
+    IWebMSess *sess = CWebMSessFac::CreateWebMSess(info);
     if (!sess) {
         LOG_ERROR("new http-fmp4 session error");
         return -1;
@@ -570,7 +595,7 @@ int CWebServer::handleOpenHttpFmp4Session(struct mg_connection *c, void *ev_data
     mg_printf(c, "%s", httphdr);
     // add to session
     {
-        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        std::lock_guard<std::mutex> locker(m_fmp4sessmutex);
         m_fmp4sesslist.push_back(sess);
     }
 
@@ -587,27 +612,31 @@ err:
 int CWebServer::handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("ws-fmp4 into");
     char httphdr[256];
-    zc_fmp4sess_info_t info = {
-        .sendfmp4datacb = sendFmp4DataCb,
-        .context = this,
-        .connsess = c,
+    zc_msess_info_t info = {
+        .type = zc_web_msess_ws_fmp4,
+        .fmp4info =
+            {
+                .sendfmp4datacb = sendFmp4DataCb,
+                .context = this,
+                .connsess = c,
+            },
     };
 
     // prase channel
-    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.fmp4info.streaminfo)) {
         LOG_ERROR("get streaminfo error");
         return -1;
     }
 
     // create sess
-    CFmp4Sess *sess = new CHttpFmp4Sess(info);
+    IWebMSess *sess = CWebMSessFac::CreateWebMSess(info);
     if (!sess) {
-        LOG_ERROR("new http-fmp4 session error");
+        LOG_ERROR("new ws-fmp4 session error");
         return -1;
     }
 
     if (!sess->Open()) {
-        LOG_ERROR("http-flv Open error");
+        LOG_ERROR("ws-fmp4 Open error");
         goto err;
     }
 
@@ -627,13 +656,13 @@ int CWebServer::handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, 
     // _sendFlvHdr(c, true, false);
     // add to session
     {
-        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        std::lock_guard<std::mutex> locker(m_fmp4sessmutex);
         m_fmp4sesslist.push_back(sess);
     }
 
     // c->user_data = sess;
 
-    LOG_WARN("handleOpenHttpFmp4Session ok");
+    LOG_WARN("handleOpenWsFmp4Session ok");
     return 0;
 err:
     delete sess;
@@ -641,23 +670,27 @@ err:
     return -1;
 }
 
-int CWebServer::sendTsDataCb(void *ptr, void *sess, const void *data, size_t bytes) {
+int CWebServer::sendTsDataCb(void *ptr, void *sess, int sesstype, const void *data, size_t bytes) {
     CWebServer *webs = reinterpret_cast<CWebServer *>(ptr);
-    return webs->_sendTsDataCb(sess, data, bytes);
+    return webs->_sendTsDataCb(sess, sesstype, data, bytes);
 }
 
 // TODO(zhoucc): maybe memory leak可能存在内存泄漏
-int CWebServer::_sendTsDataCb(void *sess, const void *data, size_t bytes) {
+int CWebServer::_sendTsDataCb(void *sess, int sesstype, const void *data, size_t bytes) {
     struct mg_connection *con = reinterpret_cast<struct mg_connection *>(sess);
     int ret = 0;
     // taghdr(11byte) + datalen + previous_tag_len(4byte)
     uint8_t *buf = new uint8_t[bytes];  // Big structure, allocate it
     // Sender side:
     zc_wakeup_msg_t framemsg = {
-        .msgtype = zc_wakeup_msg_httpts,
+        .msgtype = zc_wakeup_msg_http_chunk,
         .len = (uint32_t)bytes,
         .data = buf,
     };
+
+    if (sesstype == zc_web_msess_ws_ts) {
+        framemsg.msgtype = zc_wakeup_msg_ws_data;
+    }
 
     // if (type)
     //     LOG_TRACE("write bytes:%u, len:%u, ptr:%p, c:%p, id:%lu", bytes, bytes, buf, con, con->id);
@@ -670,20 +703,24 @@ int CWebServer::_sendTsDataCb(void *sess, const void *data, size_t bytes) {
 int CWebServer::handleOpenHttpTsSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("http-ts into");
     char httphdr[256];
-    zc_tssess_info_t info = {
-        .sendtsdatacb = sendTsDataCb,
-        .context = this,
-        .connsess = c,
+    zc_msess_info_t info = {
+        .type = zc_web_msess_http_ts,
+        .tsinfo =
+            {
+                .sendtsdatacb = sendTsDataCb,
+                .context = this,
+                .connsess = c,
+            },
     };
 
     // prase channel
-    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.tsinfo.streaminfo)) {
         LOG_ERROR("get streaminfo error");
         return -1;
     }
 
     // create sess
-    CTsSess *sess = new CHttpTsSess(info);
+    IWebMSess *sess = CWebMSessFac::CreateWebMSess(info);
     if (!sess) {
         LOG_ERROR("new http-ts session error");
         return -1;
@@ -711,7 +748,7 @@ int CWebServer::handleOpenHttpTsSession(struct mg_connection *c, void *ev_data, 
     mg_printf(c, "%s", httphdr);
     // add to session
     {
-        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        std::lock_guard<std::mutex> locker(m_tssessmutex);
         m_tssesslist.push_back(sess);
     }
 
@@ -728,20 +765,24 @@ err:
 int CWebServer::handleOpenWsTsSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("ws-ts into");
     char httphdr[256];
-    zc_tssess_info_t info = {
-        .sendtsdatacb = sendTsDataCb,
-        .context = this,
-        .connsess = c,
+    zc_msess_info_t info = {
+        .type = zc_web_msess_ws_ts,
+        .tsinfo =
+            {
+                .sendtsdatacb = sendTsDataCb,
+                .context = this,
+                .connsess = c,
+            },
     };
 
     // prase channel
-    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.streaminfo)) {
+    if (!m_cbinfo.getStreamInfoCb || m_cbinfo.getStreamInfoCb(m_cbinfo.MgrContext, type, chn, &info.tsinfo.streaminfo)) {
         LOG_ERROR("get streaminfo error");
         return -1;
     }
 
     // create sess
-    CTsSess *sess = new CHttpTsSess(info);
+    IWebMSess *sess = CWebMSessFac::CreateWebMSess(info);
     if (!sess) {
         LOG_ERROR("new http-ts session error");
         return -1;
@@ -768,7 +809,7 @@ int CWebServer::handleOpenWsTsSession(struct mg_connection *c, void *ev_data, zc
     // _sendFlvHdr(c, true, false);
     // add to session
     {
-        std::lock_guard<std::mutex> locker(m_flvsessmutex);
+        std::lock_guard<std::mutex> locker(m_tssessmutex);
         m_tssesslist.push_back(sess);
     }
 
@@ -848,13 +889,11 @@ void CWebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data) {
         // LOG_WARN("MG_EV_WAKEUP len:%u, type:%u, ptr:%p, session c:%p, id:%lu", framemsg->len, framemsg->msgtype,
         //          framemsg->data, c, c->id);
         if (framemsg->len > 0) {
-            if (framemsg->msgtype == zc_wakeup_msg_httpflv || framemsg->msgtype == zc_wakeup_msg_httpfmp4 ||
-                framemsg->msgtype == zc_wakeup_msg_httpts) {
+            if (framemsg->msgtype == zc_wakeup_msg_http_chunk) {
                 mg_printf(c, "%x\r\n", framemsg->len);
                 mg_send(c, framemsg->data, framemsg->len);
                 mg_send(c, "\r\n", 2);
-            } else if (framemsg->msgtype == zc_wakeup_msg_wsflv || framemsg->msgtype == zc_wakeup_msg_wsfmp4 ||
-                       framemsg->msgtype == zc_wakeup_msg_wsts) {
+            } else if (framemsg->msgtype == zc_wakeup_msg_ws_data) {
                 mg_ws_send(c, framemsg->data, framemsg->len, WEBSOCKET_OP_BINARY);
             }
         }

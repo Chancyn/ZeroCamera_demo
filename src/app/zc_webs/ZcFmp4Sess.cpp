@@ -17,8 +17,8 @@
 
 namespace zc {
 
-CFmp4Sess::CFmp4Sess(zc_fmp4sess_type_e type, const zc_fmp4sess_info_t &info)
-    : m_type(type), m_status(zc_fmp4sess_uninit_e) {
+CFmp4Sess::CFmp4Sess(zc_web_msess_type_e type, const zc_fmp4sess_info_t &info)
+    : IWebMSess(type), m_status(zc_msess_uninit_e) {
     memcpy(&m_info, &info, sizeof(zc_fmp4sess_info_t));
     return;
 }
@@ -28,7 +28,7 @@ CFmp4Sess::~CFmp4Sess() {
 }
 
 bool CFmp4Sess::Open() {
-    if (m_status > zc_fmp4sess_uninit_e) {
+    if (m_status > zc_msess_uninit_e) {
         return false;
     }
 
@@ -42,39 +42,39 @@ bool CFmp4Sess::Open() {
     // TODO(zhoucc): check info
     if (!m_fmp4muxer.Create(muxerinfo)) {
         LOG_ERROR("fmp4muxer create error");
-        m_status = zc_fmp4sess_err_e;
+        m_status = zc_msess_err_e;
         return false;
     }
 
-    m_status = zc_fmp4sess_init_e;
+    m_status = zc_msess_init_e;
     LOG_TRACE("Session Start ok");
     return true;
 }
 
 bool CFmp4Sess::StartSendProcess() {
-    if (m_status != zc_fmp4sess_init_e) {
+    if (m_status != zc_msess_init_e) {
         return false;
     }
 
     if (!m_fmp4muxer.Start()) {
         LOG_ERROR("fmp4muxer start error");
-        m_status = zc_fmp4sess_err_e;
+        m_status = zc_msess_err_e;
         m_fmp4muxer.Destroy();
         return false;
     }
-    m_status = zc_fmp4sess_sending_e;
+    m_status = zc_msess_sending_e;
 
     return true;
 }
 
 bool CFmp4Sess::Close() {
-    if (m_status <= zc_fmp4sess_uninit_e) {
+    if (m_status <= zc_msess_uninit_e) {
         return true;
     }
 
     m_fmp4muxer.Stop();
     m_fmp4muxer.Destroy();
-    m_status = zc_fmp4sess_uninit_e;
+    m_status = zc_msess_uninit_e;
     return true;
 }
 
@@ -89,7 +89,7 @@ int CFmp4Sess::_onFmp4PacketCb(int type, const void *data, size_t bytes, uint32_
     }
 
     int ret = 0;
-    ret = m_info.sendfmp4datacb(m_info.context, m_info.connsess, type, data, bytes, timestamp);
+    ret = m_info.sendfmp4datacb(m_info.context, m_info.connsess, m_type, type, data, bytes, timestamp);
     return ret;
 }
 

@@ -17,8 +17,8 @@
 
 namespace zc {
 
-CTsSess::CTsSess(zc_tssess_type_e type, const zc_tssess_info_t &info)
-    : m_type(type), m_status(zc_tssess_uninit_e) {
+CTsSess::CTsSess(zc_web_msess_type_e type, const zc_tssess_info_t &info)
+    : IWebMSess(type), m_status(zc_msess_uninit_e) {
     memcpy(&m_info, &info, sizeof(zc_tssess_info_t));
     return;
 }
@@ -28,7 +28,7 @@ CTsSess::~CTsSess() {
 }
 
 bool CTsSess::Open() {
-    if (m_status > zc_tssess_uninit_e) {
+    if (m_status > zc_msess_uninit_e) {
         return false;
     }
 
@@ -41,39 +41,39 @@ bool CTsSess::Open() {
     // TODO(zhoucc): check info
     if (!m_tsmuxer.Create(muxerinfo)) {
         LOG_ERROR("tsmuxer create error");
-        m_status = zc_tssess_err_e;
+        m_status = zc_msess_err_e;
         return false;
     }
 
-    m_status = zc_tssess_init_e;
+    m_status = zc_msess_init_e;
     LOG_TRACE("Session Start ok");
     return true;
 }
 
 bool CTsSess::StartSendProcess() {
-    if (m_status != zc_tssess_init_e) {
+    if (m_status != zc_msess_init_e) {
         return false;
     }
 
     if (!m_tsmuxer.Start()) {
         LOG_ERROR("tsmuxer start error");
-        m_status = zc_tssess_err_e;
+        m_status = zc_msess_err_e;
         m_tsmuxer.Destroy();
         return false;
     }
-    m_status = zc_tssess_sending_e;
+    m_status = zc_msess_sending_e;
 
     return true;
 }
 
 bool CTsSess::Close() {
-    if (m_status <= zc_tssess_uninit_e) {
+    if (m_status <= zc_msess_uninit_e) {
         return true;
     }
 
     m_tsmuxer.Stop();
     m_tsmuxer.Destroy();
-    m_status = zc_tssess_uninit_e;
+    m_status = zc_msess_uninit_e;
     return true;
 }
 
@@ -87,11 +87,6 @@ int CTsSess::_onTsPacketCb(const void *data, size_t bytes) {
         return 0;
     }
 
-    return m_info.sendtsdatacb(m_info.context, m_info.connsess, data, bytes);
+    return m_info.sendtsdatacb(m_info.context, m_info.connsess, m_type, data, bytes);
 }
-
-#if ZC_SUPPORT_HTTP_TS
-
-#endif
-
 }  // namespace zc

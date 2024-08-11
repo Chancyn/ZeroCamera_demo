@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "zc_type.h"
 #include "zc_basic_fun.h"
 #include "zc_basic_stream.h"
 #include "zc_log.h"
@@ -13,12 +14,15 @@
 #include "Thread.hpp"
 #include "ZcType.hpp"
 #include "ZcWebMSess.hpp"
+#include "ZcFlvSess.hpp"
+#include "ZcFmp4Sess.hpp"
+#include "ZcTsSess.hpp"
 #include "ZcWebServer.hpp"
-#include "zc_type.h"
+
 
 namespace zc {
 
-//
+// url suffix
 static const char *const g_suffixTab[zc_web_msess_type_butt] = {
     "flv",
     "ws.flv",
@@ -27,6 +31,28 @@ static const char *const g_suffixTab[zc_web_msess_type_butt] = {
     "ts",
     "ws.ts",
 };
+
+IWebMSess *CWebMSessFac::CreateWebMSess(const zc_msess_info_t &info) {
+        IWebMSess *sess = nullptr;
+        switch (info.type) {
+        case zc_web_msess_http_flv:
+        case zc_web_msess_ws_flv:
+            sess =  new CFlvSess(info.type, info.flvinfo);
+            break;
+        case zc_web_msess_http_fmp4:
+        case zc_web_msess_ws_fmp4:
+            sess =  new CFmp4Sess(info.type, info.fmp4info);
+            break;
+        case zc_web_msess_http_ts:
+        case zc_web_msess_ws_ts:
+            sess = new CTsSess(info.type, info.tsinfo);
+            break;
+        default:
+            LOG_ERROR("error, type[%d]", info.type);
+            break;
+        }
+        return sess;
+}
 
 int zc_get_msess_path(char *dst, unsigned int len, zc_web_msess_type_e mtype, zc_shmstream_e type, unsigned int chn) {
     int ret = 0;
