@@ -21,6 +21,8 @@ typedef enum {
     zc_web_msess_ws_flv,        // ws-flv
     zc_web_msess_http_fmp4,     // http-fmp4
     zc_web_msess_ws_fmp4,       // ws-fmp4
+    zc_web_msess_http_ts,       // http-ts
+    zc_web_msess_ws_ts,         // ws-ts
 
     zc_web_msess_type_butt,  // max
 } zc_web_msess_type_e;

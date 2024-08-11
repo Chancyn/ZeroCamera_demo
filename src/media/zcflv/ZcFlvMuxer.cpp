@@ -240,10 +240,10 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
         if (m_pts) {
             if (frame->pts + ZC_AUIDO_DELAY_VIDEO < m_pts) {
                 LOG_WARN("drop apts:%llu,delay pts:%llu,over%dms", frame->pts, m_pts, ZC_AUIDO_DELAY_VIDEO);
-                return 0;
+                // return 0;
             } else if (frame->pts > m_pts + ZC_AUIDO_LEADER_VIDEO) {
                 LOG_WARN("drop apts:%llu,leader pts%llu,over%dms", frame->pts, m_pts, ZC_AUIDO_LEADER_VIDEO);
-                return 0;
+                // return 0;
             }
 
             if (!m_apts) {

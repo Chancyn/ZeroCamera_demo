@@ -74,5 +74,4 @@ class CWebSocketFmp4Sess : public CFmp4Sess {
     virtual ~CWebSocketFmp4Sess() {}
 };
 #endif
-
 }  // namespace zc

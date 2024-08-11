@@ -72,6 +72,9 @@ http://192.168.1.166/live/pull.ch0.mp4
 #define ZC_AUIDO_DELAY_VIDEO 200    // 100ms drop audio delay video
 #define ZC_AUIDO_LEADER_VIDEO 50   // 50ms drop audio leader video
 
+#define ZC_AUIDO_DELAY_VIDEO_WARN 100    // 100ms audio delay video
+#define ZC_AUIDO_LEADER_VIDEO_WARN 30     // 30ms  audio leader video
+
 // shmstream type
 typedef enum {
     ZC_SHMSTREAM_LIVE = 0,  // live shmstream,url /live/live.ch0

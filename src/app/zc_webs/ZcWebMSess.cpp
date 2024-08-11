@@ -24,6 +24,8 @@ static const char *const g_suffixTab[zc_web_msess_type_butt] = {
     "ws.flv",
     "mp4",
     "ws.mp4",
+    "ts",
+    "ws.ts",
 };
 
 int zc_get_msess_path(char *dst, unsigned int len, zc_web_msess_type_e mtype, zc_shmstream_e type, unsigned int chn) {

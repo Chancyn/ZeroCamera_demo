@@ -184,7 +184,7 @@ bool CRtmpPush::StopCli() {
         // first shutdown socket wakeup block recv thead
         if (m_client.socket > 0)
             socket_shutdown(m_client.socket, SHUT_RDWR);
-        LOG_TRACE("socket_shutdown socket", m_client.socket);
+        LOG_TRACE("socket_shutdown socket:%d", m_client.socket);
         Thread::Stop();
         m_running = false;
     }

@@ -9,9 +9,11 @@
 
 #include "NonCopyable.hpp"
 #include "Thread.hpp"
+#include "ZcWebMSess.hpp"
 #include "ZcFlvSess.hpp"
 #include "ZcFmp4Sess.hpp"
-#include "ZcWebMSess.hpp"
+#include "ZcTsSess.hpp"
+
 
 #define ZC_SUPPORT_SSL 1
 
@@ -80,6 +82,12 @@ class CWebServer : protected Thread, public NonCopyable {
     int handleOpenHttpFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
     int handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
 
+    // ts
+    static int sendTsDataCb(void *ptr, void *sess, const void *data, size_t bytes);
+    int _sendTsDataCb(void *sess, const void *data, size_t bytes);
+    int handleOpenHttpTsSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
+    int handleOpenWsTsSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn);
+
     int handleOpenHttpMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype,
                                    zc_shmstream_e type, int chn);
     int handleOpenWsMediaSession(struct mg_connection *c, void *ev_data, zc_web_msess_type_e mtype, zc_shmstream_e type,
@@ -98,6 +106,7 @@ class CWebServer : protected Thread, public NonCopyable {
     std::mutex m_flvsessmutex;
     std::list<CFlvSess *> m_flvsesslist;
     std::list<CFmp4Sess *> m_fmp4sesslist;
+    std::list<CTsSess *> m_tssesslist;
 };
 
 class CWebServerHttp : public CWebServer {

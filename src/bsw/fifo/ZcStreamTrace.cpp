@@ -77,6 +77,18 @@ void CStreamTrace::TraceStream(const zc_frame_t *frame) {
             trace->framecnt = 0;
             trace->lostcnt = 0;
             trace->startframecnt = 0;
+            if (type == ZC_STREAM_VIDEO) {
+                LOG_TRACE("%s:first,pts:%llu,encode:%d,size:%u,now:%llu, %ux%u", g_streamnametab[type], frame->pts,
+                          frame->video.encode, frame->size, now, frame->video.width, frame->video.height);
+            } else if (type == ZC_STREAM_AUDIO) {
+                LOG_TRACE("%s:first,pts:%llu,encode:%d,size:%u,now:%llu,chn:%d,bit:%d,samplerate:%d",
+                          g_streamnametab[type], frame->pts, frame->video.encode, frame->size, now, frame->audio.chn,
+                          frame->audio.bitwidth, frame->audio.samplerate);
+            } else {
+                LOG_TRACE("%s:first,pts:%llu,encode:%d,size:%u,now:%llu", g_streamnametab[type], frame->pts,
+                          frame->video.encode, frame->size, now);
+            }
+
             return;
         }
 
@@ -106,7 +118,7 @@ void CStreamTrace::TraceStream(const zc_frame_t *frame) {
             ZC_U32 framediff = trace->framecnt - trace->startframecnt;
             ZC_U64 timediff = (now - trace->startutc) / 1000;
             trace->bitrate = trace->size / framediff * 1000 / 1024;
-            trace->fps = (double) framediff / timediff;
+            trace->fps = (double)framediff / timediff;
             LOG_TRACE("%s:fps[%.2f],cnt:%u,bps:%ukbps,seq[%u->%u=%u],cos[%llu->%llu=%llu]ms", g_streamnametab[type],
                       (double)trace->fps, framediff, trace->bitrate, trace->startseq, frame->seq,
                       frame->seq - trace->startseq, trace->startutc, now, timediff);
