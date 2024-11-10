@@ -4,12 +4,12 @@
 #ifndef __ZC_BASE_STREAM_H__
 #define __ZC_BASE_STREAM_H__
 
-#include "zc_frame.h"
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
+
+#include "zc_frame.h"
+#include <stdint.h>
 
 typedef struct _zc_h26x_nalu {
     uint32_t type;    // zc_nalu_type_e

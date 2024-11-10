@@ -13,6 +13,14 @@ extern "C" {
 // 对齐到最接近的、不大于x的、alignment的倍数
 #define ALIGN_DOWN(x, alignment) ((x) & ~(((alignment)-1)))
 
+#define ZCMKTAG(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((unsigned)(d) << 24))
+#define ZCMKBETAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((unsigned)(a) << 24))
+
+#define ZCMAX(a, b) ((a) > (b) ? (a) : (b))
+#define ZCMAX3(a, b, c) ZCMAX(ZCMAX(a, b), c)
+#define ZCMIN(a, b) ((a) > (b) ? (b) : (a))
+#define ZCMIN3(a, b, c) ZCMIN(ZCMIN(a, b), c)
+
 #define ZC_USLEEP(Sec, Usec) \
     do { \
         struct timeval _SleepTime_; \

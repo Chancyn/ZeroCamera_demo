@@ -102,6 +102,9 @@ set(SPDLOG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/spdlog/lib
 set(NNG_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/include)
 set(NNG_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/nng/lib)
 
+set(SRT_INC ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/srt/include)
+set(SRT_LIBPATH ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/srt/lib)
+
 set(PLAT_BASIC_INC ${CMAKE_SOURCE_DIR}/src/plat/basic)
 set(MSGCOMM_INC ${CMAKE_SOURCE_DIR}/src/bsw/msgcomm)
 set(UTILSXX_INC ${CMAKE_SOURCE_DIR}/src/bsw/utilsxx)

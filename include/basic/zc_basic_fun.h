@@ -4,7 +4,13 @@
 #ifndef __ZC_BASE_FUN_H__
 #define __ZC_BASE_FUN_H__
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /*__cplusplus*/
+
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <errno.h>
 #include <pthread.h>
@@ -14,10 +20,6 @@
 #include <sys/utsname.h>
 
 #include "zc_frame.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif /*__cplusplus*/
 
 // debug dump stream
 #ifdef ZC_DEBUG

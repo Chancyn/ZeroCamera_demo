@@ -63,7 +63,7 @@ class CRtmpSource {
     std::list<std::shared_ptr<CRtmpPlayer>> m_players;
 };
 
-class CRtmpSvr : public Thread {
+class CRtmpSvr : protected Thread {
  public:
     CRtmpSvr();
     virtual ~CRtmpSvr();

@@ -4,12 +4,12 @@
 #ifndef __ZC_FRAME_H__
 #define __ZC_FRAME_H__
 
+#include "zc_media_track.h"
+#include "zc_type.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#include "zc_media_track.h"
-#include "zc_type.h"
 
 // rtsp-server live shmfifo
 #define ZC_STREAM_VIDEO_SHM_PATH "v_live"

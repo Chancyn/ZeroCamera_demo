@@ -3,6 +3,11 @@
 
 #ifndef __ZC_PROC_H__
 #define __ZC_PROC_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/sched.h>
@@ -10,11 +15,8 @@
 #include <string.h>
 #include <sys/prctl.h>
 #include <unistd.h>
-#include "zc_version.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#include "zc_version.h"
 
 #ifdef TASK_COMM_LEN
 #define ZC_TASK_COMM_LEN TASK_COMM_LEN

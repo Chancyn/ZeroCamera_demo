@@ -13,6 +13,7 @@ endforeach()
 add_library(zcsrt STATIC ${DIR_SOURCE_SRCS})
 
 target_include_directories(zcsrt PRIVATE
+${SRT_INC}
 ${ZCMPEG_INC}
 ${MEDIAAVCODEC_INC}
 ${MEDIAAVBSF_INC}
@@ -20,6 +21,7 @@ ${PLAT_BASIC_INC}
 )
 
 target_link_libraries(zcsrt PUBLIC
+srt
 zcmpeg
 ${MEDIAAVBSF}
 ${MEDIAAVCODEC}
