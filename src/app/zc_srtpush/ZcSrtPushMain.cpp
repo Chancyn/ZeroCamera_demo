@@ -34,9 +34,9 @@ int main(int argc, char **argv) {
     InitSignals();
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
     if (argc < 2) {
-        LOG_ERROR("args error pls ./zc_rtmppush url chn\n \
-        example./zc_rtmppush rtmp://192.168.1.66:1935/live/push.ch0 0\n \
-        example./zc_rtmppush rtmp://192.168.1.66:1935/live/push.ch1 1");
+        LOG_ERROR("args error pls ./zc_srtpush url chn\n \
+        example./zc_srtpush srt://192.168.1.66:1935/live/push.ch0 0\n \
+        example./zc_srtpush srt://192.168.1.66:1935/live/push.ch1 1");
         return -1;
     }
 

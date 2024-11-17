@@ -260,6 +260,10 @@ int CSrtPush::_onMpegTsPacketCb(const void *data, size_t bytes) {
     }
     // LOG_TRACE("ts onpkg, size:%d", bytes);
     int ret = 0;
+    ret = m_caller->Write((const char *)data, bytes);
+    if (ret != bytes) {
+        LOG_ERROR("write error ts onpkg, size:%d", bytes);
+    }
 
     return ret;
 }
