@@ -13,8 +13,6 @@ extern "C" {
 size_t zc_strlcpy(char *dst, const char *src, size_t size);
 size_t zc_strlcat(char *dst, const char *src, size_t size);
 size_t zc_strlcatf(char *dst, size_t size, const char *fmt, ...);
-void zc_url_split(char *proto, int proto_size, char *authorization, int authorization_size, char *hostname,
-                  int hostname_size, int *port_ptr, char *path, int path_size, const char *url);
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/

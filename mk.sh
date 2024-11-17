@@ -56,6 +56,7 @@ function build_make_append(){
 function build_copy_thirdparty(){
     # copy nng
     cp ${thirdinstalldir}/nng/lib/lib*.so* ${outputdir}/lib
+    cp ${thirdinstalldir}/srt/lib/lib*.so* ${outputdir}/lib
 }
 
 echo "----------------------------------"
