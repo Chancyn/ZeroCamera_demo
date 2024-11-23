@@ -26,29 +26,30 @@
 #include "zc_macros.h"
 
 #include "Thread.hpp"
-#include "ZcRtmpPush.hpp"
+#include "ZcRtmpPushCli.hpp"
 #include "ZcType.hpp"
 #include "zc_h26x_sps_parse.h"
+#include "zc_rtmp_utils.h"
 
 #define ZC_RTMP_CLI_BUF_SIZE (2 * 1024 * 1024)
 
 namespace zc {
-CRtmpPush::CRtmpPush()
+CRtmpPushCli::CRtmpPushCli()
     : Thread("Rtmppush"), m_init(false), m_running(0), m_pbuf(new char[ZC_RTMP_CLI_BUF_SIZE]), m_phandle(nullptr) {
     memset(&m_client, 0, sizeof(m_client));
 }
 
-CRtmpPush::~CRtmpPush() {
+CRtmpPushCli::~CRtmpPushCli() {
     UnInit();
     ZC_SAFE_DELETEA(m_pbuf);
 }
 
-int CRtmpPush::rtmp_client_send(void *ptr, const void *header, size_t len, const void *data, size_t bytes) {
-    CRtmpPush *pcli = reinterpret_cast<CRtmpPush *>(ptr);
+int CRtmpPushCli::rtmp_client_send(void *ptr, const void *header, size_t len, const void *data, size_t bytes) {
+    CRtmpPushCli *pcli = reinterpret_cast<CRtmpPushCli *>(ptr);
     return pcli->_rtmp_client_send(header, len, data, bytes);
 }
 
-int CRtmpPush::_rtmp_client_send(const void *header, size_t len, const void *data, size_t bytes) {
+int CRtmpPushCli::_rtmp_client_send(const void *header, size_t len, const void *data, size_t bytes) {
     socket_bufvec_t vec[2];
     socket_setbufvec(vec, 0, (void *)header, len);
     socket_setbufvec(vec, 1, (void *)data, bytes);
@@ -56,7 +57,7 @@ int CRtmpPush::_rtmp_client_send(const void *header, size_t len, const void *dat
     return socket_send_v_all_by_time(m_client.socket, vec, bytes > 0 ? 2 : 1, 0, 5000);
 }
 
-bool CRtmpPush::Init(const zc_stream_info_t &info, const char *url) {
+bool CRtmpPushCli::Init(const zc_stream_info_t &info, const char *url) {
     if (m_init || !url || url[0] == '\0') {
         return false;
     }
@@ -67,7 +68,7 @@ bool CRtmpPush::Init(const zc_stream_info_t &info, const char *url) {
     return true;
 }
 
-bool CRtmpPush::UnInit() {
+bool CRtmpPushCli::UnInit() {
     StopCli();
     m_init = false;
     return true;
@@ -75,51 +76,14 @@ bool CRtmpPush::UnInit() {
 
 // rtmp://video-center.alivecdn.com/live/hello?vhost=your.domain
 // rtmp_publish_test("video-center.alivecdn.com", "live", "hello?vhost=your.domain", local-flv-file-name)
-bool CRtmpPush::_startconn() {
-    char rurl[256] = {0};  // rtmp url
-    char host[128] = {0};
-    char path[128] = {0};
-    char app[128] = {0};
-    char stream[128] = {0};
-    char *pstream = nullptr;
-    unsigned short port = 1593;
+bool CRtmpPushCli::_startconn() {
     int r = 0;
-    strncpy(rurl, m_url, sizeof(rurl) - 1);
+
     struct rtmp_client_handler_t *phandle = nullptr;
     struct rtmp_client_t *rtmp = nullptr;
-    // parse url
-    struct uri_t *url = uri_parse(rurl, strlen(rurl));
-    if (!url)
-        return false;
+    LOG_TRACE("rtmppush url:%s, host:%s, port:%hu, app:%s, stream:%s", m_rtmpurl.rurl, m_rtmpurl.host, m_rtmpurl.port,
+              m_rtmpurl.app, m_rtmpurl.stream);
 
-    // prase port
-    url_decode(url->path, strlen(url->path), path, sizeof(path));
-    url_decode(url->host, strlen(url->host), host, sizeof(host));
-    strncpy(m_host, host, sizeof(host) - 1);
-    pstream = strrchr(url->path, '/');
-    if (!pstream) {
-        LOG_ERROR("rtmppush prase error url:%s path:%s", m_url, url->path);
-        uri_free(url);
-        return false;
-    }
-
-    *pstream = '\0';
-    strncpy(app, url->path + 1, sizeof(app) - 1);
-    strncpy(stream, pstream + 1, sizeof(stream) - 1);
-    if (app[0] == '\0' || stream[0] == '\0') {
-        LOG_ERROR("rtmppush prase error url:%s path:%s", m_url, url->path);
-        uri_free(url);
-        return false;
-    }
-
-    if (url->port != 0) {
-        port = url->port;
-        snprintf(rurl, sizeof(rurl) - 1, "rtmp://%s:%hu/%s", m_host, port, app);
-    } else {
-        snprintf(rurl, sizeof(rurl) - 1, "rtmp://%s/%s", m_host, app);
-    }
-
-    LOG_TRACE("rtmppush url:%s, host:%s, port:%hu, app:%s, stream:%s", rurl, m_host, port, app, stream);
     phandle = (struct rtmp_client_handler_t *)malloc(sizeof(struct rtmp_client_handler_t));
     ZC_ASSERT(phandle);
     if (!phandle) {
@@ -131,10 +95,10 @@ bool CRtmpPush::_startconn() {
     phandle->send = rtmp_client_send;
 
     socket_init();
-    m_client.socket = socket_connect_host(host, 1935, 2000);
+    m_client.socket = socket_connect_host(m_rtmpurl.host, m_rtmpurl.port, 2000);
     socket_setnonblock(m_client.socket, 0);
 
-    rtmp = rtmp_client_create(app, stream, rurl, this, phandle);
+    rtmp = rtmp_client_create(m_rtmpurl.app, m_rtmpurl.stream, m_rtmpurl.rurl, this, phandle);
     if (!rtmp) {
         LOG_ERROR("rtmp rtmp_client_create error");
         ZC_ASSERT(0);
@@ -155,20 +119,23 @@ bool CRtmpPush::_startconn() {
         }
     }
     m_client.status = 1;
-    uri_free(url);
     LOG_TRACE("rtmppush starcomm ok");
     return true;
 _err:
     _stopconn();
-    uri_free(url);
     m_client.status = 0;
     LOG_ERROR("rtmppush _startconn error");
     return false;
 }
 
-bool CRtmpPush::StartCli() {
+bool CRtmpPushCli::StartCli() {
     if (m_running) {
         LOG_ERROR("already Start");
+        return false;
+    }
+
+    if (!zc_rtmp_prase_url(m_url, &m_rtmpurl)) {
+        LOG_ERROR("prase rtmpurl error :%s", m_url);
         return false;
     }
 
@@ -178,7 +145,7 @@ bool CRtmpPush::StartCli() {
     return true;
 }
 
-bool CRtmpPush::StopCli() {
+bool CRtmpPushCli::StopCli() {
     LOG_TRACE("Stop into");
     if (m_running) {
         // first shutdown socket wakeup block recv thead
@@ -192,7 +159,7 @@ bool CRtmpPush::StopCli() {
     return true;
 }
 
-bool CRtmpPush::_stopconn() {
+bool CRtmpPushCli::_stopconn() {
     if (m_client.rtmp) {
         rtmp_client_destroy(reinterpret_cast<rtmp_client_t *>(m_client.rtmp));
         m_client.rtmp = nullptr;
@@ -209,12 +176,12 @@ bool CRtmpPush::_stopconn() {
     return true;
 }
 
-int CRtmpPush::onFlvPacketCb(void *ptr, int type, const void *data, size_t bytes, uint32_t timestamp) {
-    CRtmpPush *pcli = reinterpret_cast<CRtmpPush *>(ptr);
+int CRtmpPushCli::onFlvPacketCb(void *ptr, int type, const void *data, size_t bytes, uint32_t timestamp) {
+    CRtmpPushCli *pcli = reinterpret_cast<CRtmpPushCli *>(ptr);
     return pcli->_onFlvPacketCb(type, data, bytes, timestamp);
 }
 
-int CRtmpPush::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t timestamp) {
+int CRtmpPushCli::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t timestamp) {
     if (!m_client.status) {
         return 0;
     }
@@ -223,7 +190,7 @@ int CRtmpPush::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t
     if (FLV_TYPE_AUDIO == type) {
         ret = rtmp_client_push_audio(m_client.rtmp, data, bytes, timestamp);
     } else if (FLV_TYPE_VIDEO == type) {
-#if 0 // ZC_DEBUG
+#if 0  // ZC_DEBUG
         int keyframe = 1 == (((*(unsigned char *)data) & 0xF0) >> 4);
         if (keyframe)
             LOG_TRACE("type:%02d [A:%d, V:%d, S:%d] key:%d", type, FLV_TYPE_AUDIO, FLV_TYPE_VIDEO, FLV_TYPE_SCRIPT,
@@ -239,7 +206,7 @@ int CRtmpPush::_onFlvPacketCb(int type, const void *data, size_t bytes, uint32_t
     return ret;
 }
 
-bool CRtmpPush::_startFlvMuxer() {
+bool CRtmpPushCli::_startFlvMuxer() {
     m_flv = new CFlvMuxer();
     if (!m_flv) {
         return false;
@@ -270,7 +237,7 @@ _err:
     return false;
 }
 
-bool CRtmpPush::_stopFlvMuxer() {
+bool CRtmpPushCli::_stopFlvMuxer() {
     if (m_flv) {
         m_flv->Stop();
         m_flv->Destroy();
@@ -281,7 +248,7 @@ bool CRtmpPush::_stopFlvMuxer() {
     return true;
 }
 
-int CRtmpPush::_cliwork() {
+int CRtmpPushCli::_cliwork() {
     // start
     int ret = 0;
     if (!_startconn()) {
@@ -294,7 +261,7 @@ int CRtmpPush::_cliwork() {
         goto _err;
     }
 
-    while (State() == Running && m_client.status == 1) {
+    while (State() == Running && m_client.status >= 0) {
         system_sleep(5);
     }
 
@@ -305,7 +272,7 @@ _err:
     return ret;
 }
 
-int CRtmpPush::process() {
+int CRtmpPushCli::process() {
     LOG_WARN("process into");
     while (State() == Running /*&&  i < loopcnt*/) {
         if (_cliwork() < 0) {

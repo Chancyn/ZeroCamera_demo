@@ -59,14 +59,15 @@ void Thread::Resume() {
 }
 
 void Thread::_run() {
-    LOG_INFO("enter thread:,%s %d", m_name.c_str(), std::this_thread::get_id());
+    size_t threadId = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    LOG_INFO("enter thread:,%s %lu", m_name.c_str(), threadId);
     // 线程外设置,线程内使用段错误;
     // pthread_setname_np(_thread->native_handle(), m_name.substr(0, 15).c_str());
     // 线程内设置pthread_self()
     pthread_setname_np(pthread_self(), m_name.substr(0, 15).c_str());
     while (!_stopFlag) {
         if (process() < 0) {
-            LOG_ERROR("process error, pause thread:,%s %d", m_name.c_str(), std::this_thread::get_id());
+            LOG_ERROR("process error, pause thread:,%s %lu", m_name.c_str(), threadId);
             _pauseFlag = true;
         }
 
@@ -81,7 +82,7 @@ void Thread::_run() {
     _pauseFlag = false;
     _stopFlag = false;
 
-    LOG_INFO("exit thread:%s %d", m_name.c_str(), std::this_thread::get_id());
+    LOG_INFO("exit thread:%s %lu", m_name.c_str(), threadId);
 }
 
 }  // namespace zc

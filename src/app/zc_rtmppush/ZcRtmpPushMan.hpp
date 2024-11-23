@@ -8,7 +8,7 @@
 #include "ZcModCli.hpp"
 
 namespace zc {
-class CRtmpPushMan : public CModCli, public CRtmpPush {
+class CRtmpPushMan : public CModCli {
  public:
     CRtmpPushMan();
     virtual ~CRtmpPushMan();
@@ -27,5 +27,6 @@ class CRtmpPushMan : public CModCli, public CRtmpPush {
  private:
     bool m_init;
     int m_running;
+    CIRtmpPush *m_push;
 };
 }  // namespace zc

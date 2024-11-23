@@ -13,7 +13,7 @@
 
 namespace zc {
 // modsyscli
-CRtmpPushMan::CRtmpPushMan() : CModCli(ZC_MODID_SYSCLI_E), m_init(false), m_running(0) {}
+CRtmpPushMan::CRtmpPushMan() : CModCli(ZC_MODID_SYSCLI_E), m_init(false), m_running(0), m_push(nullptr) {}
 
 CRtmpPushMan::~CRtmpPushMan() {
     UnInit();
@@ -24,14 +24,21 @@ bool CRtmpPushMan::Init(unsigned int type, unsigned int chn, const char *url) {
         LOG_ERROR("already init");
         return false;
     }
-    zc_stream_info_t info;
 
+    m_push = CIRtmpPushFac::CreateRtmpPush(ZC_RTMPPUSH_AIO_E);
+    //push = CIRtmpPushFac::CreateRtmpPush(ZC_RTMPPUSH_E);
+    if (!m_push) {
+        LOG_TRACE("CreateRtmpPush error");
+        return false;
+    }
+
+    zc_stream_info_t info;
     if (sendSMgrGetInfo(type, chn, &info) < 0) {
         LOG_TRACE("sendSMgrGetInfo error");
         goto _err;
     }
 
-    if (!CRtmpPush::Init(info, url)) {
+    if (!m_push->Init(info, url)) {
         LOG_TRACE("CModRtsp Init error");
         goto _err;
     }
@@ -49,7 +56,11 @@ _err:
 
 bool CRtmpPushMan::_unInit() {
     Stop();
-    CRtmpPush::UnInit();
+
+    if (m_push) {
+        m_push->UnInit();
+        delete m_push;
+    }
 
     return true;
 }
@@ -64,12 +75,16 @@ bool CRtmpPushMan::UnInit() {
     m_init = false;
     return true;
 }
+
 bool CRtmpPushMan::Start() {
     if (m_running) {
         return false;
     }
 
-    m_running = CRtmpPush::StartCli();
+    if (m_push) {
+        m_running = m_push->StartCli();
+    }
+
     return m_running;
 }
 
@@ -78,7 +93,7 @@ bool CRtmpPushMan::Stop() {
         return false;
     }
 
-    CRtmpPush::StopCli();
+    m_push->StopCli();
     m_running = false;
     return true;
 }
