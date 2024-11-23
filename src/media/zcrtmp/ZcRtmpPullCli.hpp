@@ -15,6 +15,7 @@
 #include "Thread.hpp"
 #include "ZcFlvDemuxer.hpp"
 #include "ZcIRtmp.hpp"
+#include "ZcStreamsPut.hpp"
 
 namespace zc {
 typedef struct {
@@ -43,8 +44,8 @@ class CRtmpPullCli : public CIRtmpPull, protected Thread {
     static void rtmpClientPullOnError(void *ptr, int code);
     void _rtmpClientPullOnError(int code);
 
-    static int onFrameCb(void *ptr, zc_flvframe_t *frame);
-    int _onFrameCb(zc_flvframe_t *frame);
+    static int onFrameCb(void *ptr, zc_frame_t *framehdr, const uint8_t *data);
+    int _onFrameCb(zc_frame_t *framehdr, const uint8_t *data);
     static void aioOnConnect(void *ptr, int code, socket_t tcp, aio_socket_t aio);
     void _aioOnConnect(int code, socket_t tcp, aio_socket_t aio);
     bool _startFlvDemuxer();
@@ -65,6 +66,7 @@ class CRtmpPullCli : public CIRtmpPull, protected Thread {
     zc_rtmp_pull_t m_client;
     void *m_phandle;  // handle
     CFlvDemuxer *m_flvmuxer;
+    CStreamsPut *m_streamsput;
     std::mutex m_mutex;
 };
 

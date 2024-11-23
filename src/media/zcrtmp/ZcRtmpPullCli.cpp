@@ -32,7 +32,7 @@
 #define ZC_RTSP_CLI_BUF_SIZE (2 * 1024 * 1024)
 
 namespace zc {
-CRtmpPullCli::CRtmpPullCli() : Thread("RtmpPull"), m_init(false), m_running(0), m_phandle(nullptr) {
+CRtmpPullCli::CRtmpPullCli() : Thread("RtmpPull"), m_init(false), m_running(0), m_phandle(nullptr),m_flvmuxer(nullptr), m_streamsput(nullptr)  {
     memset(&m_client, 0, sizeof(m_client));
 }
 
@@ -118,13 +118,32 @@ bool CRtmpPullCli::Init(rtmppull_callback_info_t *cbinfo, int chn, const char *u
     memcpy(&m_cbinfo, cbinfo, sizeof(rtmppull_callback_info_t));
     strncpy(m_url, url, sizeof(m_url));
     // memcpy(&m_info, &info, sizeof(zc_stream_info_t));
+    m_streamsput = new CStreamsPut();
+    if (!m_streamsput) {
+        LOG_TRACE("new CStreamsPut");
+        return false;
+    }
+
+    if (!m_streamsput->Init(chn)) {
+        LOG_ERROR("CStreamsPut Init error");
+        goto _err;
+    }
+
     m_init = true;
     return true;
+_err:
+    LOG_ERROR("error");
+    ZC_SAFE_DELETE(m_streamsput);
+    return false;
 }
 
 bool CRtmpPullCli::UnInit() {
-    StopCli();
-    m_init = false;
+    if (m_init) {
+        StopCli();
+        ZC_SAFE_DELETE(m_streamsput);
+        m_init = false;
+    }
+
     return true;
 }
 
@@ -227,14 +246,14 @@ bool CRtmpPullCli::_stopconn() {
     return true;
 }
 
-int CRtmpPullCli::onFrameCb(void *ptr, zc_flvframe_t *frame) {
-    return reinterpret_cast<CRtmpPullCli *>(ptr)->_onFrameCb(frame);
+int CRtmpPullCli::onFrameCb(void *ptr, zc_frame_t *framehdr, const uint8_t *data) {
+    return reinterpret_cast<CRtmpPullCli *>(ptr)->_onFrameCb(framehdr, data);
 }
 
-int CRtmpPullCli::_onFrameCb(zc_flvframe_t *frame) {
-    LOG_TRACE("_onFrameCb type:%u, code:%u, seqno:%u, size:%u, pts:%u, keyflag:%d", frame->stream, frame->encode,
-              frame->seqno, frame->bytes, frame->pts, frame->keyflag);
-    return 0;
+int CRtmpPullCli::_onFrameCb(zc_frame_t *framehdr, const uint8_t *data) {
+    // LOG_TRACE("_onFrameCb type:%u, code:%u, seqno:%u, size:%u, pts:%u, keyflag:%d", framehdr->type, framehdr->video.encode,
+    //           framehdr->seq, framehdr->size, framehdr->pts, framehdr->keyflag);
+    return m_streamsput->PutFrame(framehdr, data);
 }
 
 bool CRtmpPullCli::_startFlvDemuxer() {

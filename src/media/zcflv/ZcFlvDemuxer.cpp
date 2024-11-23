@@ -10,7 +10,7 @@
 #include "flv-proto.h"
 #include "flv-reader.h"
 #include "zc_macros.h"
-// #include "sys/system.h"
+#include "zc_basic_fun.h"
 #include "flv-demuxer.h"
 #include "zc_frame.h"
 #include "zc_log.h"
@@ -35,56 +35,51 @@ int CFlvDemuxer::onFlvCb(void *ptr, int codec, const void *data, size_t bytes, u
 
 int CFlvDemuxer::_onFlvCb(int codec, const void *data, size_t bytes, uint32_t pts, uint32_t dts, int flags) {
     int ret = 0;
-    zc_flvframe_t frame = {0};
+    zc_frame_t framehdr = {0};
     if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec || FLV_VIDEO_H266 == codec || FLV_VIDEO_AV1 == codec) {
-        if (flags) {
-            LOG_TRACE("video codec:%d,flags:%d, bytes:%d, pts:%u, diff: %03d/%03d %s", codec, flags, bytes, pts,
-                      (int)(pts - dframeinfo[ZC_STREAM_VIDEO].pts), (int)(dts - dframeinfo[ZC_STREAM_VIDEO].dts),
-                      flags ? "[I]" : "");
-        }
+        // if (flags) {
+        //     LOG_TRACE("video codec:%d,flags:%d, bytes:%d, pts:%u, diff: %03d/%03d %s", codec, flags, bytes, pts,
+        //               (int)(pts - dframeinfo[ZC_STREAM_VIDEO].pts), (int)(dts - dframeinfo[ZC_STREAM_VIDEO].dts),
+        //               flags ? "[I]" : "");
+        // }
 
         // fwrite(data, bytes, 1, h264);
-        frame.keyflag = flags ? 1 : 0;
-        frame.encode = ZC_FRAME_ENC_H264;
-        frame.stream = ZC_STREAM_VIDEO;
-        frame.bytes = bytes;
-        frame.pts = pts;
-        frame.dts = dts;
+        framehdr.keyflag = flags ? 1 : 0;
+        framehdr.video.encode = ZC_FRAME_ENC_H264;
+        framehdr.type = ZC_STREAM_VIDEO;
+        framehdr.size = bytes;
+        framehdr.pts = pts;
+        framehdr.utc = zc_system_time();
         dframeinfo[ZC_STREAM_VIDEO].pts = pts;
         dframeinfo[ZC_STREAM_VIDEO].dts = dts;
-        frame.seqno = dframeinfo[ZC_STREAM_VIDEO].seqno++;
-        frame.ptr = (uint8_t *)data;
+        framehdr.seq = dframeinfo[ZC_STREAM_VIDEO].seqno++;
         if (FLV_VIDEO_H265 == codec) {
-            frame.encode = ZC_FRAME_ENC_H265;
+            framehdr.video.encode = ZC_FRAME_ENC_H265;
         }
     } else if (FLV_AUDIO_AAC == codec) {
         // LOG_TRACE("audio aac bytes:%d, pts:%u,diff:%03d/%03d", bytes, pts, (int)(pts - dframeinfo[ZC_STREAM_AUDIO].pts),
         //           (int)(dts - dframeinfo[ZC_STREAM_AUDIO].dts));
         assert(bytes == get_adts_length((const uint8_t *)data, bytes));
-        frame.keyflag = flags;
-        frame.encode = ZC_FRAME_ENC_AAC;
-        frame.stream = ZC_STREAM_AUDIO;
-        frame.bytes = bytes;
-        frame.pts = pts;
-        frame.dts = dts;
+        framehdr.audio.encode = ZC_FRAME_ENC_AAC;
+        framehdr.type = ZC_STREAM_AUDIO;
+        framehdr.size = bytes;
+        framehdr.pts = pts;
+        framehdr.utc = zc_system_time();
         dframeinfo[ZC_STREAM_AUDIO].pts = pts;
         dframeinfo[ZC_STREAM_AUDIO].dts = dts;
-        frame.seqno = dframeinfo[ZC_STREAM_AUDIO].seqno++;
-        frame.ptr = (uint8_t *)data;
+        framehdr.seq = dframeinfo[ZC_STREAM_AUDIO].seqno++;
         // fwrite(data, bytes, 1, aac);
     } else if (FLV_AUDIO_MP3 == codec || FLV_AUDIO_OPUS == codec) {
         LOG_TRACE("audio codec:%d, bytes:%d, pts:%u,diff:%03d/%03d", codec, bytes, pts,
                   (int)(pts - dframeinfo[ZC_STREAM_AUDIO].pts), (int)(dts - dframeinfo[ZC_STREAM_AUDIO].dts));
-        frame.keyflag = flags;
-        frame.encode = ZC_FRAME_ENC_AAC;
-        frame.stream = ZC_STREAM_AUDIO;
-        frame.bytes = bytes;
-        frame.pts = pts;
-        frame.dts = dts;
+        framehdr.audio.encode = ZC_FRAME_ENC_AAC;
+        framehdr.type = ZC_STREAM_AUDIO;
+        framehdr.size = bytes;
+        framehdr.pts = pts;
+        framehdr.utc = zc_system_time();
         dframeinfo[ZC_STREAM_AUDIO].pts = pts;
         dframeinfo[ZC_STREAM_AUDIO].dts = dts;
-        frame.seqno = dframeinfo[ZC_STREAM_AUDIO].seqno++;
-        frame.ptr = (uint8_t *)data;
+        framehdr.seq = dframeinfo[ZC_STREAM_AUDIO].seqno++;
         // fwrite(data, bytes, 1, aac);
     } else if (FLV_AUDIO_ASC == codec || FLV_AUDIO_OPUS_HEAD == codec || FLV_VIDEO_AVCC == codec ||
                FLV_VIDEO_HVCC == codec || FLV_VIDEO_VVCC == codec || FLV_VIDEO_AV1C == codec) {
@@ -98,13 +93,14 @@ int CFlvDemuxer::_onFlvCb(int codec, const void *data, size_t bytes, uint32_t pt
         assert(FLV_SCRIPT_METADATA == codec);
     }
 
-    if (frame.bytes > 0 && m_info.onframe) {
-        m_info.onframe(m_info.ctx, &frame);
+    if (framehdr.size > 0 && m_info.onframe) {
+        m_info.onframe(m_info.ctx, &framehdr, (const uint8_t *)data);
     }
     return ret;
 }
 
 CFlvDemuxer::CFlvDemuxer(const zc_flvdemuxer_info_t &cb) {
+    memcpy(&m_info, &cb, sizeof(zc_flvdemuxer_info_t));
     m_flv = flv_demuxer_create(onFlvCb, this);
     ZC_ASSERT(m_flv != nullptr);
 }

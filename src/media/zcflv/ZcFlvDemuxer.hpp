@@ -14,16 +14,6 @@
 #include "ZcShmStream.hpp"
 
 namespace zc {
-typedef struct {
-    uint8_t keyflag;
-    uint8_t encode;  // zc_frame_enc_e
-    uint8_t stream;  // zc_stream_e
-    uint32_t seqno;
-    size_t bytes;
-    int32_t pts;
-    int32_t dts;
-    uint8_t *ptr;
-} zc_flvframe_t;
 
 typedef struct {
     uint32_t seqno;
@@ -31,7 +21,7 @@ typedef struct {
     uint32_t dts;
 } zc_flv_dinfo_t;
 
-typedef int (*flvOnFrame)(void* param, zc_flvframe_t *frame);
+typedef int (*flvOnFrame)(void* param, zc_frame_t *framehdr, const uint8_t *data);
 
 typedef struct {
     flvOnFrame onframe;
