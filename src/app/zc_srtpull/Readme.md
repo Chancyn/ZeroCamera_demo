@@ -3,7 +3,7 @@ rtmppull rtmp pull client 测试进程
 
 ## 执行方式
 执行
-./zc_srtpull
+./zc_srtpull 'srt://192.168.1.166:10080?streamid=#!::r=live/livestream,m=request' 1
 
 示例
 rtmp推流测试

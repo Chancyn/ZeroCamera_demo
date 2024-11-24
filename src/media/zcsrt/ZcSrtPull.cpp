@@ -56,13 +56,29 @@ bool CSrtPull::Init(srtpull_callback_info_t *cbinfo, int chn, const char *url) {
 
     strncpy(m_url, url, sizeof(m_url));
     memcpy(&m_cbinfo, &cbinfo, sizeof(srtpull_callback_info_t));
+    m_streamsput = new CStreamsPut();
+    if (!m_streamsput) {
+        LOG_TRACE("new CStreamsPut");
+        return false;
+    }
+
+    if (!m_streamsput->Init(chn)) {
+        LOG_ERROR("CStreamsPut Init error");
+        goto _err;
+    }
+
     m_chn = chn;
     m_init = true;
     return true;
+_err:
+    ZC_SAFE_DELETE(m_streamsput);
+    LOG_ERROR("CStreamsPut Init error");
+    return false;
 }
 
 bool CSrtPull::UnInit() {
     StopCli();
+    ZC_SAFE_DELETE(m_streamsput);
     m_init = false;
     return true;
 }
@@ -81,7 +97,7 @@ bool CSrtPull::_startconn() {
     }
 
     LOG_TRACE("Open m_url[%s]", m_url);
-    ret = m_caller->Open(m_url, 0);
+    ret = m_caller->Open(m_url);
     if (ret < 0) {
         goto _err;
     }
@@ -131,9 +147,9 @@ int CSrtPull::onFrameCb(void *ptr, zc_frame_t *framehdr, const uint8_t *data) {
 }
 
 int CSrtPull::_onFrameCb(zc_frame_t *framehdr, const uint8_t *data) {
-    LOG_TRACE("_onFrameCb type:%u, code:%u, seqno:%u, size:%u, pts:%u, keyflag:%d", framehdr->type,
-    framehdr->video.encode,
-              framehdr->seq, framehdr->size, framehdr->pts, framehdr->keyflag);
+    // LOG_TRACE("_onFrameCb type:%u, code:%u, seqno:%u, size:%u, pts:%u, keyflag:%d", framehdr->type,
+    // framehdr->video.encode,
+    //           framehdr->seq, framehdr->size, framehdr->pts, framehdr->keyflag);
     return m_streamsput->PutFrame(framehdr, data);
 }
 
@@ -162,13 +178,13 @@ bool CSrtPull::_startTsDemuxer() {
         goto _err;
     }
 
-    LOG_TRACE("startFlvMuxer OK");
+    LOG_TRACE("startTsDemuxer OK");
     return true;
 _err:
     delete m_mpegts;
     m_mpegts = nullptr;
 
-    LOG_ERROR("startFlvMuxer error");
+    LOG_ERROR("startTsDemuxer error");
     return false;
 }
 
@@ -176,7 +192,7 @@ bool CSrtPull::_stopTsDemuxer() {
     if (m_mpegts) {
         delete m_mpegts;
         m_mpegts = nullptr;
-        LOG_ERROR("_stopFlvDemuxer ok");
+        LOG_ERROR("stopTsDemuxer ok");
     }
 
     return true;
@@ -185,13 +201,13 @@ bool CSrtPull::_stopTsDemuxer() {
 int CSrtPull::_cliwork() {
     // start
     int ret = 0;
-    if (!_startconn()) {
-        LOG_ERROR("_startconn error");
+    if (!_startTsDemuxer()) {
+        LOG_ERROR("_startMpegTsMuxer error");
         return -1;
     }
 
-    if (!_startTsDemuxer()) {
-        LOG_ERROR("_startMpegTsMuxer error");
+    if (!_startconn()) {
+        LOG_ERROR("_startconn error");
         goto _err;
     }
 
@@ -200,9 +216,11 @@ int CSrtPull::_cliwork() {
     }
 
 _err:
-    _stopTsDemuxer();
     // stop
     _stopconn();
+
+    _stopTsDemuxer();
+
     return ret;
 }
 

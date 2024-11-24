@@ -44,6 +44,7 @@ class CSrtCaller : protected Thread {
     CSrtCaller();
     explicit CSrtCaller(const zc_srtcaller_info_t &cbinfo);
     virtual ~CSrtCaller();
+    int Open(const char *uri);
     int Open(const char *uri, int flags);
     int Read(uint8_t *buf, int size);
     int Write(const uint8_t *buf, int size);
@@ -53,9 +54,10 @@ class CSrtCaller : protected Thread {
     int SetNonBlock(int socket, int enable);
 
  private:
+    int _open(const char *uri, int flags);
     void safeFreeCtx(SRTContext **ppctx);
     int setup(const char *uri, int flags);
-    int urlSplit(const char *uri, zc_srt_url_t *stUrl);
+    int srtUrlSplit(const char *uri, zc_srt_url_t *stUrl);
     int praseUrl(const char *uri, zc_srt_url_t *pstUrl);
     int praseUrlArgs(const char *uriargs);
     int EpollCreate(int write);

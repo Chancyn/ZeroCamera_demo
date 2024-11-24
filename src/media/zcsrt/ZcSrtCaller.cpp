@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/syslog.h>
 
+#include "Thread.hpp"
 #include "srt/srt.h"
 
 #include "zc_error.h"
@@ -21,6 +22,10 @@
 #include "ZcType.hpp"
 
 namespace zc {
+// 默认caller读写模式
+#define ZC_SRT_RWFLAG_DEF (ZC_AVIO_FLAG_WRITE | ZC_AVIO_FLAG_NONBLOCK)  // 非阻塞/写
+// #define ZC_SRT_RWFLAG_DEF (ZC_AVIO_FLAG_WRITE)   // 阻塞/写
+
 static inline int zc_srt_neterrno() {
     int os_errno;
     int err = srt_getlasterror(&os_errno);
@@ -34,12 +39,22 @@ CSrtCaller::CSrtCaller() : Thread("csrtcaller"), m_open(0), m_srtcontext(nullptr
     memset(&m_url, 0, sizeof(m_url));
     memset(&m_cbinfo, 0, sizeof(zc_srtcaller_info_t));
     memset(&m_flags, 0, sizeof(zc_srt_flags_t));
+    m_flags.flags = ZC_SRT_RWFLAG_DEF;
+    if (m_cbinfo.onRead) {
+        m_flags.flags |= ZC_AVIO_FLAG_READ;
+    }
+    LOG_TRACE("caller flags:0x%x", m_flags.flags);
 }
 
 CSrtCaller::CSrtCaller(const zc_srtcaller_info_t &cbinfo) : Thread("csrtcaller"), m_open(0), m_srtcontext(nullptr) {
     memset(&m_url, 0, sizeof(m_url));
     memcpy(&m_cbinfo, &cbinfo, sizeof(zc_srtcaller_info_t));
     memset(&m_flags, 0, sizeof(zc_srt_flags_t));
+    // m_flags.flags = ZC_AVIO_FLAG_WRITE;
+    if (m_cbinfo.onRead) {
+        m_flags.flags |= ZC_AVIO_FLAG_READ;
+    }
+    LOG_TRACE("caller flags:0x%x", m_flags.flags);
 }
 
 CSrtCaller::~CSrtCaller() {}
@@ -68,8 +83,16 @@ int CSrtCaller::SetNonBlock(int socket, int enable) {
     return srt_setsockopt(socket, 0, SRTO_RCVSYN, &blocking, sizeof(blocking));
 }
 
-int CSrtCaller::EpollCreate(int write) {
-    int modes = SRT_EPOLL_ERR | (write ? SRT_EPOLL_OUT : SRT_EPOLL_IN);
+int CSrtCaller::EpollCreate(int rwflag) {
+    int modes = SRT_EPOLL_ERR;
+    if (rwflag & ZC_AVIO_FLAG_READ) {
+        modes |= SRT_EPOLL_IN;
+    }
+
+    if (rwflag & ZC_AVIO_FLAG_WRITE) {
+        modes |= SRT_EPOLL_OUT;
+    }
+
     int eid = srt_epoll_create();
     if (eid < 0)
         return zc_srt_neterrno();
@@ -77,6 +100,7 @@ int CSrtCaller::EpollCreate(int write) {
         srt_epoll_release(eid);
         return zc_srt_neterrno();
     }
+    LOG_TRACE(" EpollCreate rwflag:0x%x, eid:%d,fd:%d, modes:%d", rwflag, eid, m_srtcontext->fd, modes);
     return eid;
 }
 
@@ -96,7 +120,12 @@ int CSrtCaller::networkWait(int write) {
         else
             ret = zc_srt_neterrno();
     } else {
-        ret = errlen ? ZCERROR(EIO) : 0;
+        if (errlen) {
+            ret = ZCERROR(EIO);
+            LOG_ERROR("networkWait error write:%d, ret:%d, errlen:%d", write, ret,  errlen);
+        } else {
+            ret = 0;
+        }
     }
     return ret;
 }
@@ -184,7 +213,7 @@ int CSrtCaller::SetOptionsPre(int fd) {
     return 0;
 }
 
-int CSrtCaller::urlSplit(const char *uri, zc_srt_url_t *pstUrl) {
+int CSrtCaller::srtUrlSplit(const char *uri, zc_srt_url_t *pstUrl) {
     if (uri == NULL || pstUrl == NULL) {
         return -1;
     }
@@ -228,7 +257,7 @@ int CSrtCaller::praseUrl(const char *uri, zc_srt_url_t *pstUrl) {
     char opt[1024];
     int ret = 0;
     // split url
-    ret = urlSplit(uri, pstUrl);
+    ret = srtUrlSplit(uri, pstUrl);
     if (ret < 0) {
         return -1;
     }
@@ -301,7 +330,7 @@ int CSrtCaller::connect(zc_srt_url_t *url, int flags) {
         LOG_WARN("zc_srt_socket_nonblock failed\n");
     }
 
-    ctx->eid = EpollCreate(flags & ZC_AVIO_FLAG_WRITE);
+    ctx->eid = EpollCreate(flags);
     if (ctx->eid < 0) {
         LOG_ERROR("epoll create error:ret:%d, fd:%d", ctx->eid, ctx->fd);
         goto _err;
@@ -319,7 +348,7 @@ int CSrtCaller::connect(zc_srt_url_t *url, int flags) {
     }
 
     m_flags.is_streamed = 1;
-    LOG_INFO("srt listemn OK fd:%d, eid:%d", ctx->fd, ctx->eid);
+    LOG_INFO("srt connectListen OK fd:%d, eid:%d", ctx->fd, ctx->eid);
     return 0;
 _err:
     if (ctx->eid > 0) {
@@ -350,7 +379,16 @@ void CSrtCaller::safeFreeCtx(SRTContext **ppctx) {
     return;
 }
 
+int CSrtCaller::Open(const char *uri) {
+    return _open(uri, m_flags.flags);
+}
+
 int CSrtCaller::Open(const char *uri, int flags) {
+    m_flags.flags = flags;
+    return _open(uri, m_flags.flags);
+}
+
+int CSrtCaller::_open(const char *uri, int flags) {
     if (m_open) {
         LOG_ERROR("Already open");
         return -1;
@@ -380,6 +418,7 @@ int CSrtCaller::Open(const char *uri, int flags) {
         goto err;
     }
 
+    Thread::Start();
     m_open = 1;
     LOG_INFO("Open ok fd:%d", m_srtcontext->fd);
     return 0;
@@ -406,6 +445,7 @@ int CSrtCaller::Read(uint8_t *buf, int size) {
     ret = srt_recvmsg(ctx->fd, (char *)buf, size);
     if (ret < 0) {
         ret = zc_srt_neterrno();
+        LOG_INFO("error srt_recvmsg fd:%d, ret:%d", m_srtcontext->fd, ret);
     }
 
     return ret;
@@ -435,6 +475,7 @@ int CSrtCaller::Close() {
     if (m_open) {
         SRTContext *ctx = m_srtcontext;
         LOG_TRACE("srt close Into:%d", ctx->fd);
+        Thread::Stop();
         srt_epoll_release(ctx->eid);
         srt_close(ctx->fd);
         safeFreeCtx(&m_srtcontext);
@@ -447,9 +488,8 @@ int CSrtCaller::Close() {
 
 int CSrtCaller::process() {
     LOG_WARN("process into");
-    ZC_SRT_CALLER_RECV_BUFSIZE;
     int ret = 0;
-    int rbuflen = 0;
+    int rbuflen = ZC_SRT_CALLER_RECV_BUFSIZE;
     while (State() == Running) {
         ret = Read(m_recvpkbuf, rbuflen);
         if (ret > 0) {

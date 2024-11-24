@@ -206,7 +206,7 @@ bool CSrtPush::_startconn() {
     }
 
     LOG_TRACE("Open m_url[%s]", m_url);
-    ret = m_caller->Open(m_url, 0);
+    ret = m_caller->Open(m_url);
     if (ret < 0) {
         goto _err;
     }

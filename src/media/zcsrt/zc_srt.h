@@ -64,7 +64,7 @@ typedef struct {
 } zc_srt_url_t;
 
 typedef struct {
-    int flags;
+    int flags;                // write read flags
     int max_packet_size;        /**< if non zero, the stream is packetized with this max packet size */
     int is_streamed;            /**< true if streamed (no seek possible), default = false */
     int is_connected;

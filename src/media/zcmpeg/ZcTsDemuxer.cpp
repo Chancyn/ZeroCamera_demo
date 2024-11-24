@@ -6,19 +6,19 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "zc_macros.h"
-#include "zc_basic_fun.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
 #include "mpeg-util.h"
+#include "zc_basic_fun.h"
 #include "zc_frame.h"
 #include "zc_log.h"
+#include "zc_macros.h"
 #include "zc_proc.h"
 
 #include "Epoll.hpp"
 #include "Thread.hpp"
-#include "ZcTsDemuxer.hpp"
 #include "ZcStreamTrace.hpp"
+#include "ZcTsDemuxer.hpp"
 #include "ZcType.hpp"
 
 namespace zc {
@@ -28,14 +28,17 @@ static inline size_t get_adts_length(const uint8_t *data, size_t bytes) {
     return ((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] >> 5) & 0x07);
 }
 
-int CTsDemuxer::onTsCb(void* ptr, int program, int stream, int codec, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes) {
+int CTsDemuxer::onTsCb(void *ptr, int program, int stream, int codec, int flags, int64_t pts, int64_t dts,
+                       const void *data, size_t bytes) {
     return reinterpret_cast<CTsDemuxer *>(ptr)->_onTsCb(program, stream, codec, flags, pts, dts, data, bytes);
 }
 
-int CTsDemuxer::_onTsCb(int program, int stream, int codec, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes) {
+int CTsDemuxer::_onTsCb(int program, int stream, int codec, int flags, int64_t pts, int64_t dts, const void *data,
+                        size_t bytes) {
     int ret = 0;
     zc_frame_t framehdr = {0};
-    if (PSI_STREAM_H264 == codec || PSI_STREAM_H265 == codec || PSI_STREAM_H266 == codec || PSI_STREAM_VIDEO_AVS3 == codec) {
+    if (PSI_STREAM_H264 == codec || PSI_STREAM_H265 == codec || PSI_STREAM_H266 == codec ||
+        PSI_STREAM_VIDEO_AVS3 == codec) {
         // if (flags) {
         //     LOG_TRACE("video codec:%d,flags:%d, bytes:%d, pts:%u, diff: %03d/%03d %s", codec, flags, bytes, pts,
         //               (int)(pts - dframeinfo[ZC_STREAM_VIDEO].pts), (int)(dts - dframeinfo[ZC_STREAM_VIDEO].dts),
@@ -56,7 +59,8 @@ int CTsDemuxer::_onTsCb(int program, int stream, int codec, int flags, int64_t p
             framehdr.video.encode = ZC_FRAME_ENC_H265;
         }
     } else if (PSI_STREAM_AAC == codec || PSI_STREAM_AUDIO_OPUS == codec) {
-        // LOG_TRACE("audio aac bytes:%d, pts:%u,diff:%03d/%03d", bytes, pts, (int)(pts - dframeinfo[ZC_STREAM_AUDIO].pts),
+        // LOG_TRACE("audio aac bytes:%d, pts:%u,diff:%03d/%03d", bytes, pts, (int)(pts -
+        // dframeinfo[ZC_STREAM_AUDIO].pts),
         //           (int)(dts - dframeinfo[ZC_STREAM_AUDIO].dts));
         assert(bytes == get_adts_length((const uint8_t *)data, bytes));
         framehdr.audio.encode = ZC_FRAME_ENC_AAC;
@@ -91,9 +95,22 @@ CTsDemuxer::~CTsDemuxer() {
     }
 }
 
-int CTsDemuxer::Input(const uint8_t*data, size_t bytes) {
+int CTsDemuxer::Input(const uint8_t *data, size_t bytes) {
     ZC_ASSERT(m_ts != nullptr);
-    return ts_demuxer_input(reinterpret_cast<ts_demuxer_t *>(m_ts), data, bytes);
+    int ret = 0;
+    const uint8_t *packet = data;
+    // LOG_WARN("Input bytes:%u", bytes);
+    while (bytes >= 188) {
+        ret = ts_demuxer_input(reinterpret_cast<ts_demuxer_t *>(m_ts), packet, 188);
+        if (0 != ret) {
+            ZC_ASSERT(0 == ret);
+            break;
+        }
+        bytes -= 188;
+        packet += 188;
+    }
+
+    return 0;
 }
 
 }  // namespace zc
