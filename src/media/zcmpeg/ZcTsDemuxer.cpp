@@ -39,18 +39,18 @@ int CTsDemuxer::_onTsCb(int program, int stream, int codec, int flags, int64_t p
     zc_frame_t framehdr = {0};
     if (PSI_STREAM_H264 == codec || PSI_STREAM_H265 == codec || PSI_STREAM_H266 == codec ||
         PSI_STREAM_VIDEO_AVS3 == codec) {
-        // if (flags) {
-        //     LOG_TRACE("video codec:%d,flags:%d, bytes:%d, pts:%u, diff: %03d/%03d %s", codec, flags, bytes, pts,
-        //               (int)(pts - dframeinfo[ZC_STREAM_VIDEO].pts), (int)(dts - dframeinfo[ZC_STREAM_VIDEO].dts),
-        //               flags ? "[I]" : "");
-        // }
-
+        if (flags) {
+            LOG_TRACE("video codec:%d,flags:%d, bytes:%d, pts:%u, diff: %03d/%03d %s", codec, flags, bytes, pts,
+                      (int)(pts - dframeinfo[ZC_STREAM_VIDEO].pts), (int)(dts - dframeinfo[ZC_STREAM_VIDEO].dts),
+                      flags ? "[I]" : "");
+        }
+        // m_demuxerouttrace.Write(data, bytes);
         // fwrite(data, bytes, 1, h264);
         framehdr.keyflag = flags ? 1 : 0;
         framehdr.video.encode = ZC_FRAME_ENC_H264;
         framehdr.type = ZC_STREAM_VIDEO;
         framehdr.size = bytes;
-        framehdr.pts = pts;
+        framehdr.pts = pts/90;
         framehdr.utc = zc_system_time();
         dframeinfo[ZC_STREAM_VIDEO].pts = pts;
         dframeinfo[ZC_STREAM_VIDEO].dts = dts;
@@ -62,16 +62,16 @@ int CTsDemuxer::_onTsCb(int program, int stream, int codec, int flags, int64_t p
         // LOG_TRACE("audio aac bytes:%d, pts:%u,diff:%03d/%03d", bytes, pts, (int)(pts -
         // dframeinfo[ZC_STREAM_AUDIO].pts),
         //           (int)(dts - dframeinfo[ZC_STREAM_AUDIO].dts));
+
         assert(bytes == get_adts_length((const uint8_t *)data, bytes));
         framehdr.audio.encode = ZC_FRAME_ENC_AAC;
         framehdr.type = ZC_STREAM_AUDIO;
         framehdr.size = bytes;
-        framehdr.pts = pts;
+        framehdr.pts = pts/90;
         framehdr.utc = zc_system_time();
         dframeinfo[ZC_STREAM_AUDIO].pts = pts;
         dframeinfo[ZC_STREAM_AUDIO].dts = dts;
         framehdr.seq = dframeinfo[ZC_STREAM_AUDIO].seqno++;
-        // fwrite(data, bytes, 1, aac);
     } else {
         LOG_WARN("unsupport codec:%d, bytes:%u", codec, bytes);
         // nothing to do
@@ -85,6 +85,9 @@ int CTsDemuxer::_onTsCb(int program, int stream, int codec, int flags, int64_t p
 
 CTsDemuxer::CTsDemuxer(const zc_tsdemuxer_info_t &cb) {
     memcpy(&m_info, &cb, sizeof(zc_tsdemuxer_info_t));
+    // m_demuxerouttrace.Open("./tsdemuxerout_trace.ts", "wb");
+    // m_demuxerintrace.Open("./tsdemuxerin_trace.ts", "wb");
+
     m_ts = ts_demuxer_create(onTsCb, this);
     ZC_ASSERT(m_ts != nullptr);
 }
@@ -106,6 +109,7 @@ int CTsDemuxer::Input(const uint8_t *data, size_t bytes) {
             ZC_ASSERT(0 == ret);
             break;
         }
+        // m_demuxerintrace.Write(packet, 188);
         bytes -= 188;
         packet += 188;
     }

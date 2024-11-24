@@ -12,6 +12,7 @@
 #include "Thread.hpp"
 #include "ZcShmStream.hpp"
 #include "ZcStreamTrace.hpp"
+// #include "ZcFile.hpp"
 
 namespace zc {
 typedef int (*tsOnFrame)(void *param, zc_frame_t *framehdr, const uint8_t *data);
@@ -45,6 +46,8 @@ class CTsDemuxer {
     void *m_ts;
     zc_ts_dinfo_t dframeinfo[ZC_MEDIA_TRACK_BUTT];
     //  CStreamTrace m_trace;
+   //  CFile m_demuxerouttrace;
+   //  CFile m_demuxerintrace;
 };
 
 }  // namespace zc
