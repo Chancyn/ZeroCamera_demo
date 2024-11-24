@@ -31,9 +31,11 @@ srtpush客户端
 # 启动srs rtmp服务器(见rtmp服务器)
 ./objs/srs -c conf/srs.conf
 
-srt://192.168.1.166:10080?streamid=#!::h=live/livestream,m=publish 0
+srt://192.168.1.166:10080?streamid=#!::r=live/livestream,m=publish
 # 启动zc_srtpush 将实时流1(H264)流推送到服务器
-./zc_srtpush srt://192.168.1.166:10080?streamid=#!::h=live/livestream,m=publish 0
+./zc_srtpush 'srt://192.168.1.166:10080?streamid=#!::r=live/livestream,m=publish' 0
+
+./zc_srtpush 'srt://192.168.1.166:10080?streamid=#!::r=live/test,m=publish' 0
 # vlc拉流测试(仅支持H264拉流)
 rtmp://192.168.1.166/live/livestream
 # srs http-flv测试页面打开
@@ -42,4 +44,8 @@ http://192.168.1.166:8080/players/srs_player.html
 http://192.168.1.166:8080/live/livestream.flv
 # 测试H265 rtmppush 将实时流0(H265)流推送到服务器 livestream0
 ./zc_srtpush rtmp://192.168.1.166/live/livestream0 0
+### potplay拉流测试
+srt://192.168.1.166:10080?streamid=#!::r=live/livestream,m=request
+### vlc拉流测试(vlc设置streamid,偏好设置-高级设置-访问输出-串流输出-streamid设置#!::r=live/livestream,m=request)
+vlc拉流输入srt://192.168.1.166:10080
 ```

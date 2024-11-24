@@ -71,7 +71,7 @@ int CRtmpPullCli::rtmpClientPullOnVideo(void *ptr, const void *data, size_t byte
 int CRtmpPullCli::_rtmpClientPullOnVideo(const void *data, size_t bytes, uint32_t timestamp) {
     // LOG_TRACE("rtmpull onvideo bytes:%u, timestamp:%u", bytes, timestamp);
 
-    return m_flvmuxer->Input(FLV_TYPE_VIDEO, data, bytes, timestamp);
+    return m_flvmuxer->Input(FLV_TYPE_VIDEO, (const uint8_t *)data, bytes, timestamp);
 }
 
 int CRtmpPullCli::rtmpClientPullOnAudio(void *ptr, const void *data, size_t bytes, uint32_t timestamp) {
@@ -81,7 +81,7 @@ int CRtmpPullCli::rtmpClientPullOnAudio(void *ptr, const void *data, size_t byte
 
 int CRtmpPullCli::_rtmpClientPullOnAudio(const void *data, size_t bytes, uint32_t timestamp) {
     // LOG_TRACE("rtmpull onaudio bytes:%u, timestamp:%u", bytes, timestamp);
-    return m_flvmuxer->Input(FLV_TYPE_AUDIO, data, bytes, timestamp);
+    return m_flvmuxer->Input(FLV_TYPE_AUDIO, (const uint8_t *)data, bytes, timestamp);
 }
 
 int CRtmpPullCli::rtmpClientPullOnScript(void *ptr, const void *data, size_t bytes, uint32_t timestamp) {
@@ -92,7 +92,7 @@ int CRtmpPullCli::rtmpClientPullOnScript(void *ptr, const void *data, size_t byt
 int CRtmpPullCli::_rtmpClientPullOnScript(const void *data, size_t bytes, uint32_t timestamp) {
     // LOG_TRACE("rtmpull onscript bytes:%u, timestamp:%u", bytes, timestamp);
 
-    return m_flvmuxer->Input(FLV_TYPE_SCRIPT, data, bytes, timestamp);
+    return m_flvmuxer->Input(FLV_TYPE_SCRIPT, (const uint8_t *)data, bytes, timestamp);
 }
 
 void CRtmpPullCli::rtmpClientPullOnError(void *ptr, int code) {

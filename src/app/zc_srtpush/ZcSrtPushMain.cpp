@@ -12,7 +12,7 @@
 #include "ZcSrtPushMan.hpp"
 
 #define ZC_LOG_PATH "./log"
-#define ZC_LOG_APP_NAME "zc_rtsppushcli.log"
+#define ZC_LOG_APP_NAME "zc_srtpush.log"
 
 static BOOL bExitFlag = FALSE;
 
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         chn = atoi(argv[2]);
     }
 
-    LOG_TRACE("pushcli url[%s] chn[%d]", argv[1], chn);
+    LOG_TRACE("push url[%s] chn[%d]", argv[1], chn);
     zc::CSrtPushMan cli;
     if (!cli.Init(type, chn, argv[1])) {
         goto _err;

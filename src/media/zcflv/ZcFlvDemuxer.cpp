@@ -111,7 +111,7 @@ CFlvDemuxer::~CFlvDemuxer() {
     }
 }
 
-int CFlvDemuxer::Input(int type, const void *data, size_t bytes, uint32_t timestamp) {
+int CFlvDemuxer::Input(int type, const uint8_t *data, size_t bytes, uint32_t timestamp) {
     ZC_ASSERT(m_flv != nullptr);
     return flv_demuxer_input(reinterpret_cast<flv_demuxer_t *>(m_flv), type, data, bytes, timestamp);
 }

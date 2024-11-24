@@ -13,6 +13,8 @@ extern "C" {
 int zc_prase_key_value(const char *src, const char *key, char *value, int vlen);
 void zc_url_split(char *proto, int proto_size, char *authorization, int authorization_size, char *hostname,
                   int hostname_size, int *port_ptr, char *path, int path_size, const char *url);
+
+char *zc_urldecode(const char *url, int decode_plus_sign);
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/

@@ -34,7 +34,7 @@ class CFlvDemuxer {
     virtual ~CFlvDemuxer();
 
  public:
-    int Input(int type, const void *data, size_t bytes, uint32_t timestamp);
+    int Input(int type, const uint8_t *data, size_t bytes, uint32_t timestamp);
 
  private:
     static int onFlvCb(void *ptr, int codec, const void *data, size_t bytes, uint32_t pts, uint32_t dts, int flags);

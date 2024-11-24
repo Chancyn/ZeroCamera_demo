@@ -12,7 +12,7 @@
 #include "ZcRtmpPullMan.hpp"
 
 #define ZC_LOG_PATH "./log"
-#define ZC_LOG_APP_NAME "zc_rtsppushcli.log"
+#define ZC_LOG_APP_NAME "zc_rtsppull.log"
 
 static BOOL bExitFlag = FALSE;
 
@@ -35,9 +35,9 @@ int main(int argc, char **argv) {
     zc_log_init(ZC_LOG_PATH ZC_LOG_APP_NAME);
 
     if (argc < 2) {
-        LOG_ERROR("args error pls ./zc_rtmppush url chn\n \
-        example./zc_rtmppush rtmp://192.168.1.66:1935/live/push.ch0 0\n \
-        example./zc_rtmppush rtmp://192.168.1.66:1935/live/push.ch1 1");
+        LOG_ERROR("args error pls ./zc_rtmppull url chn\n \
+        example./zc_rtmppull rtmp://192.168.1.66:1935/live/push.ch0 0\n \
+        example./zc_rtmppull rtmp://192.168.1.66:1935/live/push.ch1 1");
         return -1;
     }
 
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         chn = atoi(argv[2]);
     }
 
-    LOG_TRACE("pullcli url[%s] chn[%d]", argv[1], chn);
+    LOG_TRACE("pull url[%s] chn[%d]", argv[1], chn);
     zc::CRtmpPullMan pull;
     if (!pull.Init(chn, argv[1])) {
         goto _err;

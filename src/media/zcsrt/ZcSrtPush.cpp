@@ -204,6 +204,8 @@ bool CSrtPush::_startconn() {
     if (m_caller == nullptr) {
         return false;
     }
+
+    LOG_TRACE("Open m_url[%s]", m_url);
     ret = m_caller->Open(m_url, 0);
     if (ret < 0) {
         goto _err;
@@ -260,8 +262,8 @@ int CSrtPush::_onMpegTsPacketCb(const void *data, size_t bytes) {
     }
     // LOG_TRACE("ts onpkg, size:%d", bytes);
     int ret = 0;
-    ret = m_caller->Write((const char *)data, bytes);
-    if (ret != bytes) {
+    ret = m_caller->Write((const uint8_t *)data, bytes);
+    if (ret != (int)bytes) {
         LOG_ERROR("write error ts onpkg, size:%d", bytes);
     }
 

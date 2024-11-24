@@ -20,6 +20,7 @@
  */
 
 #pragma once
+#include <cstdint>
 #include <stdint.h>
 
 #include <mutex>
@@ -29,25 +30,34 @@
 #include "Thread.hpp"
 
 namespace zc {
-
+#define ZC_SRT_CALLER_RECV_BUFSIZE (1316)   // 188*7 tspkg=188
 typedef struct _SRTContext SRTContext;
+typedef int32_t (*srtCallReadCb)(void *ptr, const uint8_t *data, uint32_t len);
+
+typedef struct {
+    srtCallReadCb onRead;
+    void *ctx;
+} zc_srtcaller_info_t;
 
 class CSrtCaller : protected Thread {
  public:
     CSrtCaller();
+    explicit CSrtCaller(const zc_srtcaller_info_t &cbinfo);
     virtual ~CSrtCaller();
     int Open(const char *uri, int flags);
-    int Read(char *buf, int size);
-    int Write(const char *buf, int size);
+    int Read(uint8_t *buf, int size);
+    int Write(const uint8_t *buf, int size);
     int Close();
     int GetSockOpt(int socket, SRT_SOCKOPT optname, const char *optnamestr, void *optval, int *optlen);
     int SetSockOpt(int socket, SRT_SOCKOPT optname, const char *optnamestr, const void *optval, int optlen);
     int SetNonBlock(int socket, int enable);
 
  private:
+    void safeFreeCtx(SRTContext **ppctx);
     int setup(const char *uri, int flags);
     int urlSplit(const char *uri, zc_srt_url_t *stUrl);
     int praseUrl(const char *uri, zc_srt_url_t *pstUrl);
+    int praseUrlArgs(const char *uriargs);
     int EpollCreate(int write);
     int networkWait(int write);
     int networkWaitTimeout(int write, int64_t timeout);
@@ -60,8 +70,10 @@ class CSrtCaller : protected Thread {
  private:
     int m_open;
     zc_srt_url_t m_url;
+    zc_srtcaller_info_t m_cbinfo;
     SRTContext *m_srtcontext;
     zc_srt_flags_t m_flags;
+    uint8_t m_recvpkbuf[ZC_SRT_CALLER_RECV_BUFSIZE];
 };
 
 }  // namespace zc

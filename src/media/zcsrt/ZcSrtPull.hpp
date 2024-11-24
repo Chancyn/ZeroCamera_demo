@@ -29,18 +29,27 @@
 
 #include "Thread.hpp"
 #include "ZcTsDemuxer.hpp"
-#include "ZcSrtCaller.hpp"
+#include "ZcStreamsPut.hpp"
 
 namespace zc {
 class CSrtCaller;
-#if 1
+// mancallback
+typedef int (*SrtPullGetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
+typedef int (*SrtPullSetInfoCb)(void *ptr, unsigned int chn, zc_stream_info_t *data);
+
+typedef struct {
+    SrtPullGetInfoCb GetInfoCb;
+    SrtPullSetInfoCb SetInfoCb;
+    void *MgrContext;
+} srtpull_callback_info_t;
+
 class CSrtPull : protected Thread {
  public:
     CSrtPull();
     virtual ~CSrtPull();
 
  public:
-    bool Init(const zc_stream_info_t &info, const char *url);
+    bool Init(srtpull_callback_info_t *cbinfo, int chn, const char *url);
     bool UnInit();
     bool StartCli();
     bool StopCli();
@@ -48,25 +57,28 @@ class CSrtPull : protected Thread {
  private:
     bool _startconn();
     bool _stopconn();
-    bool _startMpegTsMuxer();
-    bool _stopMpegTsMuxer();
+    bool _startTsDemuxer();
+    bool _stopTsDemuxer();
     int _cliwork();
-
-    static int onMpegTsPacketCb(void *ptr, const void *data, size_t bytes);
-    int _onMpegTsPacketCb(const void *data, size_t bytes);
+    static int onFrameCb(void *ptr, zc_frame_t *framehdr, const uint8_t *data);
+    int _onFrameCb(zc_frame_t *framehdr, const uint8_t *data);
+    static int32_t onSrtPullTsPkgCb(void *ptr, const uint8_t *data, uint32_t bytes);
+    int32_t _onSrtPullTsPkgCb(const uint8_t *data, uint32_t bytes);
     virtual int process();
 
  private:
     bool m_init;
     int m_running;
-    zc_stream_info_t m_info;
+    int m_chn;
+    srtpull_callback_info_t m_cbinfo;
     CSrtCaller *m_caller;
     char *m_pbuf;  // buffer
     char m_host[128];
     char m_url[ZC_MAX_PATH];
     void *m_phandle;  // handle
     CTsDemuxer *m_mpegts;
+    CStreamsPut *m_streamsput;
     std::mutex m_mutex;
 };
-#endif
+
 }  // namespace zc

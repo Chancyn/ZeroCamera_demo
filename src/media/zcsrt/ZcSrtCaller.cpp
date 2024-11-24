@@ -21,7 +21,6 @@
 #include "ZcType.hpp"
 
 namespace zc {
-
 static inline int zc_srt_neterrno() {
     int os_errno;
     int err = srt_getlasterror(&os_errno);
@@ -31,11 +30,19 @@ static inline int zc_srt_neterrno() {
     return os_errno ? ZCERROR(os_errno) : ZCERR_UNKNOWN;
 }
 
-CSrtCaller::CSrtCaller() : Thread("csrtcaller") {}
-
-CSrtCaller::~CSrtCaller() {
-
+CSrtCaller::CSrtCaller() : Thread("csrtcaller"), m_open(0), m_srtcontext(nullptr) {
+    memset(&m_url, 0, sizeof(m_url));
+    memset(&m_cbinfo, 0, sizeof(zc_srtcaller_info_t));
+    memset(&m_flags, 0, sizeof(zc_srt_flags_t));
 }
+
+CSrtCaller::CSrtCaller(const zc_srtcaller_info_t &cbinfo) : Thread("csrtcaller"), m_open(0), m_srtcontext(nullptr) {
+    memset(&m_url, 0, sizeof(m_url));
+    memcpy(&m_cbinfo, &cbinfo, sizeof(zc_srtcaller_info_t));
+    memset(&m_flags, 0, sizeof(zc_srt_flags_t));
+}
+
+CSrtCaller::~CSrtCaller() {}
 int CSrtCaller::GetSockOpt(int socket, SRT_SOCKOPT optname, const char *optnamestr, void *optval, int *optlen) {
     if (srt_getsockopt(socket, 0, optname, optval, optlen) < 0) {
         LOG_ERROR("failed to get option %s on socket: %s", optnamestr, srt_getlasterror_str());
@@ -129,7 +136,7 @@ int CSrtCaller::connectListen(const struct sockaddr *addr, socklen_t addrlen, in
 }
 
 static inline int zc_srt_setsockopt(int fd, SRT_SOCKOPT optname, const char *optnamestr, const void *optval,
-                             int optlen) {
+                                    int optlen) {
     if (srt_setsockopt(fd, 0, optname, optval, optlen) < 0) {
         LOG_ERROR("failed to set option %s on socket: %s", optnamestr, srt_getlasterror_str());
         return ZCERROR(EIO);
@@ -168,6 +175,12 @@ int CSrtCaller::SetOptionsPre(int fd) {
             return ZCERROR(EIO);
     }
 
+    if (ctx->streamid) {
+        if (SetSockOpt(fd, SRTO_STREAMID, "SRTO_STREAMID", ctx->streamid, strlen(ctx->streamid)) < 0) {
+            return ZCERROR(EIO);
+        }
+    }
+    LOG_TRACE("SetOptionsPre ok");
     return 0;
 }
 
@@ -188,6 +201,23 @@ int CSrtCaller::urlSplit(const char *uri, zc_srt_url_t *pstUrl) {
     if (port <= 0 || port >= 65536) {
         LOG_ERROR("Port missing in uri");
         return -1;
+    }
+
+    return 0;
+}
+
+int CSrtCaller::praseUrlArgs(const char *uriargs) {
+    SRTContext *s = m_srtcontext;
+    const char *p = uriargs;
+    char buf[1024];
+    if (zc_prase_key_value(p, "streamid", buf, sizeof(buf))) {
+        ZC_SAFE_FREE(s->streamid);
+        s->streamid = zc_urldecode(buf, 1);
+        if (!s->streamid) {
+            LOG_ERROR("zc_urldecode error");
+            return -1;
+        }
+        LOG_TRACE("prase streamid:%s", s->streamid);
     }
 
     return 0;
@@ -219,9 +249,16 @@ int CSrtCaller::praseUrl(const char *uri, zc_srt_url_t *pstUrl) {
             }
         }
     }
+
+    LOG_WARN("prase: ok,uri:%s, proto:%s,hostname:%s, path:%s,port:%lu, mode:%d ", pstUrl->uri, pstUrl->proto,
+             pstUrl->hostname, pstUrl->path, pstUrl->port, pstUrl->srtmode);
+
+    if (praseUrlArgs(pstUrl->path) < 0) {
+        LOG_ERROR("praseUrlArgs: error");
+        return -1;
+    }
+
     return 0;
-err:
-    return ret;
 }
 
 int CSrtCaller::connect(zc_srt_url_t *url, int flags) {
@@ -297,6 +334,22 @@ _err:
     return -1;
 }
 
+void CSrtCaller::safeFreeCtx(SRTContext **ppctx) {
+    if (ppctx == nullptr) {
+        return;
+    }
+
+    SRTContext *pctx = *ppctx;
+    if (pctx) {
+        if (pctx->streamid)
+            free(pctx->streamid);
+        if (pctx->smoother)
+            free(pctx->smoother);
+    }
+    *ppctx = nullptr;
+    return;
+}
+
 int CSrtCaller::Open(const char *uri, int flags) {
     if (m_open) {
         LOG_ERROR("Already open");
@@ -331,13 +384,13 @@ int CSrtCaller::Open(const char *uri, int flags) {
     LOG_INFO("Open ok fd:%d", m_srtcontext->fd);
     return 0;
 err:
-    ZC_SAFE_DELETE(m_srtcontext);
+    safeFreeCtx(&m_srtcontext);
     srt_cleanup();
     m_open = 0;
     return ret;
 }
 
-int CSrtCaller::Read(char *buf, int size) {
+int CSrtCaller::Read(uint8_t *buf, int size) {
     ZC_ASSERT(buf != nullptr);
     if (!m_open) {
         return -1;
@@ -350,7 +403,7 @@ int CSrtCaller::Read(char *buf, int size) {
             return ret;
     }
 
-    ret = srt_recvmsg(ctx->fd, buf, size);
+    ret = srt_recvmsg(ctx->fd, (char *)buf, size);
     if (ret < 0) {
         ret = zc_srt_neterrno();
     }
@@ -358,7 +411,7 @@ int CSrtCaller::Read(char *buf, int size) {
     return ret;
 }
 
-int CSrtCaller::Write(const char *buf, int size) {
+int CSrtCaller::Write(const uint8_t *buf, int size) {
     if (!m_open) {
         return -1;
     }
@@ -370,7 +423,7 @@ int CSrtCaller::Write(const char *buf, int size) {
             return ret;
     }
 
-    ret = srt_sendmsg(ctx->fd, buf, size, -1, 1);
+    ret = srt_sendmsg(ctx->fd, (const char *)buf, size, -1, 1);
     if (ret < 0) {
         ret = zc_srt_neterrno();
     }
@@ -384,7 +437,7 @@ int CSrtCaller::Close() {
         LOG_TRACE("srt close Into:%d", ctx->fd);
         srt_epoll_release(ctx->eid);
         srt_close(ctx->fd);
-
+        safeFreeCtx(&m_srtcontext);
         srt_cleanup();
         m_open = 0;
         LOG_TRACE("srt close Exit");
@@ -394,8 +447,25 @@ int CSrtCaller::Close() {
 
 int CSrtCaller::process() {
     LOG_WARN("process into");
+    ZC_SRT_CALLER_RECV_BUFSIZE;
+    int ret = 0;
+    int rbuflen = 0;
     while (State() == Running) {
-        ZC_MSLEEP(1000);
+        ret = Read(m_recvpkbuf, rbuflen);
+        if (ret > 0) {
+            if (m_cbinfo.onRead) {
+                m_cbinfo.onRead(m_cbinfo.ctx, m_recvpkbuf, ret);
+            } else {
+                LOG_TRACE("recv ok ret:%d, rbuflen:%u", ret, rbuflen);
+            }
+        } else if (ret < 0) {
+            if (ret != ZCERROR(ETIMEDOUT)) {
+                LOG_WARN("recv error ret:%d", ret);
+                break;
+            }
+        } else {
+            LOG_WARN("recv error ret:%d", ret);
+        }
     }
     LOG_WARN("process exit");
     return -1;
