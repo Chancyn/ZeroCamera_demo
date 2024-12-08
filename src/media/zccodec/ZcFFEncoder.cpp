@@ -94,7 +94,7 @@ int CFFEncoder::_openDev() {
 int CFFEncoder::_openEncoder() {
     int ret = 0;
     AVCodecContext *encctx;
-    AVCodec *codec = NULL;
+    const AVCodec *codec = NULL;
     AVDictionary *opts = NULL;
 
     // codec = avcodec_find_encoder_by_name("libx264");

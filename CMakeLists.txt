@@ -197,7 +197,7 @@ include/basic
 #endif()
 
 #option(WITH_FFMPEG "ffmpeg option"     ON)
-option(WITH_FFMPEG "ffmpeg option"     OFF)
+option(WITH_FFMPEG "ffmpeg option"     ON)
 if(WITH_FFMPEG)
     add_definitions(-DWITH_FFMPEG)
 endif()
@@ -209,16 +209,19 @@ pkg_check_modules(AVUTIL libavutil)
 pkg_check_modules(SWSCALE libswscale)
 pkg_check_modules(SWRESAMPLE libswresample)
 pkg_check_modules(AVDEVICE libavdevice)
+pkg_check_modules(AVFILTER libavfilter)
 
 if(WITH_FFMPEG)
 # 包含ffmpeg头文件
-include_directories(zc_testv4l2 PRIVATE
+include_directories(
 ${AVDEVICE_INCLUDE_DIRS}
 ${AVFORMAT_INCLUDE_DIRS}
 ${AVCODEC_INCLUDE_DIRS}
 ${SWSCALE_INCLUDE_DIRS}
 ${SWRESAMPLE_INCLUDE_DIRS}
-${AVUTIL_INCLUDE_DIRS} )
+${AVUTIL_INCLUDE_DIRS}
+${AVFILTER_INCLUDE_DIRS}
+)
 endif()
 
 add_subdirectory(src)
