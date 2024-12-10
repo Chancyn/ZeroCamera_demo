@@ -126,6 +126,9 @@ vlc/ffmpeg: rtsp://192.168.1.166:8554/live/pull.ch1
 ## build
 ### build for linux x64 gcc/g++
 # x64编译环境
+sudo apt install pkg-config cmake bear gcc g++
+sudo apt install ffmpeg libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev libavdevice-dev
+
 thridparty/install中上传的三方库编译由
 ubuntu22.04, 编译环境要求glibc2.34以上
 ```

@@ -15,7 +15,7 @@ class Singleton {
             std::unique_lock<std::mutex> unique_locker(mtx_);
             if (t_ == nullptr) {
                 t_ = std::unique_ptr<T>(new T);
-                printf("zhoucc Constructor [%p]\n", &(*t_));
+                // printf("zhoucc Constructor [%p]\n", &(*t_));
             }
 
             return *t_;
