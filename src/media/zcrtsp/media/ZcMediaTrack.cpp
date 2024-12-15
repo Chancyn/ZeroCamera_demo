@@ -189,7 +189,7 @@ int CMediaTrack::GetData2Send() {
         }
         if (pframe->keyflag) {
             uint64_t now = zc_system_time();
-            LOG_TRACE("rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", pframe->pts, pframe->utc, now, pframe->size,
+            LOG_TRACE("this:%p, rtsp:pts:%u,utc:%u,now:%u,len:%d,cos:%dms", this, pframe->pts, pframe->utc, now, pframe->size,
                       now - pframe->utc);
         }
         bool first = false;

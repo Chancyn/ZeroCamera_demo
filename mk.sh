@@ -7,6 +7,7 @@ cd $basepath
 #CMake编译工作目录生成文件的地方
 builddir=$basepath/build/${soc}
 outputdir=$basepath/output/${soc}
+rundir=/nfsroot/run/${soc}
 thirdinstalldir=$basepath/thirdparty/install/${soc}
 echo "builddir=${builddir}"
 echo "outputdir=${outputdir}"
@@ -56,7 +57,14 @@ function build_make_append(){
 function build_copy_thirdparty(){
     # copy nng
     cp ${thirdinstalldir}/nng/lib/lib*.so* ${outputdir}/lib
-    cp ${thirdinstalldir}/srt/lib/lib*.so* ${outputdir}/lib
+    cp ${thirdinstalldir}/media_server/sdk/libaio/lib/lib*.so* ${outputdir}/lib
+    cp ${thirdinstalldir}/libaio/lib/lib*.so* ${outputdir}/lib
+}
+
+function build_copy2rundir(){
+    # copy nng
+    cp ${outputdir}/bin/* ${rundir}/bin
+    cp ${outputdir}/lib/lib*.so* ${rundir}/lib
 }
 
 echo "----------------------------------"
@@ -71,4 +79,5 @@ build_make
 #build_make_debug
 #build_make_append
 build_copy_thirdparty
+build_copy2rundir
 echo "mk soc=${soc} end"
