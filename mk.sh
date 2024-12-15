@@ -5,7 +5,7 @@ cd $basepath
 #soc="x64"
 
 #CMake编译工作目录生成文件的地方
-builddir=$basepath/build/${soc}
+builddir=$basepath/build
 outputdir=$basepath/output/${soc}
 rundir=/nfsroot/run/${soc}
 thirdinstalldir=$basepath/thirdparty/install/${soc}
@@ -58,7 +58,7 @@ function build_copy_thirdparty(){
     # copy nng
     cp ${thirdinstalldir}/nng/lib/lib*.so* ${outputdir}/lib
     cp ${thirdinstalldir}/media_server/sdk/libaio/lib/lib*.so* ${outputdir}/lib
-    cp ${thirdinstalldir}/libaio/lib/lib*.so* ${outputdir}/lib
+    cp ${thirdinstalldir}/srt/lib/lib*.so* ${outputdir}/lib
 }
 
 function build_copy2rundir(){
