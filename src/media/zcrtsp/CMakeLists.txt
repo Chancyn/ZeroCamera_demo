@@ -67,6 +67,7 @@ zcfifo
 plat_basic
 bsw_basic
 nng
+atomic
 zc_log
 )
 

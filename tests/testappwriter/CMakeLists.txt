@@ -10,7 +10,7 @@ foreach(SOURCE_FILE zc_testwriter_main.cpp)
     )
 endforeach()
 
-#add_executable(zc_tests zc_test_main.cpp)
+#add_executable(zc_testwriter zc_test_main.cpp)
 #头文件包含
 #头文件包含
 target_include_directories(zc_testwriter PRIVATE
@@ -80,6 +80,7 @@ zc_log
 # utilsxx
 # utils
 nng
+atomic
 pthread
 )
 

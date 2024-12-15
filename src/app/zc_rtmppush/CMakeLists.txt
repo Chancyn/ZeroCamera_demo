@@ -72,6 +72,7 @@ plat_basic
 bsw_basic
 zccrypto
 nng
+atomic
 zc_log
 )
 

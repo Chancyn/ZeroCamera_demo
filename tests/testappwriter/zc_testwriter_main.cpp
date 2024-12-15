@@ -11,7 +11,7 @@
 #include "ZcTestWriterMan.hpp"
 
 #define ZC_LOG_PATH "./log"
-#define ZC_LOG_APP_NAME "zc_tests.log"
+#define ZC_LOG_APP_NAME "zc_testwriter.log"
 
 #ifndef BOOL
 #define BOOL int

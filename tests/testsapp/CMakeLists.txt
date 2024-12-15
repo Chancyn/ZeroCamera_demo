@@ -58,6 +58,7 @@ zc_log
 # utilsxx
 # utils
 nng
+atomic
 pthread
 )
 

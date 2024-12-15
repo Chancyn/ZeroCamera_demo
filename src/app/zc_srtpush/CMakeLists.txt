@@ -33,6 +33,7 @@ ${MEDIAAIO_LIBPATH}
 ${MEDIASDK_LIBPATH}
 ${SRT_LIBPATH}
 ${NNG_LIBPATH}
+${OPENSSL_LIBRARY_DIR}
 )
 
 target_link_libraries(zc_srtpush PUBLIC
@@ -56,6 +57,9 @@ plat_basic
 bsw_basic
 zccrypto
 nng
+atomic
+ssl
+crypto
 zc_log
 )
 

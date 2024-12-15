@@ -34,6 +34,7 @@ zccrypto
 zcfifo
 zc_log
 nng
+atomic
 #pthread
 )
 
