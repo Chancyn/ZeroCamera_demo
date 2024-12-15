@@ -39,7 +39,7 @@ function build_make()
     pushd $srcdir
     [ -e Makefile ] && rm Makefile
 
-    ./configure --host=arm-linux --prefix=$installdir
+    ./configure --host=linux --prefix=$installdir
 
     make clean
     make

@@ -5,6 +5,7 @@ project(zc_test VERSION 0.1.0 LANGUAGES C CXX)
 #set the project name
 message("build $ENV{soc}")
 set(ZC_SOC $ENV{soc})
+set(ZC_CROSS $ENV{cross})
 
 #install
 set(ZC_BIN_INSTALL ${PROJECT_SOURCE_DIR}/output/${ZC_SOC}/bin)
@@ -18,25 +19,34 @@ set (CXXFLAGS_SOC )
 
 # set platform
 if("${ZC_SOC}x" STREQUAL "hi3519dv500x" )
+option(WITH_FFMPEG "ffmpeg option"     OFF)
+option(WITH_OPENSSL "openssl option"     ON)
+set(OPENSSL_ROOT_DIR ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC}/openssl)
 message("build hi3519dv500 ####")
 set(COMPILER_PREFIX "aarch64-v01c01-linux-gnu-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set (CFLAGS_SOC -mcpu=cortex-a55)
 set (CXXFLAGS_SOC -mcpu=cortex-a55)
 elseif("${ZC_SOC}x" STREQUAL "ss928v100x" )
+#option(WITH_FFMPEG "ffmpeg option"     ON)
 message("build ss928v100 ####")
 set(COMPILER_PREFIX "aarch64-mix210-linux-")
 set(CMAKE_SYSTEM_PROCESSOR arm)
 elseif("${ZC_SOC}x" STREQUAL "rk3588x" )
-message("build rk3588 ####")
+if("${ZC_CROSS}x" STREQUAL "1x" )
+message("build rk3588 cross####")
 set(COMPILER_PREFIX "aarch64-none-linux-gnu-")
+else()
+message("build rk3588 ####")
+endif()
 set(CMAKE_SYSTEM_PROCESSOR arm)
-
 #ffmpeg
 set(FFMPEG_INC include)
 set(FFMPEG_LIB lib)
 else()
 message("build ${ZC_SOC} ####")
+option(WITH_FFMPEG "ffmpeg option"     ON)
+option(WITH_OPENSSL "openssl option"     ON)
 #build memoryleak detect tool ON
 option(WITH_ASAN "asan option" OFF)
 endif()
@@ -86,11 +96,14 @@ endif()
 
 option(WITH_OPENSSL "openssl option"     OFF)
 if(WITH_OPENSSL)
-set(OPENSSL_ROOT_DIR ${PROJECT_SOURCE_DIR}/thirdparty/install/${ZC_SOC})
 find_package(OpenSSL REQUIRED)
 # mongoose ssl mg
 add_definitions(-DMG_TLS=MG_TLS_OPENSSL)
 add_definitions(-DWITH_OPENSSL=1)
+# 包含ffmpeg头文件
+include_directories(include
+${OPENSSL_INCLUDE_DIR}
+)
 endif()
 
 #media server
@@ -196,8 +209,6 @@ include/basic
 #    add_definitions(-DWITH_BSW)
 #endif()
 
-#option(WITH_FFMPEG "ffmpeg option"     ON)
-option(WITH_FFMPEG "ffmpeg option"     ON)
 if(WITH_FFMPEG)
     add_definitions(-DWITH_FFMPEG)
 endif()

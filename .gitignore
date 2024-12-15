@@ -19,6 +19,7 @@ thirdparty/package/spdlog/spdlog
 thirdparty/package/media_server/sdk
 thirdparty/package/media_server/avcodec
 thirdparty/package/v4l2cpp/v4l2cpp
+thirdparty/package/openssl/openssl
 build/
 debug/
 output/

@@ -2,8 +2,8 @@
 
 basepath=$(cd `dirname $01`; pwd)
 
-srcpkg=srt-master.tar.gz
-srcpkgbasename=srt-master
+srcpkg=srt-1.5.4.tar.gz
+srcpkgbasename=srt-1.5.4
 srcname=srt
 srcdir=$basepath/srt
 
@@ -34,19 +34,6 @@ function check_builddir()
         exit -1;
         fi
     fi
-}
-
-function build_make()
-{
-    pushd $srcdir
-    [ -e Makefile ] && rm Makefile
-
-    ./configure --host=arm-linux --prefix=$installdir
-
-    make clean
-    make -j16
-    make install
-    popd
 }
 
 function check_installdir()

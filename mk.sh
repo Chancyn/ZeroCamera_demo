@@ -80,4 +80,4 @@ build_make
 #build_make_append
 build_copy_thirdparty
 build_copy2rundir
-echo "mk soc=${soc} end"
+echo "mk soc=${soc} cross=${cross} end"

@@ -86,8 +86,8 @@ zc_rtsp:rtsp流服务器,实时流服务,推送上来的流,cli拉取的流,进�
 ./zc_rtsppushc rtsp://192.168.1.166:5540/push/push.ch0 0 tcp
 ./zc_rtsppushc rtsp://192.168.1.166:5540/push/push.ch1 1 tcp
 #6.启动cli客户端，拉live.ch0实时视频，拉到pull.ch0通道上
-./zc_rtspcli rtsp://192.168.1.166:8554/push/live.ch0 0 tcp
-./zc_rtspcli rtsp://192.168.1.166:8554/push/live.ch1 1 tcp
+./zc_rtspcli rtsp://192.168.1.166:8554/live/live.ch0 0 tcp
+./zc_rtspcli rtsp://192.168.1.166:8554/live/live.ch1 1 tcp
 #vlc取流测试
 rtsp://192.168.1.166:8554/live/live.ch0
 rtsp://192.168.1.166:8554/live/live.ch1
@@ -128,7 +128,7 @@ vlc/ffmpeg: rtsp://192.168.1.166:8554/live/pull.ch1
 # x64编译环境
 sudo apt install pkg-config cmake bear gcc g++
 sudo apt install ffmpeg libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev libavdevice-dev
-
+sudo apt-get install openssl libssl-dev
 thridparty/install中上传的三方库编译由
 ubuntu22.04, 编译环境要求glibc2.34以上
 ```
@@ -184,13 +184,16 @@ cd thirdparty/spdlog;
 ./build_x64.sh
 ```
 
-如需自行编译media-server
+
 ```
+如需自行编译media-server
 git clone git@github.com:Chancyn/ZeroCamera_demo.git; #编译
 git submodule init thirdparty/package/media_server/media-server
 git submodule update
 #进入media_server目录编译media_server
 cd thirdparty/package/media_server
+#
+git submodule init thirdparty/package/media_server/media-server
 ./build_x64.sh
 返回根目录编译项目
 cd -

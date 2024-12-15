@@ -1,4 +1,4 @@
-prefix=/home/zhoucc/work/study/zc_demo/ZeroCamera_demo/thirdparty/install/x64/srt
+prefix=/home/zhoucc/work/ZeroCamera_demo/thirdparty/install/x64/srt
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
