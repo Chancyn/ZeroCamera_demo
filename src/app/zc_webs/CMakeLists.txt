@@ -54,8 +54,7 @@ pthread
 
 if(WITH_OPENSSL)
 target_link_directories(zc_webs PRIVATE
-${OPENSSL_SSL_LIBRARY}
-${OPENSSL_CRYPTO_LIBRARY}
+${OPENSSL_LIBRARY_DIR}
 )
 target_link_libraries(zc_webs PRIVATE
 ssl
