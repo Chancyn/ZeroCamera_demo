@@ -86,6 +86,7 @@ function build_check_thirdparty(){
     # media_server
     if [ ! -d ${thirdinstalldir}/media_server ]; then
     echo_warn "media_server not exist build"
+    submodule_media_server
     pushd ${thirdpackagedir}/media_server
     source ./build_${soc}.sh
     popd 
@@ -152,10 +153,10 @@ export WITH_DEBUG=y
 # export WITH_ZC_TEST=0
 
 build_check_thirdparty
-#build_cmake
-#build_make
+build_cmake
+build_make
 #build_make_debug
 #build_make_append
-#build_copy_thirdparty
-#build_copy2rundir
+build_copy_thirdparty
+build_copy2rundir
 echo_info "mk soc=${soc} cross=${cross} end"

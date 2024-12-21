@@ -41,7 +41,7 @@ function build_make()
     pushd $srcdir
     [ -e Makefile ] && rm Makefile
 
-    ./config --host=aarch64-linux --prefix=$installdir
+    ./config --prefix=$installdir
 
     make clean
     make -j16
