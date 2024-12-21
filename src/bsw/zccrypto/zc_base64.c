@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "zc_log.h"
 #include "zc_base64.h"
 
 static char s_base64_enc[64] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -210,7 +211,7 @@ size_t zc_base32_decode(void *target, const char *src, size_t bytes) {
 
 void zc_base64_debug_test(void) {
 #if (ZC_BASE64_DEBUG)
-    printf("zc_base64_debug_test into\n");
+    LOG_DEBUG("zc_base64_debug_test into\n");
     const char *s;
     const char *r;
     char source[512];
@@ -254,7 +255,7 @@ void zc_base64_debug_test(void) {
     assert(8 == zc_base32_encode(source, "Hell", 4) && 0 == memcmp(source, "JBSWY3A=", 8));
     assert(4 == zc_base32_decode(target, source, 8) && 0 == memcmp(target, "Hell", 4));
     assert(4 == zc_base32_decode(target, "JBSWY3A", 7) && 0 == memcmp(target, "Hell", 4));
-    printf("zc_base64_debug_test end \n");
+    LOG_DEBUG("zc_base64_debug_test end \n");
 #endif
 
     return;

@@ -210,6 +210,7 @@ include/mod
 include/media
 include/binmsg
 include/basic
+${SPDLOG_INC}
 )
 
 #option build if or not

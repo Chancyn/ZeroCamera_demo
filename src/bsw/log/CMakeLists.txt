@@ -12,14 +12,4 @@ endforeach()
 
 #.a/so
 add_library(zc_log SHARED ${DIR_SOURCE_SRCS})
-#add_library(zc_log SHARED ${DIR_SOURCE_SRCS})
-
-message("build log zc_log inc:${SPDLOG_INC}")
-target_include_directories(zc_log PUBLIC ${SPDLOG_INC} )
-
-#target_link_directories(zc_log PRIVATE ${SPDLOG_LIBPATH})
-#target_link_libraries(zc_log PRIVATE spdlog)
-
-#target_link_directories(zc_log PUBLIC ${SPDLOG_LIBPATH})
-#install(TARGETS zc_log RUNTIME DESTINATION ${ZC_LIB_INSTALL})
 install(TARGETS zc_log DESTINATION ${ZC_LIB_INSTALL})

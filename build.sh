@@ -65,5 +65,5 @@ fi
 
 echo "----------------------------------"
 echo "build soc=${soc} cross=${cross}"
-source ./mk.sh
+time ./mk.sh
 
