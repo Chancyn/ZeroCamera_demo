@@ -19,6 +19,7 @@ toolchainfile_prefix=toolchain/linux_toolchain
 toolchainfile=linux_toolchain_x84_64.camke
 
 function build_cmake(){
+    echo_debug "---------------cmake into-------------------"
     # Initial directory
     rm -rf $builddir  #每次都重新编译，删除build文件
     mkdir -p $builddir #创建build文件
@@ -33,9 +34,11 @@ fi
     echo ${toolchainfile}
     cmake -DCMAKE_TOOLCHAIN_FILE=${toolchainfile} $basepath  #编译cmake
     popd
+    echo_debug "---------------cmake end-------------------"
 }
 
 function build_make(){
+    echo_debug "---------------make into-------------------"
     pushd $builddir
     # Run make
     #make
@@ -45,6 +48,7 @@ function build_make(){
     #make VERBOSE=on -j 16
     make install
     popd
+    echo_debug "---------------make end-------------------"
 }
 
 function build_make_debug(){
@@ -67,16 +71,24 @@ function build_make_append(){
 }
 
 function submodule_media_server(){
+
     if [ ! -d ${thirdpackagedir}/media_server/media-server ]; then
+    echo_debug "---------------submodule into-------------------"
     echo_warn "${thirdinstalldir}/media_server/media-server submodule not exist"
     git submodule init thirdparty/package/media_server/media-server
     git submodule update
+    pushd thirdparty/package/media_server/media-server/
+    git checkout master
+    popd
+    echo_debug "---------------submodule end-------------------"
     else
     echo_info "${thirdinstalldir}media_server/media-server exist"
     fi
+
 }
 
 function build_check_thirdparty(){
+    echo_debug "---------------check thirdparty into-------------------"
     if [ ! -d ${thirdinstalldir} ]; then
     echo_warn "${thirdinstalldir} not exist mkdir"
     mkdir ${thirdinstalldir}
@@ -84,61 +96,69 @@ function build_check_thirdparty(){
 
     # media_server
     if [ ! -d ${thirdinstalldir}/media_server ]; then
+    echo_debug "---------------check media_server into-------------------"
     echo_warn "media_server not exist build"
     submodule_media_server
     pushd ${thirdpackagedir}/media_server
-    source ./build_${soc}.sh
+    ./build_${soc}.sh
     if [ $? -ne 0 ]; then
         rm ${thirdinstalldir}/media_server -rf
         echo_err "error: build media_server with exit status $?"
         exit 1
     fi
     popd 
+    echo_debug "---------------check media_server end-------------------"
     fi
 
     # nng
     if [ ! -d ${thirdinstalldir}/nng ]; then
+    echo_debug "---------------check nng into-------------------"
     echo_warn "nng not exist build"
     pushd ${thirdpackagedir}/nng
-    source ./build_${soc}.sh
+    ./build_${soc}.sh
     if [ $? -ne 0 ]; then
         rm ${thirdinstalldir}/nng -rf
         echo_err "error: build nng with exit status $?"
         exit 1
     fi
-    popd 
+    popd
+    echo_debug "---------------check nng end-------------------"
     fi
 
     #openssl
     if [ ! -d ${thirdinstalldir}/openssl ]; then
+    echo_debug "---------------check openssl into-------------------"
     echo_warn "openssl not exist build"
     pushd ${thirdpackagedir}/openssl
-    source ./build_${soc}.sh
+    ./build_${soc}.sh
     if [ $? -ne 0 ]; then
         rm ${thirdinstalldir}/openssl -rf
         echo_err "error: build openssl with exit status $?"
         exit 1
     fi
     popd 
+    echo_debug "---------------check openssl end-------------------"
     fi
 
     #spdlog
     if [ ! -d ${thirdinstalldir}/spdlog ]; then
+    echo_debug "---------------check spdlog into-------------------"
     echo_warn "spdlog not exist build"
     pushd ${thirdpackagedir}/spdlog
-    source ./build_${soc}.sh
+    ./build_${soc}.sh
     if [ $? -ne 0 ]; then
         rm ${thirdinstalldir}/spdlog -rf
         echo_err "error: build spdlog with exit status $?"
         exit 1
     fi
-    popd 
+    popd
+    echo_debug "---------------check spdlog end-------------------"
     fi
 
     #srt
     if [ ! -d ${thirdinstalldir}/srt ]; then
     pushd ${thirdpackagedir}/srt
-    source ./build_${soc}.sh
+    ./build_${soc}.sh
     if [ $? -ne 0 ]; then
         rm ${thirdinstalldir}/srt -rf
         echo_err "error: build srt with exit status $?"
@@ -149,6 +169,7 @@ function build_check_thirdparty(){
 
     #v4l2cpp
     if [ ! -d ${thirdinstalldir}/v4l2cpp ]; then
+    echo_debug "----------------------------------"
     pushd ${thirdpackagedir}/v4l2cpp
     source ./build_${soc}.sh
     if [ $? -ne 0 ]; then
@@ -156,16 +177,21 @@ function build_check_thirdparty(){
         echo_err "error: build v4l2cpp with exit status $?"
         exit 1
     fi
+    echo_debug "----------------------------------"
     popd 
     fi
+
+    echo_debug "---------------check thirdparty end-------------------"
 }
 
 function build_copy_thirdparty(){
+    echo_debug "---------------copy thirdparty into-------------------"
     # copy nng
     cp ${thirdinstalldir}/nng/lib/lib*.so* ${outputdir}/lib
     cp ${thirdinstalldir}/media_server/sdk/libaio/lib/lib*.so* ${outputdir}/lib
     cp ${thirdinstalldir}/srt/lib/lib*.so* ${outputdir}/lib
     #cp ${thirdinstalldir}/openssl/lib/lib*.so* ${outputdir}/lib
+    echo_debug "---------------copy thirdparty end-------------------"
 }
 
 function build_copy2rundir(){
@@ -174,7 +200,7 @@ function build_copy2rundir(){
     cp ${outputdir}/lib/lib*.so* ${rundir}/lib
 }
 
-echo "----------------------------------"
+echo_debug "----------------------------------"
 #enable_debug
 export WITH_DEBUG=y
 
@@ -182,6 +208,7 @@ export WITH_DEBUG=y
 # export WITH_ZC_TEST=0
 
 build_check_thirdparty
+echo_info "check_thirdparty ok"
 build_cmake
 build_make
 #build_make_debug
