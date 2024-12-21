@@ -68,8 +68,20 @@ check_builddir_mediaserver
 
 echo "----------------------------------"
 source ./build_rk3588_sdk.sh
+if [ $? -ne 0 ]; then
+    echo "Error: build media_server sdk with exit status $?"
+    exit 1
+fi
 echo "sdk end----------------------------------"
 source ./build_rk3588_avcodec.sh
+if [ $? -ne 0 ]; then
+    echo "Error: build media_server avcodec with exit status $?"
+    exit 1
+fi
 echo "avcode end----------------------------------"
 source ./build_rk3588_media_server.sh
+if [ $? -ne 0 ]; then
+    echo "Error: build media_server with exit status $?"
+    exit 1
+fi
 echo "end----------------------------------"

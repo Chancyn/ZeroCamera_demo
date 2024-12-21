@@ -74,7 +74,6 @@ function submodule_media_server(){
     else
     echo_info "${thirdinstalldir}media_server/media-server exist"
     fi
-
 }
 
 function build_check_thirdparty(){
@@ -89,6 +88,11 @@ function build_check_thirdparty(){
     submodule_media_server
     pushd ${thirdpackagedir}/media_server
     source ./build_${soc}.sh
+    if [ $? -ne 0 ]; then
+        rm ${thirdinstalldir}/media_server -rf
+        echo_err "error: build media_server with exit status $?"
+        exit 1
+    fi
     popd 
     fi
 
@@ -97,6 +101,11 @@ function build_check_thirdparty(){
     echo_warn "nng not exist build"
     pushd ${thirdpackagedir}/nng
     source ./build_${soc}.sh
+    if [ $? -ne 0 ]; then
+        rm ${thirdinstalldir}/nng -rf
+        echo_err "error: build nng with exit status $?"
+        exit 1
+    fi
     popd 
     fi
 
@@ -105,6 +114,11 @@ function build_check_thirdparty(){
     echo_warn "openssl not exist build"
     pushd ${thirdpackagedir}/openssl
     source ./build_${soc}.sh
+    if [ $? -ne 0 ]; then
+        rm ${thirdinstalldir}/openssl -rf
+        echo_err "error: build openssl with exit status $?"
+        exit 1
+    fi
     popd 
     fi
 
@@ -113,6 +127,11 @@ function build_check_thirdparty(){
     echo_warn "spdlog not exist build"
     pushd ${thirdpackagedir}/spdlog
     source ./build_${soc}.sh
+    if [ $? -ne 0 ]; then
+        rm ${thirdinstalldir}/spdlog -rf
+        echo_err "error: build spdlog with exit status $?"
+        exit 1
+    fi
     popd 
     fi
 
@@ -120,6 +139,11 @@ function build_check_thirdparty(){
     if [ ! -d ${thirdinstalldir}/srt ]; then
     pushd ${thirdpackagedir}/srt
     source ./build_${soc}.sh
+    if [ $? -ne 0 ]; then
+        rm ${thirdinstalldir}/srt -rf
+        echo_err "error: build srt with exit status $?"
+        exit 1
+    fi
     popd 
     fi
 
@@ -127,6 +151,11 @@ function build_check_thirdparty(){
     if [ ! -d ${thirdinstalldir}/v4l2cpp ]; then
     pushd ${thirdpackagedir}/v4l2cpp
     source ./build_${soc}.sh
+    if [ $? -ne 0 ]; then
+        rm ${thirdinstalldir}/v4l2cpp -rf
+        echo_err "error: build v4l2cpp with exit status $?"
+        exit 1
+    fi
     popd 
     fi
 }
