@@ -194,9 +194,10 @@ function build_copy_thirdparty(){
 }
 
 function build_copy2rundir(){
-    if [ ! -d ${outputdir} ]; then
-    echo_debug "---${outputdir} not exist mkdir---------------------"
-    mkdir -p ${outputdir}
+    if [ ! -d ${rundir} ]; then
+    echo_debug "---${rundir} not exist pls run"
+    echo_debug "sudo mkdir  mkdir -p ${rundir}-----------------------"
+    mkdir -p ${rundir}
     fi
     # copy nng
     echo_debug "---------------pls ----------------------------------"
