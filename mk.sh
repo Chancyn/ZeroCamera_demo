@@ -66,6 +66,17 @@ function build_make_append(){
     popd
 }
 
+function submodule_media_server(){
+    if [ ! -d ${thirdpackagedir}/media_server/media-server ]; then
+    echo_warn "${thirdinstalldir}/media_server/media-server submodule not exist"
+    git submodule init thirdparty/package/media_server/media-server
+    git submodule update
+    else
+    echo_info "${thirdinstalldir}media_server/media-server exist"
+    fi
+
+}
+
 function build_check_thirdparty(){
     if [ ! -d ${thirdinstalldir} ]; then
     echo_warn "${thirdinstalldir} not exist mkdir"
