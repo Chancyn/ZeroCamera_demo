@@ -201,7 +201,7 @@ function build_copy2rundir(){
     # copy nng
     echo_debug "---------------pls ----------------------------------"
     echo_warn "------------------------------------------------------"
-    echo_warn "export LD_LIBRARY_PATH=${rundir}/lib:$LD_LIBRARY_PATH"
+    echo_warn "export LD_LIBRARY_PATH=${rundir}/lib:\$LD_LIBRARY_PATH"
     echo_warn "------------------------------------------------------"
     cp ${outputdir}/bin/* ${rundir}/bin
     cp ${outputdir}/lib/lib*.so* ${rundir}/lib
