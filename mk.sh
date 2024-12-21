@@ -71,7 +71,6 @@ function build_make_append(){
 }
 
 function submodule_media_server(){
-
     if [ ! -d ${thirdpackagedir}/media_server/media-server ]; then
     echo_debug "---------------submodule into-------------------"
     echo_warn "${thirdinstalldir}/media_server/media-server submodule not exist"
@@ -195,9 +194,18 @@ function build_copy_thirdparty(){
 }
 
 function build_copy2rundir(){
+    if [ ! -d ${outputdir} ]; then
+    echo_debug "---${outputdir} not exist mkdir---------------------"
+    mkdir -p ${outputdir}
+    fi
     # copy nng
+    echo_debug "---------------pls ----------------------------------"
+    echo_warn "------------------------------------------------------"
+    echo_warn "export LD_LIBRARY_PATH=${rundir}/lib:$LD_LIBRARY_PATH"
+    echo_warn "------------------------------------------------------"
     cp ${outputdir}/bin/* ${rundir}/bin
     cp ${outputdir}/lib/lib*.so* ${rundir}/lib
+    echo_debug "------------------------------------------"
 }
 
 echo_debug "----------------------------------"
