@@ -2,7 +2,8 @@
 basepath=$(cd `dirname $0`; pwd)
 cd $basepath
 
-soc="x64"
+#soc="x86_64"
+soc=$(uname -m)
 cross="0"
 export soc=${soc}
 export cross=${cross}
@@ -15,16 +16,18 @@ case ${soc} in
 hi3519dv500 )
 echo "soc type is ${soc}"
 export soc=${soc}
+export cross=1
 ;;
 ss928v100 )
 echo "soc type is ${soc}"
 export soc=${soc}
+export cross=1
 ;;
 rk3588 )
 echo "soc type is ${soc}"
 export soc=${soc}
 ;;
-x64 )
+x86_64 )
 echo "soc type is ${soc}"
 export soc=${soc}
 ;;
@@ -65,5 +68,5 @@ fi
 
 echo "----------------------------------"
 echo "build soc=${soc} cross=${cross}"
-time ./mk.sh
+#time source ./mk.sh
 

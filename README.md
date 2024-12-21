@@ -63,7 +63,7 @@ TODO:
 
 2.待完善
 TODO:
-1.出现zc_testwriter 异常崩溃bug;暂时未找到问题，x64环境下，重启wsl之后，正常; 怀疑点memcpy地址不对齐问题？
+1.出现zc_testwriter 异常崩溃bug;暂时未找到问题，x86_64环境下，重启wsl之后，正常; 怀疑点memcpy地址不对齐问题？
 
 ### 5.rtsps协议
 实现了rtspserver,rtspcli rtsppushserver,rtsppushcli模块 \
@@ -124,8 +124,9 @@ vlc/ffmpeg: rtsp://192.168.1.166:8554/live/pull.ch1
 ```
 
 ## build
-### build for linux x64 gcc/g++
-# x64编译环境
+### build for linux x86_64 gcc/g++
+# x86_64编译环境
+sudo apt-get install ninja-build
 sudo apt install pkg-config cmake bear gcc g++
 sudo apt install ffmpeg libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev libavdevice-dev
 sudo apt-get install openssl libssl-dev
@@ -179,9 +180,9 @@ cd ZeroCamera_demo;
 ## 编译第三方库
 ```
 cd thirdparty/nng;
-./build_x64.sh
+./build_x86_64.sh
 cd thirdparty/spdlog;
-./build_x64.sh
+./build_x86_64.sh
 ```
 
 
@@ -194,14 +195,15 @@ git submodule update
 cd thirdparty/package/media_server
 #
 git submodule init thirdparty/package/media_server/media-server
-./build_x64.sh
+./build_x86_64.sh
 返回根目录编译项目
 cd -
-./build_x64.sh
+./build_x86_64.sh
 ```
 
 ### build for rk3588 ubuntu22.04 gcc/g++
-# x64编译环境
+# x86_64编译环境
+sudo apt-get install ninja-build
 sudo apt install pkg-config cmake bear gcc g++
 sudo apt install ffmpeg libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev libavdevice-dev
 sudo apt-get install openssl libssl-dev

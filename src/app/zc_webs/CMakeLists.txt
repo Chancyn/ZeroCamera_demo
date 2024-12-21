@@ -54,6 +54,10 @@ pthread
 )
 
 if(WITH_OPENSSL)
+target_include_directories(zc_webs PRIVATE
+${OPENSSL_INCLUDE_DIR}
+)
+
 target_link_directories(zc_webs PRIVATE
 ${OPENSSL_LIBRARY_DIR}
 )

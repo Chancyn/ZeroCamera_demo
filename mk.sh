@@ -2,7 +2,7 @@
 basepath=$(cd `dirname $0`; pwd)
 cd $basepath
 
-#soc="x64"
+#soc="x86_64"
 
 #CMake编译工作目录生成文件的地方
 builddir=$basepath/build
@@ -12,6 +12,11 @@ thirdinstalldir=$basepath/thirdparty/install/${soc}
 echo "builddir=${builddir}"
 echo "outputdir=${outputdir}"
 
+#
+toolchainfile_prefix=toolchain/linux_toolchain
+toolchainfile_prefix=toolchain/linux_toolchain
+toolchainfile=linux_toolchain_x84_64.camke
+
 function build_cmake(){
     # Initial directory
     rm -rf $builddir  #每次都重新编译，删除build文件
@@ -19,7 +24,13 @@ function build_cmake(){
 
     pushd $builddir
     # Run cmake
-    cmake $basepath  #编译cmake
+if [ "${cross}" = "1" ]; then
+    toolchainfile=${toolchainfile_prefix}_cross_${soc}.cmake
+else
+    toolchainfile=${toolchainfile_prefix}_${soc}.cmake
+fi
+    echo ${toolchainfile}
+    cmake -DCMAKE_TOOLCHAIN_FILE=${toolchainfile} $basepath  #编译cmake
     popd
 }
 
@@ -78,6 +89,6 @@ build_cmake
 build_make
 #build_make_debug
 #build_make_append
-build_copy_thirdparty
-build_copy2rundir
+#build_copy_thirdparty
+#build_copy2rundir
 echo "mk soc=${soc} cross=${cross} end"
