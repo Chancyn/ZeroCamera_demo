@@ -223,6 +223,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
         LOG_ERROR("rtsp_client_play error ret[%d]", ret);
         return -1;
     }
+
     int media_count = rtsp_client_media_count(rtsp);
     media_count = media_count < ZC_MEIDIA_NUM ? media_count : ZC_MEIDIA_NUM;
     unsigned int tracktype = 0;
@@ -246,6 +247,8 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
             stinfo.tracks[trackidx].enable = 1;  // enable track
             // create MediaReceiver
             m_mediarecv[i] = fac.CreateMediaReceiver(stinfo.tracks[trackidx]);
+            m_npt[i] = npt;
+            LOG_WARN("m_npt:%llu", m_npt[i]);
         }
 
         if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
@@ -318,8 +321,16 @@ int CRtspClient::onplay(void *param, int media, const uint64_t *nptbegin, const 
 
 int CRtspClient::_onplay(int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale,
                          const struct rtsp_rtp_info_t *rtpinfo, int count) {
-    // TODO(zhoucc)
-    LOG_WARN("onplay %p", this);
+    // nptbegin: nptend scale 点播时间 播放速度
+    LOG_WARN("onplay %p, count,:%u media:%d, seq:%u, time:%u", this, count, media, rtpinfo->seq, rtpinfo->time);
+
+    for (unsigned int i = 0; i < ZC_MEIDIA_NUM; i++) {
+      if (media == i && m_mediarecv[i]) {
+            LOG_WARN("onplay %p, count,:%u seq:%u, time:%u, npt:%llu", this, count, rtpinfo->seq, rtpinfo->time, m_npt[i]);
+            m_mediarecv[i]->SetRtpInfo_Rtptime(rtpinfo->seq, rtpinfo->time, m_npt[i]);
+        }
+   }
+
     return 0;
 }
 

@@ -29,6 +29,7 @@ class CMediaReceiver : public NonCopyable{
     virtual void UnInit();
     // rtp receiver onframe in, put stream to
     virtual int RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags);
+    virtual int SetRtpInfo_Rtptime(uint16_t seq, uint32_t timestamp, uint64_t npt);
  private:
 
  protected:

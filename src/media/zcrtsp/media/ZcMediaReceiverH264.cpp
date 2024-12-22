@@ -21,6 +21,10 @@ CMediaReceiverH264::CMediaReceiverH264(const zc_meida_track_t &info) : CMediaRec
     // init package
     memset(&m_spsinfo, 0, sizeof(m_spsinfo));
     m_pkgcnt = 0;
+    // init pts
+    m_frequency = 90000;
+    m_timestamp = 0;
+    m_pts = INT64_MIN;
     LOG_TRACE("Create Constructor [%p]", m_frame);
 }
 
@@ -56,6 +60,14 @@ unsigned int CMediaReceiverH264::putingCb(void *u, void *stream) {
 unsigned int CMediaReceiverH264::_putingCb(void *stream) {
     // TODO:
     // return m_fifowriter->PutAppending();
+    return 0;
+}
+
+int CMediaReceiverH264::SetRtpInfo_Rtptime(uint16_t seq, uint32_t timestamp, uint64_t npt) {
+    m_lasttime = timestamp;
+    m_timestamp = timestamp;
+    m_basepts = npt;
+    LOG_WARN("H264,seq:%u timestamp:%u, npt:%llu, %llu", seq, timestamp, npt, m_basepts);
     return 0;
 }
 
@@ -97,15 +109,26 @@ int CMediaReceiverH264::RtpOnFrameIn(const void *packet, int bytes, uint32_t tim
 
     // I frame, P Frame
     if (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR || type == H264_NAL_UNIT_TYPE_CODED_SLICE_NON_IDR) {
+        // RTP timestamp => PTS/DTS
+        if (0 == m_lasttime && INT64_MIN == m_pts) {
+            m_timestamp = time;
+            m_basepts = 0; // zc_system_time();
+            LOG_ERROR("error init timestamp:%lld, pts:%llu", m_timestamp, m_basepts);
+        } else {
+            // m_timestamp += (int32_t)(time - m_lasttime);
+        }
+        m_lasttime = time;
+        m_pts = m_basepts + (time - m_timestamp) * 1000 / m_frequency;
+
         m_frame->keyflag = (type == H264_NAL_UNIT_TYPE_CODED_SLICE_IDR) ? ZC_FRAME_IDR : 0;
         m_frame->seq = m_frame->seq + 1;
         m_frame->utc = zc_system_time();
-        m_frame->pts = m_frame->utc;
+        m_frame->pts = m_pts;    // m_frame->utc;
 
         m_fifowriter->Put((const unsigned char *)m_frame, sizeof(zc_frame_t) + m_frame->size, NULL);
 
         if (m_frame->keyflag)
-            LOG_TRACE("H264,time:%08u,utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu", time, m_frame->utc, m_frame->size,
+            LOG_TRACE("H264,timestamp:%u, time:%u, pts:%u, utc:%u,len:%u,type:%d,flags:%d,wh:%hu*%hu", m_timestamp, time, m_frame->pts,  m_frame->utc, m_frame->size,
                       type, flags, m_frame->video.width, m_frame->video.height);
         // putto fifo
 

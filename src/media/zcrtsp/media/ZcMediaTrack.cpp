@@ -201,8 +201,9 @@ int CMediaTrack::GetData2Send() {
         m_dts_last = pframe->pts;
         uint32_t timestamp = (m_timestamp + (uint32_t)((m_dts_last - m_dts_first))) * (m_frequency / 1000);
         if (first) {
-            LOG_WARN("track:%d, timestamp:%u, freq:%u, ", m_info.tracktype, timestamp, m_frequency);
+            LOG_WARN("track:%d, size:%d, pts:%d, timestamp:%u, freq:%u, ", m_info.tracktype,  pframe->size, pframe->pts, timestamp, m_frequency);
         }
+        //  LOG_WARN("track:%d, size:%d, pts:%u, timestamp:%u, freq:%u, ", m_info.tracktype, pframe->size, pframe->pts, timestamp, m_frequency);
         rtp_payload_encode_input(m_rtppacker, pframe->data, (int)pframe->size, timestamp /*kHz*/);
 
         // m_rtp_clock += 16;
