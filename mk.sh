@@ -4,6 +4,11 @@ basepath=$(cd `dirname $0`; pwd)
 cd $basepath
 
 #soc="x86_64"
+#buildcmd=make
+#是否交叉编译
+cross="0"
+# 编译参数
+build_VERBOSE="0"
 
 #CMake编译工作目录生成文件的地方
 builddir=$basepath/build
@@ -18,11 +23,20 @@ toolchainfile_prefix=toolchain/linux_toolchain
 toolchainfile_prefix=toolchain/linux_toolchain
 toolchainfile=linux_toolchain_x84_64.camke
 
-function build_cmake(){
-    echo_debug "---------------cmake into-------------------"
+function build_cmake_clean(){
+    echo_debug "---------------cmake clean into-------------------"
     # Initial directory
     rm -rf $builddir  #每次都重新编译，删除build文件
-    mkdir -p $builddir #创建build文件
+    echo_debug "---------------cmake clean endi-------------------"
+}
+
+function build_cmake(){
+    echo_debug "---------------cmake into-------------------"
+if [ ! -d ${builddir}/Makefile ]; then
+    if [ ! -d ${builddir} ]; then
+        echo_debug "-------$builddir not exist mkdir--------------"
+        mkdir -p $builddir #创建build文件
+    fi
 
     pushd $builddir
     # Run cmake
@@ -35,39 +49,21 @@ fi
     cmake -DCMAKE_TOOLCHAIN_FILE=${toolchainfile} $basepath  #编译cmake
     popd
     echo_debug "---------------cmake end-------------------"
+fi
 }
 
 function build_make(){
     echo_debug "---------------make into-------------------"
     pushd $builddir
     # Run make
-    #make
-    #bear --output /home/zhoucc/work/study/cmake/test/compile_commands.json -- make
-
+if [ "${build_VERBOSE}" = "1" ]; then
     bear --output ${basepath}/compile_commands.json -- make VERBOSE=on -j 16
-    #make VERBOSE=on -j 16
+else
+    bear --output ${basepath}/compile_commands.json -- make -j 16
+fi
     make install
     popd
     echo_debug "---------------make end-------------------"
-}
-
-function build_make_debug(){
-    pushd $builddir
-    # Run make
-    #make
-    bear --output ${basepath}/compile_commands.json -- make VERBOSE=on -j 16
-    #make VERBOSE=on -j 16
-    make install
-    popd
-}
-
-function build_make_append(){
-    pushd $builddir
-    # Run make
-    #make
-    bear --output ${basepath}/compile_commands.json -- make VERBOSE=on
-    #make install
-    popd
 }
 
 function submodule_media_server(){
@@ -168,7 +164,7 @@ function build_check_thirdparty(){
 
     #v4l2cpp
     if [ ! -d ${thirdinstalldir}/v4l2cpp ]; then
-    echo_debug "----------------------------------"
+    echo_debug "------------------------------------------------------"
     pushd ${thirdpackagedir}/v4l2cpp
     source ./build_${soc}.sh
     if [ $? -ne 0 ]; then
@@ -176,7 +172,7 @@ function build_check_thirdparty(){
         echo_err "error: build v4l2cpp with exit status $?"
         exit 1
     fi
-    echo_debug "----------------------------------"
+    echo_debug "------------------------------------------------------"
     popd 
     fi
 
@@ -184,7 +180,7 @@ function build_check_thirdparty(){
 }
 
 function build_copy_thirdparty(){
-    echo_debug "---------------copy thirdparty into-------------------"
+    echo_debug "---------------copy thirdparty into------------------"
     # copy nng
     cp ${thirdinstalldir}/nng/lib/lib*.so* ${outputdir}/lib
     cp ${thirdinstalldir}/media_server/sdk/libaio/lib/lib*.so* ${outputdir}/lib
@@ -202,8 +198,8 @@ function build_copy2rundir(){
     mkdir -p ${rundir}/lib
     fi
     # copy nng
-    echo_debug "---------------pls ----------------------------------"
     echo_warn "------------------------------------------------------"
+    echo_debug "---------------pls run-------------------------------"
     echo_warn "export LD_LIBRARY_PATH=${rundir}/lib:\$LD_LIBRARY_PATH"
     echo_warn "------------------------------------------------------"
     cp ${outputdir}/bin/* ${rundir}/bin
@@ -211,19 +207,31 @@ function build_copy2rundir(){
     echo_debug "------------------------------------------"
 }
 
-echo_debug "----------------------------------"
-#enable_debug
-export WITH_DEBUG=y
+function build_thirdparty(){
+    echo_debug "---------------build thirdparty into-------------------"
 
-# export WITH_ZC_APP=1
-# export WITH_ZC_TEST=0
+    echo_debug "---------------build thirdparty end-------------------"
+}
 
+function buildcmd_process(){
+echo_debug "------------------------------------------------------"
+if [ "${buildcmd}" = "make" ]; then
 build_check_thirdparty
 echo_info "check_thirdparty ok"
 build_cmake
 build_make
-#build_make_debug
-#build_make_append
 build_copy_thirdparty
 build_copy2rundir
+elif [ "${buildcmd}" = "clean" ]; then
+build_cmake_clean
+elif [ "${buildcmd}" = "pack" ]; then
+build_copy2rundir
+elif [ "${buildcmd}" = "third" ]; then
+build_thirdparty
+fi
+
 echo_info "mk soc=${soc} cross=${cross} end"
+echo_debug "------------------------------------------------------"
+}
+
+buildcmd_process
