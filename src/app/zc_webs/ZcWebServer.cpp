@@ -455,7 +455,7 @@ int CWebServer::_sendWsFlvHdr(void *sess, bool hasvideo, bool hasaudio) {
 
 int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("ws-flv into");
-    char httphdr[256];
+
     zc_msess_info_t info = {
         .type = zc_web_msess_ws_flv,
         .flvinfo =
@@ -471,7 +471,7 @@ int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, z
         LOG_ERROR("get streaminfo error");
         return -1;
     }
-#if 1
+
     // create sess
     IWebMSess *sess = CWebMSessFac::CreateWebMSess(info);
     if (!sess) {
@@ -489,18 +489,6 @@ int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, z
         goto err;
     }
 
-#if 0
-    snprintf(httphdr, sizeof(httphdr) - 1,
-             "HTTP/1.1 200 OK\r\n"
-             "Connection: Close\r\n"
-             "Content-Type: video/x-flv\r\n"
-             "Server: %s\r\n"
-             "Transfer-Encoding: chunked\r\n\r\n",
-             ZC_HTTP_SERVERNAME);
-
-    mg_printf(c, "%s", httphdr);
-#endif
-
     _sendWsFlvHdr(c, true, false);
 
     // add to session
@@ -508,7 +496,7 @@ int CWebServer::handleOpenWsFlvSession(struct mg_connection *c, void *ev_data, z
         std::lock_guard<std::mutex> locker(m_flvsessmutex);
         m_flvsesslist.push_back(sess);
     }
-#endif
+
     // c->user_data = sess;
 
     LOG_WARN("handleOpenWsFlvSession ok");
@@ -611,7 +599,6 @@ err:
 
 int CWebServer::handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("ws-fmp4 into");
-    char httphdr[256];
     zc_msess_info_t info = {
         .type = zc_web_msess_ws_fmp4,
         .fmp4info =
@@ -644,16 +631,7 @@ int CWebServer::handleOpenWsFmp4Session(struct mg_connection *c, void *ev_data, 
         LOG_ERROR("StartSend error");
         goto err;
     }
-    // snprintf(httphdr, sizeof(httphdr) - 1,
-    //          "HTTP/1.1 200 OK\r\n"
-    //          "Connection: Close\r\n"
-    //          "Content-Type: video/mp4; charset=utf-8\r\n"
-    //          "Server: %s\r\n"
-    //          "Transfer-Encoding: chunked\r\n\r\n",
-    //          ZC_HTTP_SERVERNAME);
 
-    // mg_printf(c, "%s", httphdr);
-    // _sendFlvHdr(c, true, false);
     // add to session
     {
         std::lock_guard<std::mutex> locker(m_fmp4sessmutex);
@@ -764,7 +742,6 @@ err:
 
 int CWebServer::handleOpenWsTsSession(struct mg_connection *c, void *ev_data, zc_shmstream_e type, int chn) {
     LOG_TRACE("ws-ts into");
-    char httphdr[256];
     zc_msess_info_t info = {
         .type = zc_web_msess_ws_ts,
         .tsinfo =
@@ -797,16 +774,7 @@ int CWebServer::handleOpenWsTsSession(struct mg_connection *c, void *ev_data, zc
         LOG_ERROR("StartSend error");
         goto err;
     }
-    // snprintf(httphdr, sizeof(httphdr) - 1,
-    //          "HTTP/1.1 200 OK\r\n"
-    //          "Connection: Close\r\n"
-    //          "Content-Type: video/mp2t; charset=utf-8\r\n"
-    //          "Server: %s\r\n"
-    //          "Transfer-Encoding: chunked\r\n\r\n",
-    //          ZC_HTTP_SERVERNAME);
 
-    // mg_printf(c, "%s", httphdr);
-    // _sendFlvHdr(c, true, false);
     // add to session
     {
         std::lock_guard<std::mutex> locker(m_tssessmutex);

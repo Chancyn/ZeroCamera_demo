@@ -130,7 +130,7 @@ unsigned int CMediaReceiverAAC::_putingCb(void *stream) {
 
 int CMediaReceiverAAC::RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags) {
     ZC_ASSERT(m_fifowriter != nullptr);
-    if (bytes + 7 <= m_info.framemaxlen) {
+    if (bytes + 7 <= (int)m_info.framemaxlen) {
         _framelenUpdateADTSHdr(bytes);
         memcpy(m_frame->data, m_dtshdr, 7);
 

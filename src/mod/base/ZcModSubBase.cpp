@@ -163,7 +163,7 @@ int CModSubBase::_sendRegisterMsg(int cmd) {
     char rmsg_buf[sizeof(zc_msg_t) + sizeof(zc_mod_reg_t)] = {0};
     zc_msg_t *rep = reinterpret_cast<zc_msg_t *>(rmsg_buf);
     size_t rlen = sizeof(zc_msg_t) + sizeof(zc_mod_reg_t);
-    zc_mod_reg_t *repreg = reinterpret_cast<zc_mod_reg_t *>(rep->data);
+    // zc_mod_reg_t *repreg = reinterpret_cast<zc_mod_reg_t *>(rep->data);
     if (MsgSendTo(req, ZC_SYS_URL_IPC, rep, &rlen)) {
         if (rep->err != 0) {
             LOG_ERROR("recv register rep err:%d \n", rep->err);

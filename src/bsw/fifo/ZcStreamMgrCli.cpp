@@ -50,16 +50,16 @@ bool CStreamMgrCli::Init(zc_streamcli_t *info) {
         return false;
     }
 
-    memcpy(&m_info, &info, sizeof(m_info));
+    memcpy(&m_info, info, sizeof(m_info));
     m_init = true;
     LOG_TRACE("Init ok [%s]pid:%d", m_info.pname, m_info.pid);
     return true;
 
-_err:
-    _unInit();
+// _err:
+//     _unInit();
 
-    LOG_TRACE("Init error");
-    return false;
+//     LOG_TRACE("Init error");
+//     return false;
 }
 
 bool CStreamMgrCli::_unInit() {
@@ -124,7 +124,7 @@ int CStreamMgrCli::process() {
         // TODO(zhoucc): do something
         usleep(10 * 1000);
     }
-_err:
+// _err:
     LOG_WARN("process exit");
     return ret;
 }

@@ -525,7 +525,7 @@ unsigned int CShmFIFO::getUserData(unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.shmbuff != nullptr);
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     share_mutex_lock(&m_pfifo.fifo->mutex);
-    unsigned int wlen = wlen < m_pfifo.usersize ? wlen : m_pfifo.usersize;
+    unsigned int wlen = len < m_pfifo.usersize ? len : m_pfifo.usersize;
     if (wlen > 0 && m_pfifo.fifo->usersetflag) {
         memcpy(buffer, m_pfifo.shmbuff, wlen);
         LOG_WARN("get user data:%u", wlen);
@@ -538,7 +538,7 @@ unsigned int CShmFIFO::setUserData(unsigned char *buffer, unsigned int len) {
     ZC_ASSERT(m_pfifo.shmbuff != nullptr);
     ZC_ASSERT(m_pfifo.fifo != nullptr);
     share_mutex_lock(&m_pfifo.fifo->mutex);
-    unsigned int wlen = wlen < m_pfifo.usersize ? wlen : m_pfifo.usersize;
+    unsigned int wlen = len < m_pfifo.usersize ? len : m_pfifo.usersize;
     if (wlen > 0) {
         if (m_pfifo.fifo->usersetflag)
             m_pfifo.fifo->usersetflag = 1;

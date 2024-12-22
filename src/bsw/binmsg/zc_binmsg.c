@@ -30,7 +30,7 @@ void zc_binmsg_debug_dump(zc_binmsg_t *msg) {
     if (!msg) {
         return;
     }
-    unsigned char *buf = msg;
+    unsigned char *buf = (unsigned char *)msg;
     ZC_U16 cmd = msg->cmd;
     ZC_U16 size = msg->size;
     ZC_U16 seq = msg->seq;
@@ -113,10 +113,8 @@ void zc_binmsg_packdata(zc_binmsg_t *msg, const ZC_U8 *data, ZC_U16 len) {
 }
 
 int zc_binmsg_parse(zc_binmsg_t *msg, ZC_U8 *buf, ZC_U32 buflen, ZC_U16 readlen, ReadCb readcb) {
-    ZC_U16 datalen = 0;
     int remain = 0;
     int pos = 0;  // read pos
-    zc_binmsg_t *pmsgtmp = NULL;
     ZC_U16 msglen = 0;
     BOOL bmsg = FALSE;
 

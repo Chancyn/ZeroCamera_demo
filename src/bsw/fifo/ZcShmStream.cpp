@@ -279,7 +279,7 @@ bool CShmStreamR::_findSkip2LatestPos(bool key) {
     setLatestOutpos(pos);
     unsigned int ret = _preget((unsigned char *)&frame, hdrlen);
     if (frame.magic != m_magic) {
-        LOG_WARN("find type:%d, keyframe error magic[0x%x]!=[0x%x], try get latest frame", m_type, frame.magic,
+        LOG_WARN("ret:%u, find type:%d, keyframe error magic[0x%x]!=[0x%x], try get latest frame", ret, m_type, frame.magic,
                  m_magic);
         if (key) {
             pos = getLatestPos(false);

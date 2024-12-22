@@ -32,12 +32,6 @@ bool CWebServerMan::Init(void *info) {
         return false;
     }
 
-    // zc_stream_info_t info;
-    // if (sendSMgrGetInfo(0, 0, &info) < 0) {
-    //     LOG_TRACE("sendSMgrGetInfo error");
-    //     goto _err;
-    // }
-
     // if (m_supbitmask == 0) {
     //     m_supbitmask = 1;  // atleast support http
     // }
@@ -45,11 +39,6 @@ bool CWebServerMan::Init(void *info) {
     m_init = true;
     LOG_TRACE("Init ok");
     return true;
-
-_err:
-
-    LOG_TRACE("Init error");
-    return false;
 }  // namespace zc
 
 bool CWebServerMan::UnInit() {

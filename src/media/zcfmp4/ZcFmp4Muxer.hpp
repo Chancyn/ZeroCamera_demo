@@ -66,8 +66,8 @@ class CFmp4Muxer : protected Thread {
     unsigned char m_framebuf[ZC_STREAM_MAXFRAME_SIZE];
     unsigned char m_framemp4buf[ZC_STREAM_MAXFRAME_SIZE];  // TODO + hdr
     zc_fmp4muxer_info_t m_info;
-    CMovIo *m_movio;
     struct fmp4_writer_t *m_fmp4;
+   CMovIo *m_movio;
     int m_trackid[ZC_MEDIA_TRACK_BUTT];
     zc_frame_userinfo_t m_frameinfoTab[ZC_MEDIA_TRACK_BUTT];
     std::vector<CShmStreamR *> m_vector;

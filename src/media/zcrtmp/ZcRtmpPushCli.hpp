@@ -59,9 +59,8 @@ class CRtmpPushCli : public CIRtmpPush, protected Thread {
     zc_rtmp_push_t m_client;
     CFlvMuxer *m_flv;
     std::mutex m_mutex;
-
-    void *m_phandle;  // handle
     char *m_pbuf;    // buffer
+    void *m_phandle;  // handle
 };
 
 }  // namespace zc

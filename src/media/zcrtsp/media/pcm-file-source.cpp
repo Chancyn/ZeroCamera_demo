@@ -3,7 +3,7 @@
 #include "base64.h"
 #include "rtp-profile.h"
 #include "rtp-payload.h"
-#include <assert.h>
+#include "zc_macros.h"
 
 extern "C" uint32_t rtp_ssrc(void);
 
@@ -133,7 +133,7 @@ int PCMFileSource::GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) cons
 
 void PCMFileSource::OnRTCPEvent(const struct rtcp_msg_t* msg)
 {
-	msg;
+	// msg;
 }
 
 void PCMFileSource::OnRTCPEvent(void* param, const struct rtcp_msg_t* msg)
@@ -165,7 +165,7 @@ int PCMFileSource::SendRTCP()
 void* PCMFileSource::RTPAlloc(void* param, int bytes)
 {
 	PCMFileSource *self = (PCMFileSource*)param;
-	assert(bytes <= sizeof(self->m_packet));
+	ZC_ASSERT(bytes <= (int)sizeof(self->m_packet));
 	return self->m_packet;
 }
 

@@ -235,7 +235,7 @@ int CStreamMgr::_findIdx(zc_shmstream_e type, unsigned int nchn) {
     return idx;
 }
 
-int CStreamMgr::getCount(unsigned int type) {
+unsigned int CStreamMgr::getCount(unsigned int type) {
     if (type == ZC_SHMSTREAM_ALL) {
         return m_total;
     } else if (type >= 0 || type < ZC_SHMSTREAM_BUTT) {
@@ -254,7 +254,7 @@ inline int CStreamMgr::_getShmStreamInfo(zc_stream_info_t *info, int idx, unsign
 }
 
 int CStreamMgr::getALLShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsigned int count) {
-    int tmpc = getCount(type);
+    unsigned int tmpc = getCount(type);
     count = count <= tmpc ? count : tmpc;
     if (count > 0) {
         int idx = 0;
@@ -279,7 +279,7 @@ int CStreamMgr::getShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsi
 }
 
 int CStreamMgr::_setShmStreamInfo(zc_stream_info_t *info, int idx) {
-    ZC_ASSERT(idx < m_total);
+    ZC_ASSERT(idx < (int)m_total);
     // TODO(zhoucc): check param
     if (memcmp(&m_infoTab[idx], info, sizeof(zc_stream_info_t)) != 0) {
         memcpy(&m_infoTab[idx], info, sizeof(zc_stream_info_t));
@@ -434,7 +434,7 @@ int CStreamMgr::process() {
         // TODO(zhoucc): do something
         usleep(10 * 1000);
     }
-_err:
+// _err:
     LOG_WARN("process exit");
     return ret;
 }

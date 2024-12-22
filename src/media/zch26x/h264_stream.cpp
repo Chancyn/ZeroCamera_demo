@@ -9,6 +9,7 @@
 #include "bs.h"
 #include "h264_stream.h"
 #include "h264_sei.h"
+#include "zc_macros.h"
 
 
 FILE* h264_dbgfile = NULL;
@@ -48,22 +49,32 @@ int is_slice_type(int slice_type, int cmp_type)
  */
 h264_stream_t* h264_new()
 {
-    h264_stream_t* h = (h264_stream_t*)calloc(1, sizeof(h264_stream_t));
-
-    h->nal = (nal_t*)calloc(1, sizeof(nal_t));
-
+    // h264_stream_t* h = (h264_stream_t*)calloc(1, sizeof(h264_stream_t));
+    // h->nal = (nal_t*)calloc(1, sizeof(nal_t));
+    h264_stream_t* h = new h264_stream_t();
+    h->nal = new nal_t();
     // initialize tables
-    for ( int i = 0; i < 32; i++ ) { h->sps_table[i] = (sps_t*)calloc(1, sizeof(sps_t)); }
-    for ( int i = 0; i < 256; i++ ) { h->pps_table[i] = (pps_t*)calloc(1, sizeof(pps_t)); }
+    for ( int i = 0; i < 32; i++ ) { 
+        // h->sps_table[i] = (sps_t*)calloc(1, sizeof(sps_t)); 
+        h->sps_table[i] = new sps_t();
+    }
+
+    for ( int i = 0; i < 256; i++ ) {
+        // h->pps_table[i] = (pps_t*)calloc(1, sizeof(pps_t)); 
+        h->pps_table[i] = new pps_t();
+    }
 
     h->sps = h->sps_table[0];
     h->pps = h->pps_table[0];
-    h->aud = (aud_t*)calloc(1, sizeof(aud_t));
+    // h->aud = (aud_t*)calloc(1, sizeof(aud_t));
+    h->aud = new aud_t();
     h->num_seis = 0;
     h->seis = NULL;
     h->sei = NULL;  //This is a TEMP pointer at whats in h->seis...
-    h->sh = (slice_header_t*)calloc(1, sizeof(slice_header_t));
-    h->info = (videoinfo_t*)calloc(1, sizeof(videoinfo_t));
+    // h->sh = (slice_header_t*)calloc(1, sizeof(slice_header_t));
+    // h->info = (videoinfo_t*)calloc(1, sizeof(videoinfo_t));
+    h->sh = new slice_header_t();
+    h->info = new videoinfo_t();
     h->info->type = 0;
     return h;
 }
@@ -77,10 +88,19 @@ void h264_free(h264_stream_t* h)
 {
     free(h->nal);
 
-    for ( int i = 0; i < 32; i++ ) { free( h->sps_table[i] ); }
-    for ( int i = 0; i < 256; i++ ) { free( h->pps_table[i] ); }
+    for ( int i = 0; i < 32; i++ ) { 
+        // free( h->sps_table[i] ); 
+        delete h->sps_table[i];
+    }
 
-    free(h->aud);
+    for ( int i = 0; i < 256; i++ ) { 
+        // free( h->pps_table[i] ); 
+        delete h->pps_table[i];
+    }
+
+    // free(h->aud);
+    delete h->aud;
+
     if(h->seis != NULL)
     {
         for( int i = 0; i < h->num_seis; i++ )
@@ -90,8 +110,10 @@ void h264_free(h264_stream_t* h)
         }
         free(h->seis);
     }
-    free(h->sh);
-    free(h);
+    // free(h->sh);
+    // free(h);
+    delete h->sh;
+    delete h;
 }
 
 /**
@@ -757,7 +779,7 @@ void read_pic_parameter_set_rbsp(h264_stream_t* h, bs_t* b)
     int pps_id = bs_read_ue(b);
     pps_t* pps = h->pps = h->pps_table[pps_id] ;
 
-    memset(pps, 0, sizeof(pps_t));
+    // memset(pps, 0, sizeof(pps_t));
 
     int i;
     int i_group;
@@ -912,7 +934,7 @@ void read_filler_data_rbsp(h264_stream_t* h, bs_t* b)
 {
     while( bs_next_bits(b, 8) == 0xFF )
     {
-        int ff_byte = bs_read_f(b,8);  // equal to 0xFF
+        ZC_UNUSED int ff_byte = bs_read_f(b,8);  // equal to 0xFF
     }
     read_rbsp_trailing_bits(h, b);
 }
@@ -976,7 +998,7 @@ more_rbsp_trailing_data(h264_stream_t* h, bs_t* b) { return !bs_eof(b); }
 void read_rbsp_slice_trailing_bits(h264_stream_t* h, bs_t* b)
 {
     read_rbsp_trailing_bits(h, b);
-    int cabac_zero_word;
+    ZC_UNUSED int cabac_zero_word;
     if( h->pps->entropy_coding_mode_flag )
     {
         while( more_rbsp_trailing_data(h, b) )
@@ -989,11 +1011,11 @@ void read_rbsp_slice_trailing_bits(h264_stream_t* h, bs_t* b)
 //7.3.2.11 RBSP trailing bits syntax
 void read_rbsp_trailing_bits(h264_stream_t* h, bs_t* b)
 {
-    int rbsp_stop_one_bit = bs_read_u1( b ); // equal to 1
+    ZC_UNUSED int rbsp_stop_one_bit = bs_read_u1( b ); // equal to 1
 
     while( !bs_byte_aligned(b) )
     {
-        int rbsp_alignment_zero_bit = bs_read_u1( b ); // equal to 0
+        ZC_UNUSED int rbsp_alignment_zero_bit = bs_read_u1( b ); // equal to 0
     }
 }
 
@@ -1003,7 +1025,7 @@ void read_slice_header(h264_stream_t* h, bs_t* b)
     slice_header_t* sh = h->sh;
     int read_slice_type = sh->read_slice_type;
 
-    memset(sh, 0, sizeof(slice_header_t));
+    // memset(sh, 0, sizeof(slice_header_t));
 
     sps_t* sps = NULL; // h->sps;
     pps_t* pps = NULL;//h->pps;
@@ -1179,8 +1201,8 @@ void read_ref_pic_list_modification(h264_stream_t* h, bs_t* b)
 void read_pred_weight_table(h264_stream_t* h, bs_t* b)
 {
     slice_header_t* sh = h->sh;
-    sps_t* sps = h->sps;
-    pps_t* pps = h->pps;
+    ZC_UNUSED sps_t* sps = h->sps;
+    ZC_UNUSED pps_t* pps = h->pps;
 
     int i, j;
 
@@ -2022,7 +2044,7 @@ void write_slice_header(h264_stream_t* h, bs_t* b)
 //7.3.3.1 Reference picture list modification syntax
 void write_ref_pic_list_modification(h264_stream_t* h, bs_t* b)
 {
-    slice_header_t* sh = h->sh;
+    ZC_UNUSED slice_header_t* sh = h->sh;
     // FIXME should be an array
 #if 0   // by latelee
     if( ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_I ) && ! is_slice_type( sh->slice_type, SH_SLICE_TYPE_SI ) )
@@ -2132,7 +2154,7 @@ void write_pred_weight_table(h264_stream_t* h, bs_t* b)
 //7.3.3.3 Decoded reference picture marking syntax
 void write_dec_ref_pic_marking(h264_stream_t* h, bs_t* b)
 {
-    slice_header_t* sh = h->sh;
+    ZC_UNUSED slice_header_t* sh = h->sh;
     // FIXME should be an array
 #if 0   // by latelee
     if( h->nal->nal_unit_type == 5 )

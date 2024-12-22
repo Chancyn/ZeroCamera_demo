@@ -20,7 +20,7 @@
 
 #define TEST_FIFO_CXX 1
 
-static zcfifo_t *g_fifo = nullptr;
+// static zcfifo_t *g_fifo = nullptr;
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
 static ZC_U8 g_buffer[FIFO_TEST_BUFFLEN] = {};
 static zc::CFIFO *g_cxxfifo = nullptr;

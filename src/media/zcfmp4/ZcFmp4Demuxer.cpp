@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <sys/syslog.h>
+// #include <sys/syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -166,7 +166,7 @@ void CFmp4DeMuxer::_onMovAudioInfo(uint32_t track, uint8_t object, int channel_c
         struct mpeg4_aac_t *aac = new struct mpeg4_aac_t();
         m_mpeg4audio = aac;
         ZC_ASSERT(m_mpeg4audio);
-        ZC_ASSERT(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t *)extra, bytes, aac));
+        ZC_ASSERT(bytes == (size_t)mpeg4_aac_audio_specific_config_load((const uint8_t *)extra, bytes, aac));
         ZC_ASSERT(channel_count == aac->channels);
         ZC_ASSERT(MOV_OBJECT_AAC == object);
         LOG_WARN("AAC track:%u,obj:%u,channel:%d,profile:%d", track, object, channel_count, aac->profile);
@@ -348,8 +348,8 @@ int CFmp4DeMuxer::_videopkt2frame(const zc_mov_pkt_info_t &pkt, zc_mov_frame_inf
         assert(h264_is_new_access_unit((const uint8_t *)pkt.ptr + 4, pkt.bytes - 4));
         n = h264_mp4toannexb((const struct mpeg4_avc_t *)m_mpeg4video, pkt.ptr, pkt.bytes, m_vframebuf, m_vframebuflen);
     } else if (pkt.encode == ZC_FRAME_ENC_H265) {
-        uint8_t nalu_type = (((const uint8_t *)pkt.ptr)[4] >> 1) & 0x3F;
-        uint8_t irap = 16 <= nalu_type && nalu_type <= 23;
+        // uint8_t nalu_type = (((const uint8_t *)pkt.ptr)[4] >> 1) & 0x3F;
+        // uint8_t irap = (16 <= nalu_type) && (nalu_type <= 23);
         assert(h265_is_new_access_unit((const uint8_t *)pkt.ptr + 4, pkt.bytes - 4));
         n = h265_mp4toannexb((const struct mpeg4_hevc_t *)m_mpeg4video, pkt.ptr, pkt.bytes, m_vframebuf,
                              m_vframebuflen);

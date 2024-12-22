@@ -76,7 +76,7 @@ int zc_prase_mediasess_path(const char *url, zc_web_msess_type_e *mtype, zc_shms
     char livepath[32] = {0};
     char suffix[16] = {0};
     strncpy(path, url, sizeof(path));
-    char *token = nullptr;
+    ZC_UNUSED char *token = nullptr;
     char *ptr = nullptr;
     int channel = 0;
     token = strtok_r(path, " ?", &ptr);

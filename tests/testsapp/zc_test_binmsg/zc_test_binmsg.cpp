@@ -14,9 +14,10 @@
 
 #include "zc_binmsg.h"
 #include "zc_log.h"
+#include "zc_macros.h"
 
 #if 1
-static int zc_test_binmsg_sendreg(int modid, int modidto) {
+ZC_UNUSED static int zc_test_binmsg_sendreg(int modid, int modidto) {
     return 0;
 }
 #endif
@@ -45,9 +46,12 @@ static int zc_test_binmsg_unpack(const ZC_U8 *buf, ZC_U16 len) {
         memcpy(msg->data, buf + sizeof(zc_binmsg_t), msg->size);
     }
     zc_binmsg_debug_printhdr(msg);
+    return 0;
 }
 
-static int zc_test_binmsg_parse() {}
+ZC_UNUSED static int zc_test_binmsg_parse() {
+    return 0;
+}
 
 static int zc_test_binmsg_pack(bool border, bool bcrc32) {
     ZC_U16 cmd = rand() & 0xFFFF;

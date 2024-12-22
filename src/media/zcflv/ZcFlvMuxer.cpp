@@ -263,7 +263,7 @@ int CFlvMuxer::_packetFlv(zc_frame_t *frame) {
 }
 
 int CFlvMuxer::_getDate2PacketFlv(CShmStreamR *stream) {
-    int ret = 0;
+    unsigned int ret = 0;
 
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
     // if (stream->Len() > sizeof(zc_frame_t)) {

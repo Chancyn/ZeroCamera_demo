@@ -5,6 +5,7 @@
 
 #include "bs.h"
 #include "h264_stream.h"
+#include "zc_macros.h"
 #include "h264_sei.h"
 
 #include <stdio.h>
@@ -56,10 +57,9 @@ static void read_user_data_unregistered(h264_stream_t* h, bs_t* b, int payloadSi
 }
 
 // D.1 SEI payload syntax
-// todo����ͬ��sei���ṹ�岻ͬ����ֱ𴴽�
 void read_sei_payload(h264_stream_t* h, bs_t* b, int payloadType, int payloadSize)
 {
-    sei_t* s = h->sei;
+    ZC_UNUSED sei_t* s = h->sei;
 
     switch (payloadType)
     {

@@ -102,7 +102,7 @@ bool CStreamsGet::UnInit() {
 }
 
 int CStreamsGet::_getFrameData(CShmStreamR *stream) {
-    int ret = 0;
+    unsigned int ret = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
     // (stream->Len() > sizeof(zc_frame_t)) {
     while (State() == Running && (stream->Len() > sizeof(zc_frame_t))) {

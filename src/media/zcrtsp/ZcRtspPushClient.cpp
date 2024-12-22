@@ -79,12 +79,10 @@ int CRtspPushClient::rtsp_client_sdp(const char *host) {
                                       "a=control:*\n";  // aggregate control
 
     int offset = 0;
-
-    int64_t duration;
     m_client.source.reset(new CLiveSource(m_info));
 
     offset = snprintf(m_client.sdp, sizeof(m_client.sdp), pattern_live, ntp64_now(), ntp64_now(), "127.0.0.1", host);
-    assert(offset > 0 && offset + 1 < sizeof(m_client.sdp));
+    assert(offset > 0 && (size_t(offset + 1) < sizeof(m_client.sdp)));
 
     std::string sdpmedia;
     m_client.source->GetSDPMedia(sdpmedia);
@@ -100,7 +98,7 @@ int CRtspPushClient::rtp_send_interleaved_data(void *ptr, const void *data, size
 int CRtspPushClient::_send_interleaved_data(const void *data, size_t bytes) {
     // TODO(zhoucc): send multiple rtp packet once time;unuse
     // TODO(zhoucc): maybe needlock
-    return bytes == socket_send(m_client.socket, data, bytes, 0) ? 0 : -1;
+    return bytes == (size_t)socket_send(m_client.socket, data, bytes, 0) ? 0 : -1;
 }
 
 int CRtspPushClient::rtsp_client_send(void *param, const char *uri, const void *req, size_t bytes) {
@@ -205,7 +203,6 @@ int CRtspPushClient::onsetup(void *param, int timeout, int64_t duration) {
 }
 
 int CRtspPushClient::_onsetup(int timeout, int64_t duration) {
-    int i;
     int ret = 0;
     uint64_t npt = 0;
     rtsp_client_t *rtsp = reinterpret_cast<rtsp_client_t *>(m_client.rtsp);
@@ -213,9 +210,9 @@ int CRtspPushClient::_onsetup(int timeout, int64_t duration) {
     media_count = media_count < ZC_MEIDIA_NUM ? media_count : ZC_MEIDIA_NUM;
 
     for (int i = 0; i < media_count; i++) {
-        int payload;
+        ZC_UNUSED int payload = 0;
         unsigned short port[2];
-        const char *encoding;
+        ZC_UNUSED const char *encoding;
         const struct rtsp_header_transport_t *transport;
         char track[16] = {0};
         snprintf(track, sizeof(track) - 1, "track%d", i);

@@ -43,7 +43,7 @@ class CStreamMgr : public Thread, public Singleton<CStreamMgr> {
     int HandleCtrl(unsigned int type, void *indata, void *outdata);
 
  private:
-    int getCount(unsigned int type);
+    unsigned int getCount(unsigned int type);
     int getALLShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsigned int count);
     int getShmStreamInfo(zc_stream_info_t *info, unsigned int type, unsigned int nchn);
 

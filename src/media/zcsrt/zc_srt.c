@@ -10,13 +10,14 @@
 
 #include <srt/srt.h>
 
+#include "zc_macros.h"
 #include "zc_log.h"
 #include "zc_srt.h"
 #include "zc_error.h"
 
 #include "zc_basic_fun.h"
 
-static int zc_srt_neterrno() {
+ZC_UNUSED static int zc_srt_neterrno() {
     int os_errno;
     int err = srt_getlasterror(&os_errno);
     if (err == SRT_EASYNCRCV || err == SRT_EASYNCSND)

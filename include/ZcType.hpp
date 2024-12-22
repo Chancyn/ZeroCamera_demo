@@ -7,7 +7,7 @@
 #define ZC_SAFE_DELETE(x) \
     do { \
         if ((x) != nullptr) { \
-            delete(x); \
+            delete (x); \
             x = nullptr; \
         } \
     } while (0)
@@ -15,7 +15,7 @@
 #define ZC_SAFE_DELETEA(x) \
     do { \
         if ((x) != nullptr) { \
-            delete [] (x); \
+            delete[] (x); \
             x = nullptr; \
         } \
     } while (0)

@@ -76,7 +76,7 @@ int CRtspPushServer::_onannounce(rtsp_server_t *rtsp, const char *uri, const cha
     rtsp_uri_parse(uri, filename);
 
     source->count = rtsp_media_sdp(sdp, len, source->media, sizeof(source->media) / sizeof(source->media[0]));
-    if (source->count < 0 || source->count > sizeof(source->media) / sizeof(source->media[0]))
+    if (source->count < 0 || source->count > int(sizeof(source->media) / sizeof(source->media[0])))
         return rtsp_server_reply_announce(rtsp, 451);  // Parameter Not Understood
 
     const char *contentBase = rtsp_server_get_header(rtsp, "Content-Base");
@@ -396,7 +396,8 @@ int CRtspPushServer::_onteardown(rtsp_server_t *rtsp, const char * /*uri*/, cons
 
     std::list<std::shared_ptr<pushrtsp_stream_t>>::iterator it;
     for (it = streams.begin(); it != streams.end(); ++it) {
-        std::shared_ptr<pushrtsp_stream_t> &stream = *it;
+        ZC_UNUSED std::shared_ptr<pushrtsp_stream_t> &stream = *it;
+        LOG_TRACE("teardown tracktype:%u, encode:%u",  stream->tracktype, stream->encode);
     }
 
     return rtsp_server_reply_teardown(rtsp, 200);
@@ -453,7 +454,7 @@ int CRtspPushServer::rtsp_onoptions(void *ptr, rtsp_server_t *rtsp, const char *
 }
 
 int CRtspPushServer::_onoptions(rtsp_server_t *rtsp, const char *uri) {
-    const char *require = rtsp_server_get_header(rtsp, "Require");
+    // const char *require = rtsp_server_get_header(rtsp, "Require");
     return rtsp_server_reply_options(rtsp, 200);
 }
 
@@ -465,9 +466,9 @@ int CRtspPushServer::rtsp_ongetparameter(void *ptr, rtsp_server_t *rtsp, const c
 
 int CRtspPushServer::_ongetparameter(rtsp_server_t *rtsp, const char *uri, const char *session, const void *content,
                                      int bytes) {
-    const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
-    const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
-    const char *language = rtsp_server_get_header(rtsp, "Content-Language");
+    // const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
+    // const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
+    // const char *language = rtsp_server_get_header(rtsp, "Content-Language");
     return rtsp_server_reply_get_parameter(rtsp, 200, NULL, 0);
 }
 
@@ -479,9 +480,9 @@ int CRtspPushServer::rtsp_onsetparameter(void *ptr, rtsp_server_t *rtsp, const c
 
 int CRtspPushServer::_onsetparameter(rtsp_server_t *rtsp, const char *uri, const char *session, const void *content,
                                      int bytes) {
-    const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
-    const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
-    const char *language = rtsp_server_get_header(rtsp, "Content-Language");
+    // const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
+    // const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
+    // const char *language = rtsp_server_get_header(rtsp, "Content-Language");
     return rtsp_server_reply_set_parameter(rtsp, 200);
 }
 

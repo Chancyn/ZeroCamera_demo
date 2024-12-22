@@ -32,25 +32,46 @@ enum LogLevel {
 #define __FILENAME__ __FILE__
 #endif
 
+#ifdef LOG_TRACE
+#undef LOG_TRACE
+#endif
+#ifdef LOG_DEBUG
+#undef LOG_DEBUG
+#endif
+#ifdef LOG_INFO
+#undef LOG_INFO
+#endif
+#ifndef LOG_WARN
+#undef LOG_WARN
+#endif
+#ifndef LOG_ERROR
+#undef LOG_ERROR
+#endif
+
 #define LOG_TRACE(fmt, ...) \
-    zc_log_levelout(LEVEL_TRACE, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+    zc_log_levelout(LEVEL_TRACE, "[%s:%d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
 #define LOG_DEBUG(fmt, ...) \
-    zc_log_levelout(LEVEL_DEBUG, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-// #define LOG_TRACE(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__,
-// ##__VA_ARGS__) #define LOG_DEBUG(fmt, ...) zc_log_levelout(LEVEL_INFO, "[%s %d][%s]" fmt, __FILENAME__, __LINE__,
-// __FUNCTION__, ##__VA_ARGS__)
+    zc_log_levelout(LEVEL_DEBUG, "[%s:%d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
 #define LOG_INFO(fmt, ...) \
-    zc_log_levelout(LEVEL_INFO, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+    zc_log_levelout(LEVEL_INFO, "[%s:%d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
 #define LOG_WARN(fmt, ...) \
-    zc_log_levelout(LEVEL_WARN, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+    zc_log_levelout(LEVEL_WARN, "[%s:%d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
 #define LOG_ERROR(fmt, ...) \
-    zc_log_levelout(LEVEL_ERROR, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+    zc_log_levelout(LEVEL_ERROR, "[%s:%d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
+#ifndef LOG_CRITI
 #define LOG_CRITI(fmt, ...) \
-    zc_log_levelout(LEVEL_CRITI, "[%s %d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+    zc_log_levelout(LEVEL_CRITI, "[%s:%d][%s]" fmt, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#endif
 
 void zc_log_levelout(int level, const char *fmt, ...);
 int zc_log_init(const char *szName);
 int zc_log_uninit();
+
 
 #ifdef __cplusplus
 }

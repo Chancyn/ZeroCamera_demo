@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <sys/syslog.h>
+// #include <sys/syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -339,7 +339,7 @@ int CFmp4Muxer::_write2Fmp4(zc_frame_t *pframe) {
 }
 
 int CFmp4Muxer::_getDate2Write2Fmp4(CShmStreamR *stream) {
-    int ret = 0;
+    unsigned int ret = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
     // (stream->Len() > sizeof(zc_frame_t)) {
     while (State() == Running && (stream->Len() > sizeof(zc_frame_t))) {

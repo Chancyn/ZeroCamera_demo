@@ -26,7 +26,7 @@
 #define FIFO_TEST_SHM_PATH "video"
 #define FIFO_TEST_SHM_CHN 1
 
-static zcfifo_safe_t *g_fifo = nullptr;
+ZC_UNUSED static zcfifo_safe_t *g_fifo = nullptr;
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
 static ZC_U8 g_buffer[FIFO_TEST_BUFFLEN] = {};
 static zc::CShmFIFOR *g_cxxfifor = nullptr;
@@ -75,10 +75,7 @@ class ThreadPutLockev : public zc::Thread {
     std::string m_name;
     unsigned int m_process_cnt;
 };
-static int test()
-{
 
-}
 class ThreadGetLockev : public zc::Thread {
  public:
     explicit ThreadGetLockev(std::string name) : Thread(name), m_name(name), m_process_cnt(0) {
@@ -91,12 +88,11 @@ class ThreadGetLockev : public zc::Thread {
         ZC_U64 startts = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
         ZC_U64 endts = 0;
         ZC_U8 buffer[FIFO_TEST_BUFFLEN];
-        unsigned int ret = 0;
+        int ret = 0;
         unsigned int retcnt = 0;
         int cmp = 0;
         unsigned int errcnt = 0;
         unsigned int loopcnt = g_loopcnt;
-        unsigned int i = 0;
         char buf[2048];
         const struct epoll_event * events = nullptr;
         zc::CEpoll ep;
@@ -113,7 +109,7 @@ class ThreadGetLockev : public zc::Thread {
                 return -1;
             } else if (ret > 0) {
                 events = ep.Events();
-                for (int i = 0; i < ret; i++) {
+                for (unsigned int i = 0; (int)i < ret; i++) {
                     // LOG_WARN("epoll wait ret[%d] events[%d] [%d] [%p]", ret, events[i].events, ep[i].data.fd, ep[i].data.ptr);
                     zc::CShmFIFOR *fifor = (zc::CShmFIFOR *)ep[i].data.ptr;
                      if (events[i].events & EPOLLIN) {

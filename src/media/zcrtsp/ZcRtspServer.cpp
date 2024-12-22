@@ -217,7 +217,7 @@ int CRtspServer::rtsp_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, c
 int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                           const struct rtsp_header_transport_t transports[], size_t num) {
     std::string filename;
-    char rtsp_transport[128];
+    char rtsp_transport[256];
     const struct rtsp_header_transport_t *transport = NULL;
 
     rtsp_uri_parse(uri, filename);
@@ -337,12 +337,12 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
                  interleaved[1]);
     } else if (transport->multicast) {
         unsigned short port[2] = {transport->rtp.u.client_port1, transport->rtp.u.client_port2};
-        char multicast[SOCKET_ADDRLEN];
+        char multicast[128];
         // RFC 2326 1.6 Overall Operation p12
 
         if (transport->destination[0]) {
             // Multicast, client chooses address
-            snprintf(multicast, sizeof(multicast), "%s", transport->destination);
+            snprintf(multicast, sizeof(multicast)-1, "%s", transport->destination);
             port[0] = transport->rtp.m.port1;
             port[1] = transport->rtp.m.port2;
         } else {
@@ -362,7 +362,7 @@ int CRtspServer::_onsetup(void *ptr, rtsp_server_t *rtsp, const char *uri, const
         item.media->SetTransport(path_basename(uri), item.transport);
 
         // Transport: RTP/AVP;multicast;destination=224.2.0.1;port=3456-3457;ttl=16
-        snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP;multicast;destination=%s;port=%hu-%hu;ttl=%d",
+        snprintf(rtsp_transport, sizeof(rtsp_transport)-1, "RTP/AVP;multicast;destination=%s;port=%hu-%hu;ttl=%d",
                  multicast, port[0], port[1], 16);
 
         // 461 Unsupported Transport
@@ -545,7 +545,7 @@ int CRtspServer::rtsp_onoptions(void *ptr, rtsp_server_t *rtsp, const char *uri)
 }
 
 int CRtspServer::_onoptions(void *ptr, rtsp_server_t *rtsp, const char *uri) {
-    const char *require = rtsp_server_get_header(rtsp, "Require");
+    // const char *require = rtsp_server_get_header(rtsp, "Require");
     return rtsp_server_reply_options(rtsp, 200);
 }
 
@@ -557,9 +557,9 @@ int CRtspServer::rtsp_ongetparameter(void *ptr, rtsp_server_t *rtsp, const char 
 
 int CRtspServer::_ongetparameter(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                                  const void *content, int bytes) {
-    const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
-    const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
-    const char *language = rtsp_server_get_header(rtsp, "Content-Language");
+    // const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
+    // const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
+    // const char *language = rtsp_server_get_header(rtsp, "Content-Language");
     return rtsp_server_reply_get_parameter(rtsp, 200, NULL, 0);
 }
 
@@ -571,9 +571,9 @@ int CRtspServer::rtsp_onsetparameter(void *ptr, rtsp_server_t *rtsp, const char 
 
 int CRtspServer::_onsetparameter(void *ptr, rtsp_server_t *rtsp, const char *uri, const char *session,
                                  const void *content, int bytes) {
-    const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
-    const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
-    const char *language = rtsp_server_get_header(rtsp, "Content-Language");
+    // const char *ctype = rtsp_server_get_header(rtsp, "Content-Type");
+    // const char *encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
+    // const char *language = rtsp_server_get_header(rtsp, "Content-Language");
     return rtsp_server_reply_set_parameter(rtsp, 200);
 }
 
@@ -626,7 +626,7 @@ int CRtspServer::_send(void *ptr, const void *data, size_t bytes) {
     socket_t socket = (socket_t)(intptr_t)ptr;
 
     // TODO(zhoucc): send multiple rtp packet once time;unuse ??
-    return bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
+    return (int)bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
 }
 
 CRtspServer::CRtspServer() : Thread("RtspSer"), m_init(false), m_running(0), m_phandle(nullptr), m_psvr(nullptr) {

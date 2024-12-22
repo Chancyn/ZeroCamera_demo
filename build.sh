@@ -110,6 +110,6 @@ declare -A params
 echo_debug "------------------------------------------------------"
 parse_args "$@"
 echo_info "build soc=${soc} buildcmd=${buildcmd} cross=${cross} "
-#time source ./mk.sh
+time ./mk.sh
 echo_info "build soc=${soc} buildcmd=${buildcmd} cross=${cross} "
 echo_debug "------------------------------------------------------"

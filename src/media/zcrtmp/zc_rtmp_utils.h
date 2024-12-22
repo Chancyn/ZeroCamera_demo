@@ -12,7 +12,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 typedef struct {
-    char rurl[256];
+    char rurl[512];
     char host[128];
     char app[128];
     char stream[128];

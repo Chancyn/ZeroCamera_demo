@@ -25,7 +25,7 @@
 #define FIFO_TEST_SHM_PATH "video"
 #define FIFO_TEST_SHM_CHN 1
 
-static zcfifo_safe_t *g_fifo = nullptr;
+ZC_UNUSED static zcfifo_safe_t *g_fifo = nullptr;
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
 static ZC_U8 g_buffer[FIFO_TEST_BUFFLEN] = {};
 static zc::CShmFIFOR *g_cxxfifor = nullptr;

@@ -134,7 +134,7 @@ CRtmpSource::CRtmpSource() {
 }
 
 CRtmpSource::~CRtmpSource() {
-     m_players.clear();
+    m_players.clear();
     if (m_demuxer)
         flv_demuxer_destroy(m_demuxer);
     LOG_TRACE("Destructor %p", this);
@@ -150,7 +150,7 @@ int CRtmpSource::_onHandler(int codec, const void *data, size_t bytes, uint32_t 
     int ret = 0;
     std::lock_guard<std::mutex> locker(m_mutex);
     for (auto it = m_players.begin(); it != m_players.end(); ++it) {
-        ret =  it->get()->FlvMuxer(codec, data, bytes, pts, dts, flags);
+        ret = it->get()->FlvMuxer(codec, data, bytes, pts, dts, flags);
     }
 
     // LOG_TRACE("_onHandler(ret:%d, code:%d,bytes: %zu, pts:%u)", ret, codec, bytes, pts);
@@ -364,7 +364,6 @@ bool CRtmpSvr::Stop() {
 }
 
 bool CRtmpSvr::_startsvr() {
-    int ret = 0;
     struct aio_rtmp_server_handler_t *phandle = nullptr;
     struct aio_rtmp_server_t *rtmp = nullptr;
 
@@ -432,10 +431,10 @@ int CRtmpSvr::_svrwork() {
         system_sleep(5);
     }
     LOG_TRACE("_svrwork loop end");
-_err:
-    // stop
-    _stopsvr();
-    LOG_ERROR("_svrwork exit");
+// _err:
+//     // stop
+//     _stopsvr();
+//     LOG_ERROR("_svrwork exit");
     return ret;
 }
 

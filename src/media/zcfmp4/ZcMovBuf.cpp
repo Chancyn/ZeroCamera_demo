@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <sys/syslog.h>
+// #include <sys/syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -152,7 +152,7 @@ int CMovBuf::Seek(int64_t offset) {
     if ((offset >= 0 ? offset : -offset) >= m_maxsize)
         return -E2BIG;
 
-    ZC_ASSERT(offset <= m_buf.capacity());
+    ZC_ASSERT((size_t)offset <= m_buf.capacity());
 
     m_offset = (size_t)(offset >= 0 ? offset : m_maxsize + offset);
     return 0;
@@ -338,8 +338,8 @@ int CMovBufFile::Read(void *data, uint64_t bytes) {
     // LOG_TRACE("read, offset:%zu, size:%llu", m_offset, bytes);
     memcpy(data, &m_buf[m_offset], (uint64_t)bytes);
     m_offset += bytes;
-    int ret = 0;
-    if (bytes == (ret = fread(data, 1, bytes, m_file)))
+    size_t ret = 0;
+    if (bytes == (size_t)(ret = fread(data, 1, bytes, m_file)))
         return 0;
     int fret = ferror(m_file);
     if (fret != 0) {
@@ -411,14 +411,14 @@ int CMovBufFile::Seek(int64_t offset) {
     }
 
     m_offset = (size_t)(offset >= 0 ? offset : m_maxsize + offset);
-    ZC_ASSERT(offset <= m_buf.capacity());
+    ZC_ASSERT(offset <= (int64_t)m_buf.capacity());
     // LOG_WARN("seek, offset%zu", m_offset);
     return fseek64(m_file, offset, offset >= 0 ? SEEK_SET : SEEK_END);
 }
 
 int64_t CMovBufFile::Tell() {
     // LOG_WARN("tell, offset%zu, %p", m_offset, m_file);
-    int64_t fsize = ftell64(m_file);
+    // int64_t fsize = ftell64(m_file);
     // if (fsize != m_offset) {
     //     LOG_ERROR("error, fsize, m_offset, fsize:%lld, %zu:", fsize, m_offset);
     //     ZC_ASSERT(0);  // for debug

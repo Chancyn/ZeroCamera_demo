@@ -3,6 +3,7 @@
 //
 
 #include "h265_sei.h"
+#include "zc_macros.h"
 
 #include <stdio.h>
 #include <stdlib.h> // malloc
@@ -58,7 +59,7 @@ static void read_user_data_unregistered(h265_stream_t* h, bs_t* b, int payloadSi
 void h265_read_sei_payload(h265_stream_t* h, bs_t* b, int payloadType, int payloadSize)
 {
     int sei_type = h->nal->nal_unit_type;
-    h265_sei_t* s = h->sei;
+    ZC_UNUSED h265_sei_t* s = h->sei;
 
     if (sei_type == NAL_UNIT_PREFIX_SEI)
     {

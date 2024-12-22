@@ -12,8 +12,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include <sys/syslog.h>
-
 #include "srt/srt.h"
 #include "zc_error.h"
 #include "zc_log.h"
@@ -146,7 +144,7 @@ int CSrtListener::SetOptionsPost(int fd) {
      derived by accept-ed socket. */
 int CSrtListener::SetOptionsPre(int fd) {
     SRTContext *ctx = m_srtcontext;
-    int connect_timeout = ctx->connect_timeout;
+    // int connect_timeout = ctx->connect_timeout;
 
     if (ctx->linger >= 0) {
         struct linger lin;
@@ -207,20 +205,15 @@ int CSrtListener::praseUrl(const char *uri, zc_srt_url_t *pstUrl) {
         }
     }
     return 0;
-err:
-    return ret;
 }
 
 int CSrtListener::startListen() {
     int ret = 0;
-    int os_errno;
     int reuse = 1;
     /* Max streamid length plus an extra space for the terminating null character */
-    char streamid[513];
     char portstr[10];
-    int streamid_len = sizeof(streamid);
     int epmodes = SRT_EPOLL_ERR | SRT_EPOLL_IN;
-    struct addrinfo hints = {0}, *ai, *cur_ai;
+    struct addrinfo hints = {0}, *ai;
 
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
@@ -232,7 +225,6 @@ int CSrtListener::startListen() {
         return ZCERROR(EIO);
     }
 
-    cur_ai = ai;
     m_srtcontext->fd = srt_create_socket();
     if (m_srtcontext->fd < 0) {
         ret = zc_srt_neterrno();

@@ -27,7 +27,7 @@ function build_cmake_clean(){
     echo_debug "---------------cmake clean into-------------------"
     # Initial directory
     rm -rf $builddir  #每次都重新编译，删除build文件
-    echo_debug "---------------cmake clean endi-------------------"
+    echo_debug "---------------cmake clean end-------------------"
 }
 
 function build_cmake(){
@@ -48,12 +48,12 @@ fi
     echo ${toolchainfile}
     cmake -DCMAKE_TOOLCHAIN_FILE=${toolchainfile} $basepath  #编译cmake
     popd
-    echo_debug "---------------cmake end-------------------"
+    echo_debug "---------------make end-------------------------"
 fi
 }
 
 function build_make(){
-    echo_debug "---------------make into-------------------"
+    echo_debug "---------------make into-----------------------------"
     pushd $builddir
     # Run make
 if [ "${build_VERBOSE}" = "1" ]; then
@@ -63,7 +63,7 @@ else
 fi
     make install
     popd
-    echo_debug "---------------make end-------------------"
+    echo_debug "---------------make end-------------------------"
 }
 
 function submodule_media_server(){
@@ -204,7 +204,7 @@ function build_copy2rundir(){
     echo_warn "------------------------------------------------------"
     cp ${outputdir}/bin/* ${rundir}/bin
     cp ${outputdir}/lib/lib*.so* ${rundir}/lib
-    echo_debug "------------------------------------------"
+    echo_debug "------------------------------------------------------"
 }
 
 function build_thirdparty(){

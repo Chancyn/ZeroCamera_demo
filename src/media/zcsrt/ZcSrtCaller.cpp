@@ -7,11 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/syslog.h>
 
 #include "Thread.hpp"
 #include "srt/srt.h"
 
+#include "zc_type.h"
 #include "zc_error.h"
 #include "zc_log.h"
 #include "zc_macros.h"
@@ -194,7 +194,7 @@ int CSrtCaller::SetOptionsPost(int fd) {
      derived by accept-ed socket. */
 int CSrtCaller::SetOptionsPre(int fd) {
     SRTContext *ctx = m_srtcontext;
-    int connect_timeout = ctx->connect_timeout;
+    // int connect_timeout = ctx->connect_timeout;
 
     if (ctx->linger >= 0) {
         struct linger lin;
@@ -294,7 +294,7 @@ int CSrtCaller::connect(zc_srt_url_t *url, int flags) {
     int ret = 0;
     SRTContext *ctx = m_srtcontext;
 
-    struct addrinfo hints = {0}, *ai, *cur_ai;
+    struct addrinfo hints = {0}, *ai;
     char portstr[10];
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
@@ -306,7 +306,7 @@ int CSrtCaller::connect(zc_srt_url_t *url, int flags) {
         LOG_ERROR("Failed to resolve hostname %s: %s", url->hostname, gai_strerror(ret));
         return ZCERROR(EIO);
     }
-    cur_ai = ai;
+
     ctx->fd = srt_create_socket();
     if (ctx->fd < 0) {
         ret = zc_srt_neterrno();

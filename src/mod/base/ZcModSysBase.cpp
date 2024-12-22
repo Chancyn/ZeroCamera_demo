@@ -257,8 +257,8 @@ int CModSysBase::PublishRegister(int regstatus, sys_modcli_status_t *info) {
     subinfo->lasttime = info->lasttime;
     subinfo->modid = info->modid;
     subinfo->pid = info->pid;
-    strncpy(subinfo->pname, subinfo->pname, sizeof(subinfo->pname) - 1);
-    strncpy(subinfo->url, subinfo->url, sizeof(subinfo->url) - 1);
+    strncpy(subinfo->pname, info->pname, sizeof(subinfo->pname) - 1);
+    strncpy(subinfo->url, info->url, sizeof(subinfo->url) - 1);
 
     LOG_INFO("pub register, [%s]pid:%d,modid:%u,regtime:%u,last:%u, url:%s", subinfo->pname, subinfo->pid,
              subinfo->modid, subinfo->regtime, subinfo->lasttime, subinfo->url);

@@ -24,8 +24,8 @@ bool CRtmpSvrMan::Init(ZC_U16 port) {
         LOG_ERROR("already init");
         return false;
     }
-    zc_stream_info_t info;
 
+    // zc_stream_info_t info;
     // if (sendSMgrGetInfo(type, chn, &info) < 0) {
     //     LOG_TRACE("sendSMgrGetInfo error");
     //     goto _err;

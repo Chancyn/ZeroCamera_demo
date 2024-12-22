@@ -10,6 +10,7 @@
 #include "bs.h"
 #include "h265_stream.h"
 #include "h265_sei.h"
+#include "zc_macros.h"
 
 FILE* h265_dbgfile = NULL;
 
@@ -21,9 +22,10 @@ FILE* h265_dbgfile = NULL;
  */
 h265_stream_t* h265_new()
 {
-    h265_stream_t* h = (h265_stream_t*)calloc(1, sizeof(h265_stream_t));
-
-    h->nal = (h265_nal_t*)calloc(1, sizeof(h265_nal_t));
+    // h265_stream_t* h = (h265_stream_t*)calloc(1, sizeof(h265_stream_t));
+    // h->nal = (h265_nal_t*)calloc(1, sizeof(h265_nal_t));
+    h265_stream_t* h = new h265_stream_t();
+    h->nal = new h265_nal_t();
 
     // initialize tables
     for ( int i = 0; i < 16; i++ ) { h->vps_table[i] = (h265_vps_t*)calloc(1, sizeof(h265_vps_t)); }
@@ -33,13 +35,17 @@ h265_stream_t* h265_new()
     h->vps = h->vps_table[0];
     h->sps = h->sps_table[0];
     h->pps = h->pps_table[0];
-    h->aud = (h265_aud_t*)calloc(1, sizeof(h265_aud_t));
+    // h->aud = (h265_aud_t*)calloc(1, sizeof(h265_aud_t));
+    h->aud = new h265_aud_t();
     h->num_seis = 0;
     h->seis = NULL;
     h->sei = NULL;  //This is a TEMP pointer at whats in h->seis...
-    h->sh = (h265_slice_header_t*)calloc(1, sizeof(h265_slice_header_t));
 
-    h->info = (videoinfo_t*)calloc(1, sizeof(videoinfo_t));
+    // h->sh = (h265_slice_header_t*)calloc(1, sizeof(h265_slice_header_t));
+    // h->info = (videoinfo_t*)calloc(1, sizeof(videoinfo_t));
+
+    h->sh = new h265_slice_header_t();
+    h->info = new videoinfo_t();
     h->info->type = 1;
     return h;
 }
@@ -50,14 +56,22 @@ h265_stream_t* h265_new()
  */
 void h265_free(h265_stream_t* h)
 {
-    free(h->nal);
+    // free(h->nal);
+    if (h->nal) {
+        delete h->nal;
+        h->nal = nullptr;
+    }
     for ( int i = 0; i < 16; i++ ) { if (h->vps_table[i]!=NULL) free( h->vps_table[i] ); }
     for ( int i = 0; i < 32; i++ ) { if (h->sps_table[i]!=NULL) free( h->sps_table[i] ); }
     for ( int i = 0; i < 256; i++ ) { if (h->pps_table[i]!=NULL) free( h->pps_table[i] ); }
 
-    if (h->aud != NULL)
-    {
-        free(h->aud);
+    // if (h->aud != NULL) {
+    //     free(h->aud);
+    // }
+
+    if (h->aud) {
+        delete h->aud;
+        h->aud = nullptr;
     }
 
     if(h->seis != NULL)
@@ -68,9 +82,21 @@ void h265_free(h265_stream_t* h)
             h265_sei_free(sei);
         }
         free(h->seis);
+
     }
-    free(h->sh);
-    free(h);
+    
+    // free(h->sh);
+    // free(h);
+
+    if (h->sh) {
+        delete h->sh;
+        h->sh = nullptr;
+    }
+
+    if (h) {
+        delete h;
+        h = nullptr;
+    }
 }
 
 /**
@@ -595,7 +621,7 @@ void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t
     if (st->inter_ref_pic_set_prediction_flag)
     {
         st->delta_idx_minus1 = 0;
-        if (stRpsIdx == sps->m_RPSList.size())
+        if (stRpsIdx == (int)sps->m_RPSList.size())
         {
             st->delta_idx_minus1 = bs_read_ue(b);
         }
@@ -604,7 +630,7 @@ void h265_read_short_term_ref_pic_set(bs_t* b, h265_sps_t* sps, st_ref_pic_set_t
 
         st->delta_rps_sign       = bs_read_u1(b);
         st->abs_delta_rps_minus1 = bs_read_ue(b);
-        int deltaRPS = (1 - 2 * st->delta_rps_sign) * (st->abs_delta_rps_minus1 + 1); // delta_RPS
+        ZC_UNUSED int deltaRPS = (1 - 2 * st->delta_rps_sign) * (st->abs_delta_rps_minus1 + 1); // delta_RPS
         st->used_by_curr_pic_flag.resize(rpsRef->m_numberOfPictures+1);
         st->use_delta_flag.resize(rpsRef->m_numberOfPictures+1);
         for (int j = 0; j <= rpsRef->m_numberOfPictures; j++)
@@ -842,7 +868,7 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
     // 选择正确的sps表
     h->vps = h->vps_table[vps_video_parameter_set_id];
     h265_vps_t* vps = h->vps;
-    memset(vps, 0, sizeof(h265_vps_t));
+    // memset(vps, 0, sizeof(h265_vps_t));
 
     vps->vps_video_parameter_set_id    = vps_video_parameter_set_id;
     vps->vps_base_layer_internal_flag  = bs_read_u1(b);
@@ -915,7 +941,7 @@ void  h265_read_vps_rbsp(h265_stream_t* h, bs_t* b)
     {
         while (h265_more_rbsp_trailing_data(b))
         {
-            int sps_extension_data_flag = bs_read_u1(b);
+            ZC_UNUSED int sps_extension_data_flag = bs_read_u1(b);
         }
     }
     h265_read_rbsp_trailing_bits(b);
@@ -930,14 +956,14 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     int sps_max_sub_layers_minus1 = 0;
     int sps_temporal_id_nesting_flag = 0;
     int sps_seq_parameter_set_id = 0;
-    profile_tier_level_t profile_tier_level;
+    profile_tier_level_t profile_tier_level{};
 
     sps_video_parameter_set_id = bs_read_u(b, 4);
     sps_max_sub_layers_minus1 = bs_read_u(b, 3);
     sps_temporal_id_nesting_flag = bs_read_u1(b);
 
     // profile tier level...
-    memset(&profile_tier_level, '\0', sizeof(profile_tier_level_t));
+    // memset(&profile_tier_level, '\0', sizeof(profile_tier_level_t));
 
     h265_read_ptl(&profile_tier_level, b, 1, sps_max_sub_layers_minus1);
 
@@ -945,13 +971,14 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     // 选择正确的sps表
     h->sps = h->sps_table[sps_seq_parameter_set_id];
     h265_sps_t* sps = h->sps;
-    memset(sps, 0, sizeof(h265_sps_t));
+    // memset(sps, 0, sizeof(h265_sps_t));
 
     sps->sps_video_parameter_set_id   = sps_video_parameter_set_id;
     sps->sps_max_sub_layers_minus1    = sps_max_sub_layers_minus1;
     sps->sps_temporal_id_nesting_flag = sps_temporal_id_nesting_flag;
 
-    memcpy(&(sps->ptl), &profile_tier_level, sizeof(profile_tier_level_t)); // ptl
+    // memcpy(&(sps->ptl), &profile_tier_level, sizeof(profile_tier_level_t)); // ptl
+    sps->ptl = profile_tier_level;
 
     sps->sps_seq_parameter_set_id     = sps_seq_parameter_set_id;
     sps->chroma_format_idc     = bs_read_ue(b);
@@ -1109,7 +1136,7 @@ void  h265_read_sps_rbsp(h265_stream_t* h, bs_t* b)
     {
         while (h265_more_rbsp_trailing_data(b))
         {
-            int sps_extension_data_flag = bs_read_u1(b);
+            ZC_UNUSED int sps_extension_data_flag = bs_read_u1(b);
         }
     }
     h265_read_rbsp_trailing_bits(b);
@@ -1123,7 +1150,7 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
 
     h265_pps_t* pps = h->pps = h->pps_table[pps_pic_parameter_set_id] ;
 
-    memset(pps, 0, sizeof(h265_pps_t));
+    // memset(pps, 0, sizeof(h265_pps_t));
 
     pps->pps_pic_parameter_set_id      = pps_pic_parameter_set_id;
     pps->pps_seq_parameter_set_id      = bs_read_ue(b);
@@ -1240,7 +1267,7 @@ void h265_read_pps_rbsp(h265_stream_t* h, bs_t* b)
     {
         while (h265_more_rbsp_trailing_data(b))
         {
-            int pps_extension_data_flag = bs_read_u1(b);
+            ZC_UNUSED int pps_extension_data_flag = bs_read_u1(b);
         }
     }
     h265_read_rbsp_trailing_bits(b);
@@ -1255,7 +1282,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
     int nal_unit_type = h->nal->nal_unit_type;
     int read_slice_type = hrd->read_slice_type;
 
-    memset(hrd, 0, sizeof(h265_slice_header_t));
+    // memset(hrd, 0, sizeof(h265_slice_header_t));
 
     hrd->first_slice_segment_in_pic_flag  = bs_read_u1(b);
 
@@ -1416,7 +1443,7 @@ void h265_read_slice_header(h265_stream_t* h, bs_t* b)
                 }
             }
             // to confirm...
-            int tmp = 0;
+            // int tmp = 0;
             int NumPicTotalCurr = getNumRpsCurrTempList(hrd);
             if(pps->lists_modification_present_flag  &&  NumPicTotalCurr > 1)
             {
@@ -1606,7 +1633,7 @@ void h265_read_sei_rbsp(h265_stream_t* h, bs_t* b)
 void h265_read_rbsp_slice_trailing_bits(bs_t* b)
 {
     h265_read_rbsp_trailing_bits(b);
-    int cabac_zero_word;
+    ZC_UNUSED int cabac_zero_word = 0;
     while( h265_more_rbsp_trailing_data(b) )
     {
         cabac_zero_word = bs_read_f(b,16); // equal to 0x0000
@@ -1616,10 +1643,10 @@ void h265_read_rbsp_slice_trailing_bits(bs_t* b)
 //7.3.2.11 RBSP trailing bits syntax
 void h265_read_rbsp_trailing_bits(bs_t* b)
 {
-    int rbsp_stop_one_bit = bs_read_u1( b ); // equal to 1
+    ZC_UNUSED int rbsp_stop_one_bit = bs_read_u1( b ); // equal to 1
 
     while( !bs_byte_aligned(b) )
     {
-        int rbsp_alignment_zero_bit = bs_read_u1( b ); // equal to 0 7 bits
+        ZC_UNUSED int rbsp_alignment_zero_bit = bs_read_u1( b ); // equal to 0 7 bits
     }
 }

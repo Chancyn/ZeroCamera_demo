@@ -125,7 +125,7 @@ void CMediaTrack::OnRTCPEvent(void *param, const struct rtcp_msg_t *msg) {
 }
 
 void *CMediaTrack::_RTPAlloc(int bytes) {
-    ZC_ASSERT(bytes <= sizeof(m_packet));
+    ZC_ASSERT(bytes <= (int)sizeof(m_packet));
     return m_packet;
 }
 
@@ -168,7 +168,7 @@ int CMediaTrack::RTPPacket(void *param, const void *packet, int bytes, uint32_t 
 }
 
 int CMediaTrack::GetData2Send() {
-    int ret = 0;
+    unsigned int ret = 0;
     zc_frame_t *pframe = (zc_frame_t *)m_framebuf;
 
 #if 0  // for test frame write over read

@@ -97,12 +97,12 @@ void CStreamTrace::TraceStream(const zc_frame_t *frame) {
         }
 
         if (trace->fps > 1 && frame->pts != 0 && frame->pts != 0) {
-            int diff = 1000 / trace->fps;
+            unsigned int diff = 1000 / trace->fps;
             if ((frame->pts - trace->lastpts) > 2 * diff) {
-                LOG_WARN("%s frame delay fps:%.2f, pts:%llu->%llu,%d, diff:%d", g_streamnametab[type], trace->fps,
+                LOG_WARN("%s frame delay fps:%.2f, pts:%llu->%llu,%d, diff:%u", g_streamnametab[type], trace->fps,
                          trace->lastpts, frame->pts, frame->pts - trace->lastpts, diff);
             } else if ((frame->pts - trace->lastpts) < 4) {
-                LOG_WARN("%s early fps:%.2f, pts:%llu->%llu,%d, diff:%d", g_streamnametab[type], trace->fps,
+                LOG_WARN("%s early fps:%.2f, pts:%llu->%llu,%d, diff:%u", g_streamnametab[type], trace->fps,
                          trace->lastpts, frame->pts, frame->pts - trace->lastpts, diff);
             }
         }

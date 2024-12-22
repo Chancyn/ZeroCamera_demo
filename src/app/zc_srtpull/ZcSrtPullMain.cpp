@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     }
 
     int chn = 0;
-    int type = 0;
+    // int type = 0;
     if (argc > 2) {
         chn = atoi(argv[2]);
     }

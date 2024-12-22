@@ -47,6 +47,14 @@ extern "C" {
     } while (0)
 #endif
 
+#if defined(_MSC_VER)
+    #define ZC_UNUSED
+#elif defined(__GNUC__)
+    #define ZC_UNUSED __attribute__((unused))
+#else
+    #define ZC_UNUSED
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

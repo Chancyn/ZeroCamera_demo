@@ -59,7 +59,7 @@ bool CMediaTrackH264::Init(void *pinfo) {
         "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=%s\n"
         "a=control:track%d\n";
 
-    const char *test_sps = "Z00AKpY1QPAET8s3AQEBAgAAAAE=,aO4xsgAAAAEG5QHpgAAAAAFluAAADJ1wAAE/6Q==";
+    // const char *test_sps = "Z00AKpY1QPAET8s3AQEBAgAAAAE=,aO4xsgAAAAEG5QHpgAAAAAFluAAADJ1wAAE/6Q==";
     // profile-level-id=4D002A;
     char profileid[3] = {0x4D, 0x00, 0x2A};
     m_fiforeader = new CShmStreamR(m_info.fifosize, m_info.name, m_info.chn);

@@ -55,7 +55,7 @@ bool CSrtPull::Init(srtpull_callback_info_t *cbinfo, int chn, const char *url) {
     }
 
     strncpy(m_url, url, sizeof(m_url));
-    memcpy(&m_cbinfo, &cbinfo, sizeof(srtpull_callback_info_t));
+    memcpy(&m_cbinfo, cbinfo, sizeof(srtpull_callback_info_t));
     m_streamsput = new CStreamsPut();
     if (!m_streamsput) {
         LOG_TRACE("new CStreamsPut");

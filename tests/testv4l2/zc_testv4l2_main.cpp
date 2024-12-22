@@ -18,6 +18,7 @@
 #define FALSE 0
 #endif
 
+#if defined(WITH_FFMPEG)
 static BOOL bExitFlag = FALSE;
 
 static void SigProc(int dummy) {
@@ -33,7 +34,6 @@ static void InitSignals() {
     signal(SIGPIPE, SIG_IGN);
 }
 
-#if defined(WITH_FFMPEG)
 int main(int argc, char **argv) {
     printf("main into\n");
     InitSignals();

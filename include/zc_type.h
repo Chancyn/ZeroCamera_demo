@@ -34,7 +34,7 @@ typedef unsigned char BOOL;
 #endif
 
 #define _ALIGN(addr, T) ((unsigned)((char *)addr + sizeof(T) - 1) & ~(sizeof(T) - 1))
-#define _ROUND(size, mask) (((size) + (mask)-1) & ~((mask)-1))
+#define _ROUND(size, mask) (((size) + (mask) - 1) & ~((mask) - 1))
 #define _SIZEOFTAB(x) (sizeof(x) / sizeof((x)[0]))
 
 #ifdef __GNUC__
@@ -98,7 +98,6 @@ typedef unsigned char BOOL;
             x = NULL; \
         } \
     } while (0)
-
 
 #define ZC_MAX_PATH 256
 #define ZC_MAX_PNAME 32

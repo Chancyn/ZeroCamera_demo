@@ -59,7 +59,7 @@ bool CMediaTrackH265::Init(void *pinfo) {
         "a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=%s\n"
         "a=control:track%d\n";
 
-    const char *test_sps = "QAEMAf//AWAAAAMAsAAAAwAAAwBdqgJAAAAAAQ==";
+    // const char *test_sps = "QAEMAf//AWAAAAMAsAAAAwAAAwBdqgJAAAAAAQ==";
     // profile-level-id=010C01;
     char profileid[3] = {0x01, 0x0C, 0x01};
 

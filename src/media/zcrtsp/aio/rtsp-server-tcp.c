@@ -10,6 +10,7 @@
 #include <errno.h>
 
 #include "rtsp-server-internal.h"
+#include "zc_macros.h"
 
 #define TIMEOUT_RECV 65000
 #define TIMEOUT_SEND 10000
@@ -152,7 +153,7 @@ static void rtsp_session_onrtp(void *param, uint8_t channel, const void *data, u
     return;
 }
 
-static void rtsp_session_onerror(void* param, rtsp_server_t* rtsp, int code, void *ptr)
+ZC_UNUSED static void rtsp_session_onerror(void* param, rtsp_server_t* rtsp, int code, void *ptr)
 {
     struct rtsp_session_t* session = (struct rtsp_session_t*)param;
     if (session)
@@ -215,6 +216,8 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 		session->rtp.onrtp = rtsp_session_onrtp;    // call onrtp2,callback with seesion ptr
 		session->onrtp2 = handler->onrtp2;
         session->onrtp = handler->onrtp;
+
+		// TODO(Chance): onerror
         // session->rtp.onerror = rtsp_session_onerror;  // call onrtp2,callback with seesion ptr
         // session->onerror2 = handler->onerror2;
         // session->onerror = handler->onerror;

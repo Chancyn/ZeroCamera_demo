@@ -34,15 +34,15 @@ static void InitSignals() {
     signal(SIGPIPE, SIG_IGN);
 }
 
-class CTestWriterMan {
- public:
-    CTestWriterMan() {}
-    virtual ~CTestWriterMan() {}
-    bool Init() {}
-    bool UnInit() {}
+// class CTestWriterMan {
+//  public:
+//     CTestWriterMan() {}
+//     virtual ~CTestWriterMan() {}
+//     bool Init() { return true; }
+//     bool UnInit() { return true; }
 
- private:
-};
+//  private:
+// };
 
 static int praseEncodetrans2Type(const char *encoding) {
     if (0 == strcasecmp("H264", encoding)) {
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     }
 
     zc::CTestWriterMan man;
-    if (man.Init(codeTab, len) < 0) {
+    if (!man.Init(codeTab, len)) {
         LOG_ERROR("error Init");
         goto _err;
     }

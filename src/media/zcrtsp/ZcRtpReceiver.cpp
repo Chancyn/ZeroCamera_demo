@@ -55,7 +55,8 @@ CRtpReceiver::~CRtpReceiver() {
     RtpReceiverStop();
     ZC_SAFE_FREE(m_rtpctx);
 }
-#if 1
+
+#if 0
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -86,7 +87,7 @@ static void print_sockaddr(const struct sockaddr *addr) {
 int CRtpReceiver::_rtpRead(socket_t s) {
     int r;
     uint8_t size[2];
-    static int i, n = 0;
+    // static int i, n = 0;
     socklen_t len;
     struct sockaddr_storage ss;
     len = sizeof(ss);
@@ -101,7 +102,7 @@ int CRtpReceiver::_rtpRead(socket_t s) {
         // ZC_ASSERT(0);
         // return 0;
     }
-    n += r;
+    // n += r;
     // if (0 == i++ % 100)
     //     LOG_TRACE("packet: %d, seq: %u, size: %d/%d", i,
     //               ((uint8_t)m_rtpctx->rtp_buffer[2] << 8) | (uint8_t)m_rtpctx->rtp_buffer[3], r, n);
@@ -344,9 +345,9 @@ int CRtpReceiver::Encodingtrans2Type(const char *encoding, unsigned int &trackty
 bool CRtpReceiver::RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int peerport[2], int payload,
                                        const char *encoding) {
     if (!m_rtpctx)
-        false;
+        return false;
+
     size_t n;
-    pthread_t t;
     const struct rtp_profile_t *profile;
 
     snprintf(m_rtpctx->rtp_buffer, sizeof(m_rtpctx->rtp_buffer), "%s.%d.%d.%s", peer, peerport[0], payload, encoding);

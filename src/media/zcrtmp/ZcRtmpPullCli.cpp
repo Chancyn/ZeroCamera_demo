@@ -273,12 +273,6 @@ bool CRtmpPullCli::_startFlvDemuxer() {
 
     LOG_TRACE("startFlvMuxer OK");
     return true;
-_err:
-    delete m_flvmuxer;
-    m_flvmuxer = nullptr;
-
-    LOG_ERROR("startFlvMuxer error");
-    return false;
 }
 
 bool CRtmpPullCli::_stopFlvDemuxer() {

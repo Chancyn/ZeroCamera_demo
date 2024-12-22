@@ -33,3 +33,6 @@ set(OPENSSL_LIBRARY_DIR ${OPENSSL_ROOT_DIR}/lib64)
 option(WITH_FFMPEG "ffmpeg option"     OFF)
 option(WITH_OPENSSL "openssl option"   ON)
 option(WITH_ASAN "asan option" OFF)
+
+# media server
+add_definitions(-DOS_LINUX)

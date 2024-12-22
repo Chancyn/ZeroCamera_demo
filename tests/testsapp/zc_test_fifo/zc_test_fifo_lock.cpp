@@ -26,7 +26,7 @@
 #define FIFO_TEST_FIFOSIZE (1024 * 1024)
 
 #if !TEST_FIFO_CXX  // cxx test
-static zcfifo_safe_t *g_fifo = nullptr;
+ZC_UNUSED static zcfifo_safe_t *g_fifo = nullptr;
 #endif
 
 static ZC_U32 g_loopcnt = FIFO_TEST_LOOPCNT;
@@ -136,7 +136,7 @@ class ThreadGetLock : public zc::Thread {
 
 static ThreadGetLock *g_threadget = nullptr;
 static ThreadPutLock *g_threadput = nullptr;
-static zcfifo_safe_lock_t g_lock;
+ZC_UNUSED static zcfifo_safe_lock_t g_lock;
 
 static int _zc_test_fifo_start() {
     for (unsigned int i = 0; i < sizeof(g_buffer); i++) {
