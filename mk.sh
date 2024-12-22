@@ -204,6 +204,11 @@ function build_copy2rundir(){
     echo_warn "------------------------------------------------------"
     cp ${outputdir}/bin/* ${rundir}/bin
     cp ${outputdir}/lib/lib*.so* ${rundir}/lib
+    if [ ! -d ${rundir}/www ]; then
+        echo_debug "-------------------copy www---------------------------"
+        cp www/* ${rundir}/bin
+        echo_debug "-------------------copy www end-----------------------"
+    fi
     echo_debug "------------------------------------------------------"
 }
 
