@@ -1,0 +1,5 @@
+{
+	"type": "ts",
+	"isLive": true,
+	"url": "http://192.168.1.166:8000/live/live.ch1.ts"
+}
