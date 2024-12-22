@@ -55,7 +55,7 @@ ZC_S32 CMsgProcModSys::_handleReqSysManRegister(zc_msg_t *req, int iqsize, zc_ms
         ret = m_cbinfo.MgrHandleCb(m_cbinfo.MgrContext, 0, nullptr, nullptr);
     }
 
-    LOG_TRACE("handle ReqSysManRegister,ret,  ret:%d, cmd:%d, url:%s,date:%s ", ret, rep->err, msgreq->regcmd,
+    LOG_TRACE("handle ReqSysManRegister,ret:%d, err:%d, cmd:%d, url:%s,date:%s ", ret, rep->err, msgreq->regcmd,
               msgreq->url, msgreq->date);
     return 0;
 }
