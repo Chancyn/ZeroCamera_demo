@@ -147,7 +147,7 @@ int CMediaReceiverAAC::RtpOnFrameIn(const void *packet, int bytes, uint32_t time
         m_fifowriter->Put((const unsigned char *)m_frame, sizeof(zc_frame_t) + 7, &raw);
 
 #if ZC_DEBUG
-        LOG_TRACE("AAC,time:%08u,utc:%u,len:%d,flags:%d", time, m_frame->size, m_frame->utc, flags);
+        // LOG_TRACE("AAC,time:%08u,utc:%u,len:%d,flags:%d", time, m_frame->utc, m_frame->size, flags);
 #endif
     }
 
