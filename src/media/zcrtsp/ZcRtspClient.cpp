@@ -39,7 +39,7 @@
 #define ZC_RTSP_CLI_BUF_SIZE (2 * 1024 * 1024)
 
 extern "C" int rtsp_addr_is_multicast(const char *ip);
-
+extern "C" int rtsp_client_options(rtsp_client_t *rtsp, const char *commands);
 namespace zc {
 CRtspClient::CRtspClient()
     : Thread("RtspCli"), m_init(false), m_running(0), m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]), m_phandle(nullptr) {
@@ -151,7 +151,6 @@ int CRtspClient::_rtpport(int media, const char *source, unsigned short rtp[2], 
     return m_client.transport;
 }
 
-int rtsp_client_options(rtsp_client_t *rtsp, const char *commands);
 void CRtspClient::onrtp(void *param, uint8_t channel, const void *data, uint16_t bytes) {
     CRtspClient *pcli = reinterpret_cast<CRtspClient *>(param);
     return pcli->_onrtp(channel, data, bytes);
@@ -168,7 +167,8 @@ void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
     m_pRtp[channel / 2]->RtpReceiverTcpInput(channel, data, bytes);
 
     if (++m_keepalive % 1000 == 0) {
-        rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL, NULL);
+        // rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL, NULL);
+        rtsp_client_options(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL);
     }
 }
 
