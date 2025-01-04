@@ -12,8 +12,8 @@ set_target_properties(spdlog::spdlog PROPERTIES
   IMPORTED_SONAME_RELEASE "libspdlog.so.1.13"
   )
 
-list(APPEND _cmake_import_check_targets spdlog::spdlog )
-list(APPEND _cmake_import_check_files_for_spdlog::spdlog "${_IMPORT_PREFIX}/lib/libspdlog.so.1.13.0" )
+list(APPEND _IMPORT_CHECK_TARGETS spdlog::spdlog )
+list(APPEND _IMPORT_CHECK_FILES_FOR_spdlog::spdlog "${_IMPORT_PREFIX}/lib/libspdlog.so.1.13.0" )
 
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

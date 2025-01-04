@@ -6,9 +6,9 @@ cd $basepath
 #soc="x86_64"
 #buildcmd=make
 #是否交叉编译
-cross="0"
+#cross="0"
 # 编译参数
-build_VERBOSE="0"
+build_VERBOSE="1"
 
 #CMake编译工作目录生成文件的地方
 builddir=$basepath/build

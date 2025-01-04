@@ -12,7 +12,7 @@ buildcmd="make"
 export buildcmd=${buildcmd}
 
 # 是否交叉编译
-cross="0"
+cross=0
 
 # shell脚本调试信息
 export shell_debug=1
@@ -28,15 +28,21 @@ export cross=1
 ;;
 ss928v100 )
 echo_info "soc type is ${soc}"
+cross="1"
 export soc=${soc}
 export cross=1
 ;;
 rk3588 )
 echo_info "soc type is ${soc}"
+cross="1"
 export soc=${soc}
 export cross=1
 ;;
 x86_64 )
+echo_info "soc type is ${soc}"
+export soc=${soc}
+;;
+aarch64 )
 echo_info "soc type is ${soc}"
 export soc=${soc}
 ;;
