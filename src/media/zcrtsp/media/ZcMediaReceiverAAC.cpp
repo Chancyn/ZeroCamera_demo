@@ -78,6 +78,10 @@ CMediaReceiverAAC::CMediaReceiverAAC(const zc_meida_track_t &info) : CMediaRecei
     m_accinfo.channel_configuration = 2;
     // init hdr
     adts_fixed_header(&m_accinfo, m_dtshdr, 0);
+    // init pts
+    m_frequency = 48000;
+    m_timestamp = 0;
+    m_pts = INT64_MIN;
 }
 
 CMediaReceiverAAC::~CMediaReceiverAAC() {}
@@ -128,16 +132,37 @@ unsigned int CMediaReceiverAAC::_putingCb(void *stream) {
     return m_fifowriter->PutAppending(frame->ptr, frame->len);
 }
 
+int CMediaReceiverAAC::SetRtpInfo_Rtptime(uint16_t seq, uint32_t timestamp, uint64_t npt) {
+    m_lasttime = timestamp;
+    m_timestamp = timestamp;
+    //m_basepts = zc_system_time() + npt;
+    m_basepts = npt;
+    LOG_WARN("AAC,seq:%u timestamp:%u, npt:%llu, %llu", seq, timestamp, npt, m_basepts);
+     return 0;
+}
+
 int CMediaReceiverAAC::RtpOnFrameIn(const void *packet, int bytes, uint32_t time, int flags) {
     ZC_ASSERT(m_fifowriter != nullptr);
     if (bytes + 7 <= (int)m_info.framemaxlen) {
         _framelenUpdateADTSHdr(bytes);
         memcpy(m_frame->data, m_dtshdr, 7);
 
+        // RTP timestamp => PTS/DTS
+        if (0 == m_lasttime && INT64_MIN == m_pts) {
+            m_timestamp = time;
+             m_basepts = 0;
+            // m_basepts = zc_system_time();
+            LOG_ERROR("error init timestamp:%lld, pts:%llu", m_timestamp, m_basepts);
+        } else {
+            // m_timestamp += (int32_t)(time - m_lasttime);
+        }
+        m_lasttime = time;
+        m_pts = m_basepts + (time - m_timestamp) * 1000 / m_frequency;
+
         m_frame->keyflag = 0;
         m_frame->seq = 0;
         m_frame->utc = zc_system_time();
-        m_frame->pts = m_frame->utc;
+        m_frame->pts = m_pts; // m_frame->utc;
         m_frame->size = bytes + 7;
         audio_raw_frame_t raw;
         raw.ptr = (const uint8_t *)packet;
@@ -147,7 +172,7 @@ int CMediaReceiverAAC::RtpOnFrameIn(const void *packet, int bytes, uint32_t time
         m_fifowriter->Put((const unsigned char *)m_frame, sizeof(zc_frame_t) + 7, &raw);
 
 #if ZC_DEBUG
-        LOG_TRACE("AAC,time:%08u,utc:%u,len:%d,flags:%d", time, m_frame->size, m_frame->utc, flags);
+        // LOG_TRACE("AAC,timestamp:%u time:%u, pts:%u, utc:%u,len:%d,flags:%d", m_timestamp, time, m_frame->pts, m_frame->utc, m_frame->size, flags);
 #endif
     }
 

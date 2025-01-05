@@ -15,14 +15,9 @@ installabsdir=$basepath/../../install/rk3588/${srcname}
 installdir=$(cd $installabsdir; pwd)
 
 COMPILER_PREFIX=aarch64-none-linux-gnu-
-export CC=${COMPILER_PREFIX}gcc
-export CXX=${COMPILER_PREFIX}g++
+# export CC=${COMPILER_PREFIX}gcc
+# export CXX=${COMPILER_PREFIX}g++
 export ARCH=arm64
-
-#export CFLAGS='-mcpu=cortex-a55'
-#export CXXFLAGS='-mcpu=cortex-a55'
-#export CFLAGS='-mcpu=cortex-a55 -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE'
-#export CXXFLAGS='-mcpu=cortex-a55 -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE'
 
 ################################################################################
 function check_builddir()
@@ -46,6 +41,8 @@ function build_make()
     [ -e Makefile ] && rm Makefile
 
     ./config ARCH=arm64 --cross-compile-prefix=${COMPILER_PREFIX} no-asm shared no-async --prefix=$installdir
+    sed -i 's/^CNF_CFLAGS=-pthread -m64/CNF_CFLAGS=-pthread/' Makefile
+    sed -i 's/^CNF_CXXFLAGS=-std=c++11 -pthread -m64/CNF_CXXFLAGS=-std=c++11 -pthread/' Makefile
 
     make clean
     make -j16

@@ -44,4 +44,9 @@ int CMediaReceiver::RtpOnFrameIn(const void *packet, int bytes, uint32_t time, i
     // default do nothing, not recv data
     return 0;
 }
+
+int CMediaReceiver::SetRtpInfo_Rtptime(uint16_t seq, uint32_t timestamp, uint64_t npt) {
+    // default do nothing, not recv data
+    return 0;
+}
 }  // namespace zc

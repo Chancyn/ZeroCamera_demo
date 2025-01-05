@@ -39,7 +39,7 @@
 #define ZC_RTSP_CLI_BUF_SIZE (2 * 1024 * 1024)
 
 extern "C" int rtsp_addr_is_multicast(const char *ip);
-
+extern "C" int rtsp_client_options(rtsp_client_t *rtsp, const char *commands);
 namespace zc {
 CRtspClient::CRtspClient()
     : Thread("RtspCli"), m_init(false), m_running(0), m_pbuf(new char[ZC_RTSP_CLI_BUF_SIZE]), m_phandle(nullptr) {
@@ -151,7 +151,6 @@ int CRtspClient::_rtpport(int media, const char *source, unsigned short rtp[2], 
     return m_client.transport;
 }
 
-int rtsp_client_options(rtsp_client_t *rtsp, const char *commands);
 void CRtspClient::onrtp(void *param, uint8_t channel, const void *data, uint16_t bytes) {
     CRtspClient *pcli = reinterpret_cast<CRtspClient *>(param);
     return pcli->_onrtp(channel, data, bytes);
@@ -168,7 +167,8 @@ void CRtspClient::_onrtp(uint8_t channel, const void *data, uint16_t bytes) {
     m_pRtp[channel / 2]->RtpReceiverTcpInput(channel, data, bytes);
 
     if (++m_keepalive % 1000 == 0) {
-        rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL, NULL);
+        // rtsp_client_play(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL, NULL);
+        rtsp_client_options(reinterpret_cast<rtsp_client_t *>(m_client.rtsp), NULL);
     }
 }
 
@@ -223,6 +223,7 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
         LOG_ERROR("rtsp_client_play error ret[%d]", ret);
         return -1;
     }
+
     int media_count = rtsp_client_media_count(rtsp);
     media_count = media_count < ZC_MEIDIA_NUM ? media_count : ZC_MEIDIA_NUM;
     unsigned int tracktype = 0;
@@ -246,6 +247,8 @@ int CRtspClient::_onsetup(int timeout, int64_t duration) {
             stinfo.tracks[trackidx].enable = 1;  // enable track
             // create MediaReceiver
             m_mediarecv[i] = fac.CreateMediaReceiver(stinfo.tracks[trackidx]);
+            m_npt[i] = npt;
+            LOG_WARN("m_npt:%llu", m_npt[i]);
         }
 
         if (m_mediarecv[i] && m_mediarecv[i]->Init()) {
@@ -318,8 +321,16 @@ int CRtspClient::onplay(void *param, int media, const uint64_t *nptbegin, const 
 
 int CRtspClient::_onplay(int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale,
                          const struct rtsp_rtp_info_t *rtpinfo, int count) {
-    // TODO(zhoucc)
-    LOG_WARN("onplay %p", this);
+    // nptbegin: nptend scale 点播时间 播放速度
+    LOG_WARN("onplay %p, count,:%u media:%d, seq:%u, time:%u", this, count, media, rtpinfo->seq, rtpinfo->time);
+
+    for (unsigned int i = 0; i < ZC_MEIDIA_NUM; i++) {
+      if (media == i && m_mediarecv[i]) {
+            LOG_WARN("onplay %p, count,:%u seq:%u, time:%u, npt:%llu", this, count, rtpinfo->seq, rtpinfo->time, m_npt[i]);
+            m_mediarecv[i]->SetRtpInfo_Rtptime(rtpinfo->seq, rtpinfo->time, m_npt[i]);
+        }
+   }
+
     return 0;
 }
 

@@ -28,6 +28,8 @@
 #include "ZcType.hpp"
 
 #define ZC_RTP_RECIVE_TIMEOUT 2000
+#define ZC_RTP_DUMP_FILE 0
+
 namespace zc {
 
 int CRtpRxThread::process() {
@@ -109,8 +111,10 @@ int CRtpReceiver::_rtpRead(socket_t s) {
 
     size[0] = r >> 8;
     size[1] = r >> 0;
+#if ZC_RTP_DUMP_FILE
     fwrite(size, 1, sizeof(size), m_rtpctx->frtp);
     fwrite(m_rtpctx->rtp_buffer, 1, r, m_rtpctx->frtp);
+#endif
 
     r = rtp_demuxer_input(m_rtpctx->demuxer, m_rtpctx->rtp_buffer, r);
     return r;
@@ -245,7 +249,9 @@ int CRtpReceiver::rtpOnpacket(void *param, const void *packet, int bytes, uint32
 int CRtpReceiver::_rtpOnpacket(const void *packet, int bytes, uint32_t timestamp, int flags) {
     const uint8_t start_code[] = {0, 0, 0, 1};
     if (m_rtpctx->mediacode == ZC_MEDIA_CODE_H264 || m_rtpctx->mediacode == ZC_MEDIA_CODE_H265) {
+#if ZC_RTP_DUMP_FILE
         fwrite(start_code, 1, 4, m_rtpctx->fp);
+#endif
 #if 0
         if (m_rtpctx->mediacode == ZC_MEDIA_CODE_H264) {
             uint8_t type = *(uint8_t *)packet & 0x1f;
@@ -274,11 +280,15 @@ int CRtpReceiver::_rtpOnpacket(const void *packet, int bytes, uint32_t timestamp
         adts[4] = (uint8_t)(len >> 3);
         adts[5] = ((len & 0x07) << 5) | 0x1F;
         adts[6] = 0xFC | ((len / 1024) & 0x03);
+#if ZC_RTP_DUMP_FILE
         fwrite(adts, 1, sizeof(adts), m_rtpctx->fp);
+#endif
     } else if (0 == strcmp("MP4A-LATM", m_rtpctx->encoding)) {
         // add ADTS header
     }
+#if ZC_RTP_DUMP_FILE
     fwrite(packet, 1, bytes, m_rtpctx->fp);
+#endif
     (void)timestamp;
     (void)flags;
 
@@ -353,9 +363,10 @@ bool CRtpReceiver::RtpReceiverUdpStart(socket_t rtp[2], const char *peer, int pe
     snprintf(m_rtpctx->rtp_buffer, sizeof(m_rtpctx->rtp_buffer), "%s.%d.%d.%s", peer, peerport[0], payload, encoding);
     snprintf(m_rtpctx->rtcp_buffer, sizeof(m_rtpctx->rtcp_buffer), "%s.%d.%d.%s.rtp", peer, peerport[0], payload,
              encoding);
+#if ZC_RTP_DUMP_FILE
     m_rtpctx->fp = fopen(m_rtpctx->rtp_buffer, "wb");
     m_rtpctx->frtp = fopen(m_rtpctx->rtcp_buffer, "wb");
-
+#endif
     socket_getrecvbuf(rtp[0], &n);
     socket_setrecvbuf(rtp[0], 512 * 1024);
     socket_getrecvbuf(rtp[0], &n);
@@ -409,8 +420,10 @@ bool CRtpReceiver::RtpReceiverTcpStart(uint8_t interleave1, uint8_t interleave2,
 
     snprintf(m_rtpctx->rtp_buffer, sizeof(m_rtpctx->rtp_buffer), "tcp.%d.%s", payload, encoding);
     snprintf(m_rtpctx->rtcp_buffer, sizeof(m_rtpctx->rtcp_buffer), "tcp.%d.%s.rtp", payload, encoding);
+#if ZC_RTP_DUMP_FILE
     m_rtpctx->fp = fopen(m_rtpctx->rtp_buffer, "wb");
     m_rtpctx->frtp = fopen(m_rtpctx->rtcp_buffer, "wb");
+#endif
     snprintf(m_rtpctx->encoding, sizeof(m_rtpctx->encoding), "%s", encoding);
     m_rtpctx->mediacode = Encodingtrans2Type(m_rtpctx->encoding);
     profile = rtp_profile_find(payload);
@@ -439,7 +452,7 @@ bool CRtpReceiver::RtpReceiverStop() {
         rtp_demuxer_destroy(&m_rtpctx->demuxer);
         m_rtpctx->demuxer = nullptr;
     }
-
+#if ZC_RTP_DUMP_FILE
     if (m_rtpctx->frtp) {
         fclose(m_rtpctx->frtp);
         m_rtpctx->frtp = nullptr;
@@ -449,7 +462,7 @@ bool CRtpReceiver::RtpReceiverStop() {
         fclose(m_rtpctx->fp);
         m_rtpctx->fp = nullptr;
     }
-
+#endif
     LOG_ERROR("RtpReceiverStop exit");
     return true;
 }
@@ -460,8 +473,10 @@ int CRtpReceiver::RtpReceiverTcpInput(uint8_t channel, const void *data, uint16_
     if (0 == channel % 2) {
         size[0] = bytes >> 8;
         size[1] = bytes >> 0;
+#if ZC_RTP_DUMP_FILE
         fwrite(size, 1, sizeof(size), m_rtpctx->frtp);
         fwrite(data, 1, bytes, m_rtpctx->frtp);
+#endif
     }
 
     if (m_rtpctx->demuxer) {

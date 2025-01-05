@@ -102,6 +102,7 @@ class CRtspClient : protected Thread {
     rtspcli_callback_info_t m_cbinfo;
     CRtpReceiver *m_pRtp[ZC_MEIDIA_NUM];  // [rtp&rtcp] Receiver
     CMediaReceiver *m_mediarecv[ZC_MEIDIA_NUM];
+    uint64_t m_npt[ZC_MEIDIA_NUM];
     std::mutex m_mutex;
 };
 
